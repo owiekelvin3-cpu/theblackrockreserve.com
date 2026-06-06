@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, BarChart3, ArrowLeftRight, ArrowUpFromLine, FileText, Wallet,
+  LayoutDashboard, BarChart3, ArrowUpFromLine, FileText, Wallet,
   RefreshCw, MessageSquare, Search, Zap, Menu, X, LineChart,
 } from "lucide-react";
 import { useState } from "react";
@@ -14,7 +14,6 @@ const mainNav = [
   { href: "/dashboard/deposit", label: "Deposit", icon: Wallet },
   { href: "/dashboard/withdrawals", label: "Withdraw", icon: ArrowUpFromLine },
   { href: "/dashboard/accounts", label: "Accounts", icon: FileText },
-  { href: "/dashboard/transfers", label: "Transfers", icon: ArrowLeftRight },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/dashboard/capital-markets", label: "Capital Markets", icon: LineChart },
 ];

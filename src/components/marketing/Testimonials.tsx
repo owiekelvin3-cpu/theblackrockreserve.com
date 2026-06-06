@@ -22,11 +22,11 @@ export default function Testimonials() {
           </h2>
         </motion.div>
 
-        <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {testimonials.map((t, i) => (
             <motion.div
               key={t.name}
-              className="min-w-[300px] sm:min-w-[360px] snap-start glow-card hover-lift p-6 relative"
+              className="glow-card hover-lift p-6 relative"
               initial={{ opacity: 0, x: 30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}

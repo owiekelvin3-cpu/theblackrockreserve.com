@@ -6,12 +6,13 @@ import { Bell } from "lucide-react";
 import { toast } from "sonner";
 import { fetchDashboardJson } from "@/lib/fetch-json";
 import { cn } from "@/lib/utils";
+import { getNotificationSoundVariant, isIncomingPaymentNotification } from "@/lib/notification-helpers";
 import {
   playNotificationSound,
   showBrowserNotification,
   ensureBrowserNotificationPermission,
+  unlockNotificationAudio,
 } from "@/lib/notification-sound";
-import { dispatchNotificationsRefresh } from "@/hooks/use-push-notifications";
 
 type Notification = {
   id: string;
@@ -23,6 +24,28 @@ type Notification = {
   createdAt: string;
 };
 
+function notificationTypeLabel(type: string) {
+  if (isIncomingPaymentNotification(type)) return "Credit posted";
+  if (type === "DEPOSIT_SUBMITTED") return "Pending review";
+  if (type.includes("REJECTED")) return "Action required";
+  if (type === "WITHDRAWAL_APPROVED") return "Withdrawal sent";
+  return null;
+}
+
+function showNotificationToast(n: Notification) {
+  const opts = { description: n.message, duration: 8000 as const };
+
+  if (n.type.includes("REJECTED")) {
+    toast.error(n.title, opts);
+    return;
+  }
+  if (isIncomingPaymentNotification(n.type)) {
+    toast.success(n.title, { ...opts, description: n.message });
+    return;
+  }
+  toast(n.title, opts);
+}
+
 export default function DashboardNotifications() {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -33,56 +56,64 @@ export default function DashboardNotifications() {
   const seenIdsRef = useRef<Set<string>>(new Set());
   const pushReadyRef = useRef(false);
 
-  const load = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    const { data, error: fetchError } = await fetchDashboardJson<{
-      notifications: Notification[];
-      unreadCount: number;
-    }>("/api/dashboard/notifications");
+  const alertNewItems = useCallback((fresh: Notification[]) => {
+    if (fresh.length === 0) return;
 
-    if (fetchError || !data) {
-      setError(true);
-      if (!silent) setLoading(false);
-      return;
-    }
+    const variant = getNotificationSoundVariant(fresh[0].type);
+    void playNotificationSound(variant);
 
-    setError(false);
-    setNotifications(data.notifications);
-    setUnreadCount(data.unreadCount);
-
-    if (pushReadyRef.current) {
-      const fresh = data.notifications.filter((n) => !seenIdsRef.current.has(n.id) && !n.read);
-      if (fresh.length > 0) {
-        playNotificationSound(
-          fresh.some((n) => n.type === "DEPOSIT_REJECTED")
-            ? "alert"
-            : fresh.some((n) => n.type === "DEPOSIT_APPROVED")
-              ? "success"
-              : "default"
-        );
-        fresh.slice(0, 2).forEach((n) => {
-          toast(n.title, { description: n.message, duration: 6000 });
-          showBrowserNotification(n.title, n.message, n.id);
-        });
-      }
-    }
-
-    data.notifications.forEach((n) => seenIdsRef.current.add(n.id));
-    pushReadyRef.current = true;
-    if (!silent) setLoading(false);
+    fresh.slice(0, 3).forEach((n) => {
+      showNotificationToast(n);
+      showBrowserNotification(n.title, n.message, n.id);
+    });
   }, []);
 
+  const load = useCallback(
+    async (silent = false) => {
+      if (!silent) setLoading(true);
+      const { data, error: fetchError } = await fetchDashboardJson<{
+        notifications: Notification[];
+        unreadCount: number;
+      }>("/api/dashboard/notifications");
+
+      if (fetchError || !data) {
+        setError(true);
+        if (!silent) setLoading(false);
+        return;
+      }
+
+      setError(false);
+      setNotifications(data.notifications);
+      setUnreadCount(data.unreadCount);
+
+      if (pushReadyRef.current) {
+        const fresh = data.notifications.filter((n) => !seenIdsRef.current.has(n.id) && !n.read);
+        alertNewItems(fresh);
+      }
+
+      data.notifications.forEach((n) => seenIdsRef.current.add(n.id));
+      pushReadyRef.current = true;
+      if (!silent) setLoading(false);
+    },
+    [alertNewItems]
+  );
+
   useEffect(() => {
+    unlockNotificationAudio();
     void ensureBrowserNotificationPermission();
     load();
     const interval = window.setInterval(() => {
       if (document.visibilityState === "visible") load(true);
-    }, 20_000);
+    }, 45_000);
     const onRefresh = () => load(true);
     window.addEventListener("notifications:refresh", onRefresh);
+    window.addEventListener("focus", onRefresh);
+    document.addEventListener("visibilitychange", onRefresh);
     return () => {
       window.clearInterval(interval);
       window.removeEventListener("notifications:refresh", onRefresh);
+      window.removeEventListener("focus", onRefresh);
+      document.removeEventListener("visibilitychange", onRefresh);
     };
   }, [load]);
 
@@ -155,7 +186,21 @@ export default function DashboardNotifications() {
                     if (!n.read) markRead([n.id]);
                   }}
                 >
-                  <p className="text-sm font-medium text-white">{n.title}</p>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm font-medium text-white">{n.title}</p>
+                    {notificationTypeLabel(n.type) && (
+                      <span
+                        className={cn(
+                          "shrink-0 text-[9px] uppercase tracking-wide font-semibold px-2 py-0.5 rounded-full",
+                          isIncomingPaymentNotification(n.type)
+                            ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20"
+                            : "bg-white/5 text-text-muted border border-white/10"
+                        )}
+                      >
+                        {notificationTypeLabel(n.type)}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-text-secondary mt-1 leading-relaxed">{n.message}</p>
                   <div className="flex items-center justify-between mt-2 gap-2">
                     <p className="text-[10px] text-text-muted">{new Date(n.createdAt).toLocaleString()}</p>
@@ -178,5 +223,3 @@ export default function DashboardNotifications() {
     </div>
   );
 }
-
-export { dispatchNotificationsRefresh };

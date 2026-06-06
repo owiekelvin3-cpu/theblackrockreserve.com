@@ -124,7 +124,7 @@ export function getChatReply(input: string): ChatReply {
         "Fund your account via Dashboard → Deposit. Send BTC to our wallet address, then click \"I Have Sent the Bitcoin\" to submit your request for admin approval. You'll see a confirmation once submitted — funds are credited after our team verifies the transaction on the blockchain.",
       suggestions: [
         { label: "Deposit status", value: "How long do deposits take?" },
-        { label: "Transfers", value: "How do transfers work?" },
+        { label: "Withdraw", value: "How do withdrawals work?" },
       ],
     };
   }
@@ -140,8 +140,8 @@ export function getChatReply(input: string): ChatReply {
   if (q.includes("transfer") || q.includes("send money")) {
     return {
       message:
-        "Use Dashboard → Transfers to send funds to another user by email or account. Select a source account, enter the recipient and amount, and confirm. Transfers appear in your activity history immediately.",
-      suggestions: [{ label: "Account balance", value: "Where can I see my balance?" }],
+        "Peer-to-peer transfers between users aren't available in the dashboard right now. To move funds out, use Dashboard → Withdraw. To add funds, use Dashboard → Deposit.",
+      suggestions: [{ label: "Withdraw steps", value: "How do withdrawals work?" }],
     };
   }
 

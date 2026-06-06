@@ -2,10 +2,24 @@ import { getServerSession } from "next-auth";
 import { getToken } from "next-auth/jwt";
 import { cookies } from "next/headers";
 import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { verifiedCustomerWhere } from "@/lib/customer-auth";
 
+/** Verified customer (USER role) — for all dashboard APIs */
 export async function getSessionUserId(): Promise<string | null> {
   const session = await getServerSession(authOptions);
-  return session?.user?.id ?? null;
+  if (!session?.user?.id || session.user.role !== "USER") return null;
+
+  const user = await prisma.user.findFirst({
+    where: {
+      id: session.user.id,
+      ...verifiedCustomerWhere,
+      status: "ACTIVE",
+    },
+    select: { id: true },
+  });
+
+  return user?.id ?? null;
 }
 
 export async function getAdminSession() {

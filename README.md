@@ -31,11 +31,12 @@ In development without Gmail configured, codes are printed to the server console
 | `GMAIL_APP_PASSWORD` | Google app password (not your login password) |
 | `EMAIL_FROM` | Sender display name |
 | `DATABASE_URL` | Supabase pooled connection (`aws-1-[region].pooler.supabase.com:6543?pgbouncer=true&sslmode=require`) |
-| `DIRECT_URL` | Supabase session pooler (`aws-1-[region].pooler.supabase.com:5432?sslmode=require`) |
+| `DIRECT_URL` | Supabase **direct** host (`db.[PROJECT_REF].supabase.co:5432?sslmode=require`) |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon (public) key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (server only) |
-| `NEXTAUTH_URL` | Your production URL, e.g. `https://your-app.vercel.app` |
+| `NEXT_PUBLIC_SITE_URL` | Production URL, e.g. `https://platinumcrest.com` |
+| `NEXTAUTH_URL` | Same as production URL (auth cookies & email links) |
 | `NEXTAUTH_SECRET` | Random secret (`openssl rand -base64 32`) |
 | `ADMIN_EMAIL` | Admin bootstrap email (for `npm run admin:create`) |
 | `ADMIN_PASSWORD` | Admin bootstrap password |
@@ -53,11 +54,15 @@ Run locally with production env vars set, or create the admin via Supabase SQL.
 
 ## Production checklist
 
+See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for custom domain setup on Vercel.
+
 - Set a strong `NEXTAUTH_SECRET` (never use the dev default)
-- Set `NEXTAUTH_URL` to your live domain
-- Use Supabase **pooler** URLs (`aws-1-[region]`, not `aws-0`)
+- Set `NEXTAUTH_URL` and `NEXT_PUBLIC_SITE_URL` to your live domain (`https://…`)
+- Use Supabase **pooler** URL on port **6543** for `DATABASE_URL`
+- Use Supabase **direct** URL on port **5432** for `DIRECT_URL`
 - Rotate any keys/passwords that were shared in chat
 - Configure Bitcoin wallet in **Admin → Settings** before going live
+- Never enable `ADMIN_PASSWORDLESS` in production
 
 ## Local development
 

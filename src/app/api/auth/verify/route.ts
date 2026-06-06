@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyOtpSchema } from "@/lib/validations";
 import { sendEmail } from "@/lib/email";
 import { welcomeEmail } from "@/lib/email-templates";
+import { ensureUserBankAccounts } from "@/lib/dashboard-data";
 
 export async function POST(req: Request) {
   try {
@@ -43,6 +44,8 @@ export async function POST(req: Request) {
         otpExpires: null,
       },
     });
+
+    await ensureUserBankAccounts(user.id);
 
     try {
       const mail = welcomeEmail(user.name);

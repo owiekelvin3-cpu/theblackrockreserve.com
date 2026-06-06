@@ -1,20 +1,65 @@
 /** Lightweight notification chime via Web Audio — no external asset required */
 
 let audioCtx: AudioContext | null = null;
+let audioUnlocked = false;
 
 function getAudioContext() {
   if (typeof window === "undefined") return null;
   if (!audioCtx) audioCtx = new AudioContext();
-  if (audioCtx.state === "suspended") void audioCtx.resume();
   return audioCtx;
 }
 
-export function playNotificationSound(variant: "default" | "success" | "alert" = "default") {
+/** Call once on app load — browsers require a user gesture before audio plays */
+export function unlockNotificationAudio() {
+  if (typeof window === "undefined" || audioUnlocked) return;
+
+  const tryUnlock = async () => {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    try {
+      if (ctx.state === "suspended") await ctx.resume();
+      audioUnlocked = ctx.state === "running";
+    } catch {
+      /* wait for user gesture */
+    }
+  };
+
+  void tryUnlock();
+
+  const onGesture = () => {
+    void tryUnlock().then(() => {
+      if (audioUnlocked) {
+        window.removeEventListener("click", onGesture);
+        window.removeEventListener("keydown", onGesture);
+        window.removeEventListener("touchstart", onGesture);
+      }
+    });
+  };
+
+  window.addEventListener("click", onGesture, { passive: true });
+  window.addEventListener("keydown", onGesture, { passive: true });
+  window.addEventListener("touchstart", onGesture, { passive: true });
+}
+
+export async function playNotificationSound(variant: "default" | "success" | "alert" = "default") {
   const ctx = getAudioContext();
   if (!ctx) return;
 
+  try {
+    if (ctx.state === "suspended") await ctx.resume();
+    if (ctx.state !== "running") return;
+  } catch {
+    return;
+  }
+
   const frequencies =
-    variant === "success" ? [523.25, 659.25] : variant === "alert" ? [440, 330] : [587.33, 739.99];
+    variant === "success"
+      ? [523.25, 659.25, 783.99]
+      : variant === "alert"
+        ? [440, 330]
+        : [587.33, 739.99];
+
+  const volume = variant === "success" ? 0.18 : 0.14;
 
   frequencies.forEach((freq, i) => {
     const osc = ctx.createOscillator();
@@ -24,13 +69,13 @@ export function playNotificationSound(variant: "default" | "success" | "alert" =
     osc.connect(gain);
     gain.connect(ctx.destination);
 
-    const start = ctx.currentTime + i * 0.12;
+    const start = ctx.currentTime + i * 0.1;
     gain.gain.setValueAtTime(0.0001, start);
-    gain.gain.exponentialRampToValueAtTime(0.12, start + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.35);
+    gain.gain.exponentialRampToValueAtTime(volume, start + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.4);
 
     osc.start(start);
-    osc.stop(start + 0.36);
+    osc.stop(start + 0.42);
   });
 }
 
@@ -48,7 +93,7 @@ export function showBrowserNotification(title: string, body: string, tag?: strin
   if (document.visibilityState === "visible") return;
 
   try {
-    new Notification(title, { body, tag, icon: "/favicon.ico" });
+    new Notification(title, { body, tag, icon: "/favicon.svg" });
   } catch {
     /* ignore unsupported environments */
   }

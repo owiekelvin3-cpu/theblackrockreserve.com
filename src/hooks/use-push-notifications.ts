@@ -7,6 +7,7 @@ import {
   showBrowserNotification,
   ensureBrowserNotificationPermission,
 } from "@/lib/notification-sound";
+import { getNotificationSoundVariant } from "@/lib/notification-helpers";
 
 export type PushNotificationItem = {
   id: string;
@@ -56,13 +57,10 @@ export function usePushNotifications<T extends { notifications?: PushNotificatio
         fresh.forEach((n) => seenIdsRef.current.add(n.id));
 
         if (!silent) {
-          playNotificationSound(
-            fresh.some((n) => n.type?.includes("REJECTED") || n.type?.includes("ALERT"))
-              ? "alert"
-              : fresh.some((n) => n.type?.includes("APPROVED") || n.type?.includes("SUBMITTED"))
-                ? "success"
-                : soundVariant
-          );
+          const variant = fresh[0].type
+            ? getNotificationSoundVariant(fresh[0].type)
+            : soundVariant;
+          void playNotificationSound(variant);
         }
 
         fresh.slice(0, 3).forEach((n) => {

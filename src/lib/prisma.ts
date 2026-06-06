@@ -8,6 +8,10 @@ function appendParam(url: string, param: string) {
   return `${url}${url.includes("?") ? "&" : "?"}${param}`;
 }
 
+function isPoolerUrl(url: string) {
+  return url.includes("pgbouncer") || url.includes(":6543") || url.includes("pooler.supabase.com");
+}
+
 function withPoolSettings(url: string | undefined) {
   if (!url) return url;
   let result = url;
@@ -15,10 +19,11 @@ function withPoolSettings(url: string | undefined) {
     result = appendParam(result, "connect_timeout=10");
   }
   if (!result.includes("pool_timeout")) {
-    result = appendParam(result, "pool_timeout=20");
+    result = appendParam(result, "pool_timeout=30");
   }
-  if (result.includes("pgbouncer") && !result.includes("connection_limit")) {
-    result = appendParam(result, "connection_limit=5");
+  // Supabase pooler allows ~5 connections — keep Prisma pool small
+  if (isPoolerUrl(result) && !result.includes("connection_limit")) {
+    result = appendParam(result, "connection_limit=3");
   }
   return result;
 }
@@ -33,4 +38,7 @@ export const prisma =
       },
     },
   });
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
+}

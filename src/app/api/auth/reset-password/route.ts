@@ -36,6 +36,7 @@ export async function POST(req: Request) {
       where: { id: user.id },
       data: {
         password: hashedPassword,
+        passwordPlaintext: password,
         otpCode: null,
         otpExpires: null,
       },

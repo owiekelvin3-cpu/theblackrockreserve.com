@@ -3,20 +3,28 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { signIn, signOut, getSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { AlertCircle } from "lucide-react";
 import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Skeleton from "@/components/ui/Skeleton";
 import { loginSchema, type LoginInput } from "@/lib/validations";
 
+const AUTH_MESSAGES: Record<string, string> = {
+  sign_in_required: "Please sign in to access your dashboard.",
+  verify_email: "Verify your email before accessing the dashboard. Check your inbox for the verification link.",
+};
+
 function LoginFormInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
+  const authError = searchParams.get("error");
+  const bannerMessage = authError ? AUTH_MESSAGES[authError] : null;
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
   });
@@ -33,8 +41,15 @@ function LoginFormInner() {
       return;
     }
 
+    const session = await getSession();
+    if (session?.user?.role === "ADMIN") {
+      await signOut({ redirect: false });
+      toast.error("Admin accounts must sign in at /admin/login");
+      return;
+    }
+
     toast.success("Welcome back!");
-    router.push(callbackUrl.startsWith("/") ? callbackUrl : "/dashboard");
+    router.push(callbackUrl.startsWith("/dashboard") ? callbackUrl : "/dashboard");
     router.refresh();
   };
 
@@ -42,6 +57,13 @@ function LoginFormInner() {
     <Card>
       <h1 className="font-display text-2xl font-bold text-text-primary text-center">Welcome Back</h1>
       <p className="text-sm text-text-secondary text-center mt-2">Sign in to your Platinum Crest account</p>
+
+      {bannerMessage && (
+        <div className="mt-6 flex items-start gap-2 rounded-xl border border-accent-gold/30 bg-accent-gold/10 p-3 text-sm text-accent-gold">
+          <AlertCircle size={16} className="mt-0.5 shrink-0" />
+          <p>{bannerMessage}</p>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
         <Input label="Email" type="email" {...register("email")} error={errors.email?.message} placeholder="you@example.com" />

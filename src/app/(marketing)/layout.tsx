@@ -7,7 +7,7 @@ export default function MarketingLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative">
+    <div className="relative overflow-x-hidden">
       <Navbar />
       <main className="relative z-10">{children}</main>
       <Footer />

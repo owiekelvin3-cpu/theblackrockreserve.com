@@ -3,8 +3,9 @@ import { unstable_cache } from "next/cache";
 import { getSessionUserId, unauthorizedResponse } from "@/lib/api-auth";
 import { DEPOSIT_SUCCESS_MESSAGE, formatDepositStatus } from "@/lib/deposit-status";
 import { getPublicDepositSettings } from "@/lib/platform-settings";
+import { ensureUserBankAccounts } from "@/lib/dashboard-data";
 import { depositSubmitSchema } from "@/lib/validations";
-import { createUserNotification } from "@/lib/user-notifications";
+import { createUserNotification, sendUserNotificationEmail } from "@/lib/user-notifications";
 import { formatCurrency } from "@/lib/utils";
 import { prisma } from "@/lib/prisma";
 import QRCode from "qrcode";
@@ -30,28 +31,24 @@ export async function GET() {
   if (!userId) return unauthorizedResponse();
 
   try {
-    const [settings, accounts, deposits] = await Promise.all([
-      getPublicDepositSettings(),
-      prisma.bankAccount.findMany({
-        where: { userId },
-        select: { id: true, name: true, currency: true, balance: true },
-        orderBy: { createdAt: "asc" },
-      }),
+    const settings = await getPublicDepositSettings();
+    const [accounts, deposits] = await Promise.all([
+      ensureUserBankAccounts(userId),
       prisma.depositRequest.findMany({
-        where: { userId },
-        orderBy: { createdAt: "desc" },
-        take: 15,
-        select: {
-          id: true,
-          amountUsd: true,
-          bitcoinWalletAddress: true,
-          txHash: true,
-          proofNote: true,
-          status: true,
-          reviewNote: true,
-          createdAt: true,
-        },
-      }),
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: 15,
+      select: {
+        id: true,
+        amountUsd: true,
+        bitcoinWalletAddress: true,
+        txHash: true,
+        proofNote: true,
+        status: true,
+        reviewNote: true,
+        createdAt: true,
+      },
+    }),
     ]);
 
     let qrCodeDataUrl = "";
@@ -102,18 +99,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
     }
 
-    const [user, account, settings] = await Promise.all([
+    const [user, settings] = await Promise.all([
       prisma.user.findUnique({ where: { id: userId }, select: { id: true, status: true, name: true } }),
-      prisma.bankAccount.findFirst({ where: { id: parsed.data.accountId, userId } }),
       getPublicDepositSettings(),
     ]);
 
     if (!user || user.status === "SUSPENDED") {
       return NextResponse.json({ error: "Account suspended" }, { status: 403 });
     }
-    if (!account) return NextResponse.json({ error: "Invalid account selected" }, { status: 400 });
     if (!settings.bitcoinWalletAddress) {
       return NextResponse.json({ error: "Bitcoin deposits are not configured" }, { status: 400 });
+    }
+
+    await ensureUserBankAccounts(userId);
+
+    const account = await prisma.bankAccount.findFirst({
+      where: parsed.data.accountId
+        ? { id: parsed.data.accountId, userId }
+        : { userId },
+      orderBy: { createdAt: "asc" },
+    });
+    if (!account) {
+      return NextResponse.json({ error: "No bank account available to credit" }, { status: 400 });
     }
 
     const txHash = parsed.data.txHash?.trim() || null;
@@ -152,11 +159,14 @@ export async function POST(req: NextRequest) {
     const amountLabel =
       parsed.data.amountUsd != null ? formatCurrency(parsed.data.amountUsd) : "Amount pending verification";
 
+    const depositTitle = "Deposit request submitted";
+    const depositMessage = `Your Bitcoin deposit request (${amountLabel}) is pending admin approval. You will be notified once it is reviewed.`;
+
     const deposit = await prisma.$transaction(async (tx) => {
       const row = await tx.depositRequest.create({
         data: {
           userId,
-          accountId: parsed.data.accountId,
+          accountId: account.id,
           amountUsd: parsed.data.amountUsd,
           bitcoinWalletAddress: settings.bitcoinWalletAddress,
           txHash,
@@ -177,14 +187,20 @@ export async function POST(req: NextRequest) {
         {
           userId,
           type: "DEPOSIT_SUBMITTED",
-          title: "Deposit request submitted",
-          message: `Your Bitcoin deposit request (${amountLabel}) is pending admin approval. You will be notified once it is reviewed.`,
+          title: depositTitle,
+          message: depositMessage,
           depositId: row.id,
         },
         tx
       );
 
       return row;
+    });
+
+    await sendUserNotificationEmail({
+      userId,
+      title: depositTitle,
+      message: depositMessage,
     });
 
     return NextResponse.json({

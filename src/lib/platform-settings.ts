@@ -22,15 +22,13 @@ const DEFAULTS: Record<SettingKey, string> = {
 const CACHE_TAG = "platform-settings";
 
 export async function ensureDefaultSettings() {
-  await Promise.all(
-    Object.entries(DEFAULTS).map(([key, value]) =>
-      prisma.platformSetting.upsert({
-        where: { key },
-        create: { key, value },
-        update: {},
-      })
-    )
-  );
+  for (const [key, value] of Object.entries(DEFAULTS)) {
+    await prisma.platformSetting.upsert({
+      where: { key },
+      create: { key, value },
+      update: {},
+    });
+  }
 }
 
 function mergeSettings(rows: { key: string; value: string }[], keys?: SettingKey[]) {

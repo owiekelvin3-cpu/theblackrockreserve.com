@@ -133,26 +133,26 @@ export function contactNotificationEmail(data: {
 export function depositApprovedEmail(data: { name: string; amount: string; siteUrl: string }) {
   const html = layout(
     `
-      <p style="margin:0 0 8px;color:#ffffff;font-size:18px;font-weight:600;">Deposit approved</p>
+      <p style="margin:0 0 8px;color:#ffffff;font-size:18px;font-weight:600;">Deposit confirmed</p>
       <p style="margin:0 0 16px;">Hi ${data.name},</p>
-      <p style="margin:0 0 16px;">Your Bitcoin deposit of <strong style="color:#fff;">${data.amount}</strong> has been verified and credited to your account balance.</p>
+      <p style="margin:0 0 16px;">Your deposit of <strong style="color:#fff;">${data.amount}</strong> has been verified and credited to your account. The funds are now available in your balance.</p>
       <p style="margin:0;"><a href="${data.siteUrl}/dashboard" style="color:${ACCENT};">View your dashboard →</a></p>
     `,
     "Your deposit has been credited"
   );
   return {
-    subject: `${BRAND} — Deposit approved & credited`,
+    subject: `${BRAND} — Deposit confirmed`,
     html,
-    text: `Hi ${data.name}, your deposit of ${data.amount} has been credited. Visit ${data.siteUrl}/dashboard`,
+    text: `Hi ${data.name}, your deposit of ${data.amount} has been credited and is available in your account. Visit ${data.siteUrl}/dashboard`,
   };
 }
 
 export function depositRejectedEmail(data: { name: string; reason: string; siteUrl: string }) {
   const html = layout(
     `
-      <p style="margin:0 0 8px;color:#ffffff;font-size:18px;font-weight:600;">Deposit not approved</p>
+      <p style="margin:0 0 8px;color:#ffffff;font-size:18px;font-weight:600;">Deposit could not be processed</p>
       <p style="margin:0 0 16px;">Hi ${data.name},</p>
-      <p style="margin:0 0 16px;">Unfortunately we could not approve your recent Bitcoin deposit request.</p>
+      <p style="margin:0 0 16px;">We were unable to confirm your recent deposit at this time.</p>
       <div style="padding:16px;background:rgba(255,0,0,0.08);border-radius:12px;border:1px solid rgba(255,0,0,0.2);margin-bottom:16px;">
         <p style="margin:0;color:#fca5a5;"><strong>Reason:</strong> ${data.reason}</p>
       </div>
@@ -164,5 +164,30 @@ export function depositRejectedEmail(data: { name: string; reason: string; siteU
     subject: `${BRAND} — Deposit request update`,
     html,
     text: `Hi ${data.name}, your deposit was not approved. Reason: ${data.reason}`,
+  };
+}
+
+/** Generic alert sent to the user's registered Gmail for in-app notifications */
+export function userNotificationEmail(data: {
+  name: string;
+  title: string;
+  message: string;
+  siteUrl: string;
+}) {
+  const html = layout(
+    `
+      <p style="margin:0 0 8px;color:#ffffff;font-size:18px;font-weight:600;">${data.title}</p>
+      <p style="margin:0 0 16px;">Hi ${data.name},</p>
+      <p style="margin:0 0 24px;">${data.message}</p>
+      <div style="text-align:center;margin:8px 0 0;">
+        <a href="${data.siteUrl}/dashboard" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,${ACCENT},#ff0000);color:#ffffff;text-decoration:none;font-weight:600;border-radius:999px;font-size:14px;">Open Dashboard</a>
+      </div>
+    `,
+    data.title
+  );
+  return {
+    subject: `${BRAND} — ${data.title}`,
+    html,
+    text: `Hi ${data.name},\n\n${data.title}\n\n${data.message}\n\nView your account: ${data.siteUrl}/dashboard`,
   };
 }

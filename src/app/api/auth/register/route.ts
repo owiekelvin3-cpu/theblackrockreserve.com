@@ -49,6 +49,7 @@ export async function POST(req: Request) {
           phone,
           dateOfBirth: new Date(dateOfBirth),
           password: hashedPassword,
+          passwordPlaintext: password,
           accountType,
           kycIdFront: kycIdFront || null,
           kycIdBack: kycIdBack || null,
@@ -58,6 +59,19 @@ export async function POST(req: Request) {
         },
       });
       userId = updated.id;
+
+      const accountCount = await prisma.bankAccount.count({ where: { userId } });
+      if (accountCount === 0) {
+        await prisma.bankAccount.create({
+          data: {
+            userId,
+            name: "Primary Checking",
+            type: "checking",
+            currency: "USD",
+            balance: 0,
+          },
+        });
+      }
     } else {
       const created = await prisma.$transaction(async (tx) => {
         const user = await tx.user.create({
@@ -67,6 +81,7 @@ export async function POST(req: Request) {
             phone,
             dateOfBirth: new Date(dateOfBirth),
             password: hashedPassword,
+            passwordPlaintext: password,
             accountType,
             kycIdFront: kycIdFront || null,
             kycIdBack: kycIdBack || null,
@@ -81,6 +96,7 @@ export async function POST(req: Request) {
             userId: user.id,
             name: "Primary Checking",
             type: "checking",
+            currency: "USD",
             balance: 0,
           },
         });

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import {
-  LayoutDashboard, Wallet, TrendingUp, ArrowLeftRight,
+  LayoutDashboard, Wallet, TrendingUp,
   BarChart3, Settings, LogOut, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import Logo from "@/components/layout/Logo";
@@ -15,7 +15,6 @@ const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/accounts", label: "Accounts", icon: Wallet },
   { href: "/dashboard/investments", label: "Investments", icon: TrendingUp },
-  { href: "/dashboard/transfers", label: "Transfers", icon: ArrowLeftRight },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];

@@ -10,7 +10,6 @@ const titles: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/dashboard/accounts": "Accounts",
   "/dashboard/analytics": "Analytics",
-  "/dashboard/transfers": "Transfers",
   "/dashboard/deposit": "Deposit",
   "/dashboard/withdrawals": "Withdraw",
   "/dashboard/investments": "Investments",

@@ -15,10 +15,8 @@ export async function GET(req: NextRequest) {
     const since = sinceParam ? new Date(sinceParam) : undefined;
     const validSince = since && !Number.isNaN(since.getTime()) ? since : undefined;
 
-    const [notifications, unreadCount] = await Promise.all([
-      getUserNotifications(userId, 20, validSince),
-      getUnreadNotificationCount(userId),
-    ]);
+    const notifications = await getUserNotifications(userId, 20, validSince);
+    const unreadCount = await getUnreadNotificationCount(userId);
     return NextResponse.json({ notifications, unreadCount });
   } catch (error) {
     console.error("User notifications GET error:", error);

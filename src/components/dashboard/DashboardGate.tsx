@@ -3,7 +3,6 @@
 import { useSession } from "next-auth/react";
 import EmptyState from "@/components/dashboard/EmptyState";
 import Skeleton from "@/components/ui/Skeleton";
-import { LogIn } from "lucide-react";
 
 interface DashboardGateProps {
   children: React.ReactNode;
@@ -36,15 +35,7 @@ export default function DashboardGate({
   }
 
   if (status === "unauthenticated") {
-    return (
-      <EmptyState
-        icon={LogIn}
-        title="Sign in to view your dashboard"
-        description="Log in to your account to see balances, transactions, and portfolio data."
-        actionLabel="Sign In"
-        actionHref="/login"
-      />
-    );
+    return null;
   }
 
   if (isEmpty) {

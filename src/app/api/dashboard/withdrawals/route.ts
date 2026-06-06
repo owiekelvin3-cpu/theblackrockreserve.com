@@ -3,6 +3,8 @@ import { getSessionUserId, unauthorizedResponse } from "@/lib/api-auth";
 import { getAvailableBalancesMap } from "@/lib/withdrawal-balance";
 import { getWithdrawalMethodLabel } from "@/lib/withdrawal-methods";
 import { withdrawalRequestSchema } from "@/lib/validations";
+import { createUserNotification, sendUserNotificationEmail } from "@/lib/user-notifications";
+import { formatCurrency } from "@/lib/utils";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
@@ -121,6 +123,18 @@ export async function POST(req: NextRequest) {
       },
       select: { id: true, method: true, status: true, createdAt: true },
     });
+
+    const title = "Withdrawal request submitted";
+    const message = `Your ${getWithdrawalMethodLabel(parsed.data.method)} withdrawal request for ${formatCurrency(parsed.data.amountUsd)} has been submitted and is pending review.`;
+
+    await createUserNotification({
+      userId,
+      type: "WITHDRAWAL_SUBMITTED",
+      title,
+      message,
+    });
+
+    await sendUserNotificationEmail({ userId, title, message });
 
     return NextResponse.json({
       success: true,

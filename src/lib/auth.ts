@@ -26,7 +26,9 @@ export const authOptions: NextAuthOptions = {
         }
 
         const adminPasswordless =
-          process.env.ADMIN_PASSWORDLESS === "true" && user.role === "ADMIN";
+          process.env.NODE_ENV !== "production" &&
+          process.env.ADMIN_PASSWORDLESS === "true" &&
+          user.role === "ADMIN";
 
         if (!adminPasswordless) {
           if (!credentials.password) {
@@ -39,9 +41,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         if (!user.emailVerified) {
-          if (process.env.NODE_ENV === "production") {
-            throw new Error("Please verify your email before signing in");
-          }
+          throw new Error("Please verify your email before signing in.");
         }
 
         if (user.status === "SUSPENDED") {
@@ -53,6 +53,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
+          emailVerified: !!user.emailVerified,
         };
       },
     }),
@@ -93,14 +94,16 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role ?? "USER";
+        token.emailVerified = Boolean(user.emailVerified);
       } else if (trigger === "update" && token.email) {
         const dbUser = await prisma.user.findUnique({
           where: { email: token.email as string },
-          select: { id: true, role: true },
+          select: { id: true, role: true, emailVerified: true },
         });
         if (dbUser) {
           token.id = dbUser.id;
           token.role = dbUser.role;
+          token.emailVerified = !!dbUser.emailVerified;
         }
       }
       return token;
@@ -109,6 +112,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = (token.role as "USER" | "ADMIN") ?? "USER";
+        session.user.emailVerified = Boolean(token.emailVerified);
       }
       return session;
     },

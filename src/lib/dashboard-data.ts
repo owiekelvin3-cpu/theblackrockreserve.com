@@ -15,11 +15,30 @@ export function currencyFlag(currency: string) {
   return CURRENCY_FLAGS[currency.toUpperCase()] ?? "💱";
 }
 
-export async function getAccounts(userId: string) {
-  const accounts = await prisma.bankAccount.findMany({
+/** Create a default checking account if the user has none (legacy signups, admin users, etc.) */
+export async function ensureUserBankAccounts(userId: string) {
+  const existing = await prisma.bankAccount.findMany({
     where: { userId },
     orderBy: { createdAt: "asc" },
   });
+
+  if (existing.length > 0) return existing;
+
+  const account = await prisma.bankAccount.create({
+    data: {
+      userId,
+      name: "Primary Checking",
+      type: "checking",
+      currency: "USD",
+      balance: 0,
+    },
+  });
+
+  return [account];
+}
+
+export async function getAccounts(userId: string) {
+  const accounts = await ensureUserBankAccounts(userId);
 
   return accounts.map((a) => ({
     id: a.id,

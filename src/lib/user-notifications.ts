@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { sendEmail } from "@/lib/email";
+import { userNotificationEmail } from "@/lib/email-templates";
+import { getSiteUrl } from "@/lib/site-url";
 
 type Tx = Prisma.TransactionClient;
 
@@ -23,6 +26,33 @@ export async function createUserNotification(
       depositId: params.depositId,
     },
   });
+}
+
+/** Sends the same notification copy to the user's registered Gmail */
+export async function sendUserNotificationEmail(params: {
+  userId: string;
+  title: string;
+  message: string;
+}) {
+  const user = await prisma.user.findUnique({
+    where: { id: params.userId },
+    select: { email: true, name: true },
+  });
+
+  if (!user?.email) return { sent: false as const, reason: "no_email" as const };
+
+  try {
+    const mail = userNotificationEmail({
+      name: user.name,
+      title: params.title,
+      message: params.message,
+      siteUrl: getSiteUrl(),
+    });
+    return await sendEmail({ to: user.email, ...mail });
+  } catch (error) {
+    console.error("User notification email failed:", error);
+    return { sent: false as const, reason: "send_failed" as const };
+  }
 }
 
 export async function getUserNotifications(userId: string, limit = 20, since?: Date) {

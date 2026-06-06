@@ -92,6 +92,14 @@ export const adminUserUpdateSchema = z.object({
   status: z.enum(["ACTIVE", "SUSPENDED"]).optional(),
 });
 
+export const adminPasswordResetSchema = z.object({
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Must contain an uppercase letter")
+    .regex(/[0-9]/, "Must contain a number"),
+});
+
 export const balanceAdjustmentSchema = z.object({
   accountId: z.string().min(1),
   type: z.enum(["CREDIT", "DEBIT"]),
