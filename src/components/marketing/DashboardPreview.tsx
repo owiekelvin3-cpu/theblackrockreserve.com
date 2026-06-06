@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import {
   LayoutDashboard, Wallet, TrendingUp, ArrowLeftRight,
-  CreditCard, BarChart3, Settings, Search, Bell, Wifi,
+  BarChart3, Settings, Search, Bell, Wifi,
 } from "lucide-react";
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { CHART_BRAND, CHART_MUTED, CHART_TOOLTIP_STYLE } from "@/lib/chart-theme";
@@ -15,7 +15,7 @@ const chartData = [
   { day: "Jul", value: 68 },
 ];
 
-const sidebarIcons = [LayoutDashboard, Wallet, TrendingUp, ArrowLeftRight, CreditCard, BarChart3, Settings];
+const sidebarIcons = [LayoutDashboard, Wallet, TrendingUp, ArrowLeftRight, BarChart3, Settings];
 const tabs = ["All", "Withdrawal", "Savings", "Deposit"];
 
 export default function DashboardPreview() {

@@ -1,9 +1,22 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { verifyOtpSchema } from "@/lib/validations";
+import { sendEmail } from "@/lib/email";
+import { welcomeEmail } from "@/lib/email-templates";
 
 export async function POST(req: Request) {
   try {
-    const { email, otp } = await req.json();
+    const body = await req.json();
+    const parsed = verifyOtpSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? "Invalid verification data" },
+        { status: 400 }
+      );
+    }
+
+    const { email, otp } = parsed.data;
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
@@ -19,7 +32,7 @@ export async function POST(req: Request) {
     }
 
     if (user.otpExpires && user.otpExpires < new Date()) {
-      return NextResponse.json({ error: "Verification code expired" }, { status: 400 });
+      return NextResponse.json({ error: "Verification code expired. Request a new code." }, { status: 400 });
     }
 
     await prisma.user.update({
@@ -30,6 +43,13 @@ export async function POST(req: Request) {
         otpExpires: null,
       },
     });
+
+    try {
+      const mail = welcomeEmail(user.name);
+      await sendEmail({ to: email, ...mail });
+    } catch (err) {
+      console.error("Welcome email failed:", err);
+    }
 
     return NextResponse.json({ message: "Email verified successfully" });
   } catch (error) {

@@ -9,27 +9,37 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
+  id            String      @id @default(cuid())
+  email         String      @unique
   password      String
   name          String
   phone         String?
   dateOfBirth   DateTime?
   accountType   AccountType @default(PERSONAL)
+  role          UserRole    @default(USER)
+  status        UserStatus  @default(ACTIVE)
   emailVerified DateTime?
-  kycStatus     KycStatus @default(PENDING)
+  kycStatus     KycStatus   @default(PENDING)
   kycIdFront    String?
   kycIdBack     String?
   otpCode       String?
   otpExpires    DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
-  accounts      BankAccount[]
-  transactions  Transaction[]
-  investments   Investment[]
-  cards         VirtualCard[]
-  sessions      Session[]
+  accounts            BankAccount[]
+  transactions        Transaction[]
+  investments         Investment[]
+  sessions            Session[]
+  balanceAdjustments  BalanceAdjustment[] @relation("UserAdjustments")
+  adminAdjustments    BalanceAdjustment[] @relation("AdminAdjustments")
+  depositRequests     DepositRequest[]    @relation("UserDeposits")
+  reviewedDeposits    DepositRequest[]    @relation("DepositReviewer")
+  withdrawalRequests  WithdrawalRequest[] @relation("UserWithdrawals")
+  reviewedWithdrawals WithdrawalRequest[] @relation("WithdrawalReviewer")
+  notifications       UserNotification[]
+  adminActivityLogs   AdminActivityLog[]  @relation("AdminActions")
+  targetedLogs        AdminActivityLog[]  @relation("TargetUser")
 }
 
 model Session {
@@ -41,17 +51,18 @@ model Session {
 }
 
 model BankAccount {
-  id        String      @id @default(cuid())
+  id        String   @id @default(cuid())
   userId    String
   name      String
-  type      String      @default("checking")
-  currency  String      @default("USD")
-  balance   Decimal     @default(0) @db.Decimal(15, 2)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  type      String   @default("checking")
+  currency  String   @default("USD")
+  balance   Decimal  @default(0) @db.Decimal(15, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions Transaction[]
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions       Transaction[]
+  balanceAdjustments BalanceAdjustment[]
 }
 
 model Transaction {
@@ -81,17 +92,6 @@ model Investment {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model VirtualCard {
-  id        String   @id @default(cuid())
-  userId    String
-  last4     String
-  brand     String   @default("visa")
-  status    String   @default("active")
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
 model ContactMessage {
   id        String   @id @default(cuid())
   name      String
@@ -99,6 +99,104 @@ model ContactMessage {
   subject   String
   message   String
   createdAt DateTime @default(now())
+}
+
+model BalanceAdjustment {
+  id            String                @id @default(cuid())
+  userId        String
+  accountId     String
+  adminId       String
+  type          BalanceAdjustmentType
+  amount        Decimal               @db.Decimal(15, 2)
+  reason        String
+  balanceBefore Decimal               @db.Decimal(15, 2)
+  balanceAfter  Decimal               @db.Decimal(15, 2)
+  createdAt     DateTime              @default(now())
+
+  user    User        @relation("UserAdjustments", fields: [userId], references: [id], onDelete: Cascade)
+  account BankAccount @relation(fields: [accountId], references: [id])
+  admin   User        @relation("AdminAdjustments", fields: [adminId], references: [id])
+}
+
+model DepositRequest {
+  id                   String               @id @default(cuid())
+  userId               String
+  accountId            String?
+  amountUsd            Decimal?             @db.Decimal(15, 2)
+  bitcoinWalletAddress String?
+  txHash               String?
+  proofNote            String?
+  status               DepositRequestStatus @default(PENDING)
+  reviewedBy           String?
+  reviewNote           String?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  user     User  @relation("UserDeposits", fields: [userId], references: [id], onDelete: Cascade)
+  reviewer User? @relation("DepositReviewer", fields: [reviewedBy], references: [id])
+}
+
+model UserNotification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  message   String   @db.Text
+  read      Boolean  @default(false)
+  depositId String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model WithdrawalRequest {
+  id               String               @id @default(cuid())
+  userId           String
+  accountId        String
+  method           WithdrawalMethod     @default(CRYPTO_STABLECOIN)
+  amountUsd        Decimal              @db.Decimal(15, 2)
+  destination      String               @map("walletAddress")
+  destinationExtra String?
+  note             String?
+  status           DepositRequestStatus @default(PENDING)
+  reviewedBy       String?
+  reviewNote       String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  user     User  @relation("UserWithdrawals", fields: [userId], references: [id], onDelete: Cascade)
+  reviewer User? @relation("WithdrawalReviewer", fields: [reviewedBy], references: [id])
+}
+
+model AdminActivityLog {
+  id           String   @id @default(cuid())
+  adminId      String
+  targetUserId String?
+  action       String
+  details      String   @db.Text
+  ipAddress    String?
+  createdAt    DateTime @default(now())
+
+  admin      User  @relation("AdminActions", fields: [adminId], references: [id])
+  targetUser User? @relation("TargetUser", fields: [targetUserId], references: [id])
+}
+
+model PlatformSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
 }
 
 enum AccountType {
@@ -124,4 +222,29 @@ enum TransactionStatus {
   PENDING
   COMPLETED
   FAILED
+}
+
+enum BalanceAdjustmentType {
+  CREDIT
+  DEBIT
+}
+
+enum DepositRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum WithdrawalMethod {
+  ACH
+  WIRE
+  ZELLE
+  PAYPAL
+  VENMO
+  CASH_APP
+  APPLE_PAY
+  GOOGLE_PAY
+  DEBIT_CARD
+  CRYPTO_STABLECOIN
+  PAPER_CHECK
 }

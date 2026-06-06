@@ -47,13 +47,6 @@ export async function getInvestments(userId: string) {
   }));
 }
 
-export async function getCards(userId: string) {
-  return prisma.virtualCard.findMany({
-    where: { userId },
-    orderBy: { createdAt: "desc" },
-  });
-}
-
 export async function getTransactions(userId: string, type?: string, limit = 20) {
   return prisma.transaction.findMany({
     where: {
@@ -66,11 +59,14 @@ export async function getTransactions(userId: string, type?: string, limit = 20)
   });
 }
 
+import { getPublicDepositSettings } from "@/lib/platform-settings";
+
 export async function getDashboardOverview(userId: string) {
-  const [accounts, investments, transactions] = await Promise.all([
+  const [accounts, investments, transactions, depositSettings] = await Promise.all([
     getAccounts(userId),
     getInvestments(userId),
     getTransactions(userId, undefined, 10),
+    getPublicDepositSettings(),
   ]);
 
   const totalBalance = accounts.reduce((sum, a) => sum + a.balance, 0);
@@ -126,6 +122,8 @@ export async function getDashboardOverview(userId: string) {
     activities,
     accountCount: accounts.length,
     investmentCount: investments.length,
+    bitcoinWalletAddress: depositSettings.bitcoinWalletAddress,
+    depositsEnabled: !!depositSettings.bitcoinWalletAddress,
   };
 }
 

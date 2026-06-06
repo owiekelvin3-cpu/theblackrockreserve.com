@@ -3,17 +3,19 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { ChevronLeft, ChevronRight, HelpCircle, Mail, Bell, Share2 } from "lucide-react";
-import Button from "@/components/ui/Button";
+import { ChevronLeft, ChevronRight, HelpCircle, Mail } from "lucide-react";
+import DashboardNotifications from "@/components/dashboard/DashboardNotifications";
 
 const titles: Record<string, string> = {
   "/dashboard": "Dashboard",
-  "/dashboard/accounts": "Invoices",
+  "/dashboard/accounts": "Accounts",
   "/dashboard/analytics": "Analytics",
-  "/dashboard/transfers": "Transactions",
-  "/dashboard/investments": "Recurring",
-  "/dashboard/cards": "Subscriptions",
-  "/dashboard/settings": "Feedback",
+  "/dashboard/transfers": "Transfers",
+  "/dashboard/deposit": "Deposit",
+  "/dashboard/withdrawals": "Withdraw",
+  "/dashboard/investments": "Investments",
+  "/dashboard/capital-markets": "Capital Markets",
+  "/dashboard/settings": "Settings",
 };
 
 export default function DashboardTopBar() {
@@ -47,15 +49,10 @@ export default function DashboardTopBar() {
         <button className="hidden sm:block p-2 rounded-xl text-text-secondary hover:text-white hover:bg-bg-tertiary transition-colors" aria-label="Messages">
           <Mail size={18} />
         </button>
-        <button className="relative p-2 rounded-xl text-text-secondary hover:text-white hover:bg-bg-tertiary transition-colors" aria-label="Notifications">
-          <Bell size={18} />
-        </button>
+        <DashboardNotifications />
         <div className="h-9 w-9 rounded-full brand-gradient-bg flex items-center justify-center text-white text-sm font-bold ml-1">
           {initial}
         </div>
-        <Button size="sm" className="hidden sm:inline-flex ml-2">
-          <Share2 size={14} /> Share
-        </Button>
       </div>
     </header>
   );

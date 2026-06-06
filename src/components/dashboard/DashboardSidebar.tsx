@@ -3,24 +3,25 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, BarChart3, ArrowLeftRight, FileText,
-  RefreshCw, CreditCard, MessageSquare, Search, Zap, Menu, X,
+  LayoutDashboard, BarChart3, ArrowLeftRight, ArrowUpFromLine, FileText, Wallet,
+  RefreshCw, MessageSquare, Search, Zap, Menu, X, LineChart,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import Button from "@/components/ui/Button";
 
 const mainNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard/deposit", label: "Deposit", icon: Wallet },
+  { href: "/dashboard/withdrawals", label: "Withdraw", icon: ArrowUpFromLine },
+  { href: "/dashboard/accounts", label: "Accounts", icon: FileText },
+  { href: "/dashboard/transfers", label: "Transfers", icon: ArrowLeftRight },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/dashboard/transfers", label: "Transactions", icon: ArrowLeftRight },
-  { href: "/dashboard/accounts", label: "Invoices", icon: FileText },
+  { href: "/dashboard/capital-markets", label: "Capital Markets", icon: LineChart },
 ];
 
 const featureNav = [
-  { href: "/dashboard/investments", label: "Recurring", icon: RefreshCw },
-  { href: "/dashboard/cards", label: "Subscriptions", icon: CreditCard },
-  { href: "/dashboard/settings", label: "Feedback", icon: MessageSquare },
+  { href: "/dashboard/investments", label: "Investments", icon: RefreshCw },
+  { href: "/dashboard/settings", label: "Settings", icon: MessageSquare },
 ];
 
 export default function DashboardSidebar() {
@@ -89,13 +90,6 @@ export default function DashboardSidebar() {
           })}
         </div>
       </nav>
-
-      <div className="p-4 m-3 rounded-2xl bg-bg-primary border border-white/10 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-accent-brand/10 to-transparent pointer-events-none" />
-        <p className="text-sm font-semibold text-white relative">Upgrade Pro!</p>
-        <p className="text-xs text-text-secondary mt-1 mb-3 relative">Unlock premium features and higher limits.</p>
-        <Button size="sm" className="w-full relative">Upgrade</Button>
-      </div>
     </>
   );
 

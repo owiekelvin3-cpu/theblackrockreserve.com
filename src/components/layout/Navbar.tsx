@@ -52,9 +52,6 @@ export default function Navbar() {
         </div>
 
         <div className="hidden lg:flex items-center gap-3">
-          <Link href="/dashboard">
-            <Button variant="ghost" size="sm">Dashboard</Button>
-          </Link>
           <Link href="/login">
             <Button variant="ghost" size="sm">Sign In</Button>
           </Link>

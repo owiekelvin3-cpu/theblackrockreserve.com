@@ -8,7 +8,7 @@ const testimonials = [
   { name: "Marcus Williams", role: "Real Estate Investor, Miami", avatar: "MW", rating: 5, text: "Instant transfers, beautiful interface, and the security features give me complete peace of mind." },
   { name: "Elena Rodriguez", role: "Startup Founder, Austin", avatar: "ER", rating: 5, text: "Finally, a bank that understands entrepreneurs. The business account features are exactly what I needed." },
   { name: "James Okonkwo", role: "Portfolio Manager, London", avatar: "JO", rating: 5, text: "The wealth analytics dashboard is exceptional. I can track all my assets in one place with real-time data." },
-  { name: "Priya Sharma", role: "Physician, New York", avatar: "PS", rating: 5, text: "Setting up my account took minutes. The KYC process was smooth and the virtual card was ready instantly." },
+  { name: "Priya Sharma", role: "Physician, New York", avatar: "PS", rating: 5, text: "Setting up my account took minutes. The KYC process was smooth and I was banking the same day." },
 ];
 
 export default function Testimonials() {

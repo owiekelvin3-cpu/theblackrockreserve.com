@@ -2,6 +2,24 @@
 
 Premium digital banking platform built with Next.js 14, TypeScript, Tailwind CSS, Prisma, Supabase PostgreSQL, and NextAuth.
 
+> **This GitHub repository contains the public customer-facing frontend** (marketing site, auth, and user dashboard UI) plus the user API routes required for login, deposits, withdrawals, and notifications. Admin console code and server scripts are kept out of this repo for security. Configure secrets only in `.env` / Vercel — never commit `.env`.
+
+## Email verification (Gmail)
+
+Registration, password reset, and welcome emails are sent via **Gmail SMTP**.
+
+1. Enable **2-Step Verification** on your Google account
+2. Create an **App Password** at [Google App Passwords](https://myaccount.google.com/apppasswords)
+3. Add to `.env` / Vercel:
+
+| Variable | Description |
+|----------|-------------|
+| `GMAIL_USER` | Your Gmail address |
+| `GMAIL_APP_PASSWORD` | 16-character Google app password |
+| `EMAIL_FROM` | Display name, e.g. `Platinum Crest Bank <you@gmail.com>` |
+
+In development without Gmail configured, codes are printed to the server console.
+
 ## Deploy to Vercel
 
 1. Push this repo to GitHub and import it in [Vercel](https://vercel.com/new).
@@ -9,21 +27,37 @@ Premium digital banking platform built with Next.js 14, TypeScript, Tailwind CSS
 
 | Variable | Description |
 |----------|-------------|
-| `DATABASE_URL` | Supabase pooled connection string (with `?pgbouncer=true`) |
-| `DIRECT_URL` | Supabase direct connection string (for Prisma migrations) |
-| `NEXTAUTH_URL` | Your production URL, e.g. `https://platinum-crest-bank.vercel.app` |
+| `GMAIL_USER` | Gmail address for sending verification emails |
+| `GMAIL_APP_PASSWORD` | Google app password (not your login password) |
+| `EMAIL_FROM` | Sender display name |
+| `DATABASE_URL` | Supabase pooled connection (`aws-1-[region].pooler.supabase.com:6543?pgbouncer=true&sslmode=require`) |
+| `DIRECT_URL` | Supabase session pooler (`aws-1-[region].pooler.supabase.com:5432?sslmode=require`) |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon (public) key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (server only) |
+| `NEXTAUTH_URL` | Your production URL, e.g. `https://your-app.vercel.app` |
 | `NEXTAUTH_SECRET` | Random secret (`openssl rand -base64 32`) |
+| `ADMIN_EMAIL` | Admin bootstrap email (for `npm run admin:create`) |
+| `ADMIN_PASSWORD` | Admin bootstrap password |
 | `GOOGLE_CLIENT_ID` | Optional — Google OAuth |
 | `GOOGLE_CLIENT_SECRET` | Optional — Google OAuth |
 
 3. Deploy. Vercel runs `npm install` (which triggers `prisma generate` via `postinstall`) then `npm run build`.
-4. After first deploy, apply the database schema:
+4. After first deploy, create the admin user:
 
 ```bash
-npx prisma db push
+npm run admin:create
 ```
 
-Run this locally with production `DATABASE_URL` / `DIRECT_URL`, or use Supabase SQL editor after exporting the schema.
+Run locally with production env vars set, or create the admin via Supabase SQL.
+
+## Production checklist
+
+- Set a strong `NEXTAUTH_SECRET` (never use the dev default)
+- Set `NEXTAUTH_URL` to your live domain
+- Use Supabase **pooler** URLs (`aws-1-[region]`, not `aws-0`)
+- Rotate any keys/passwords that were shared in chat
+- Configure Bitcoin wallet in **Admin → Settings** before going live
 
 ## Local development
 
@@ -37,6 +71,40 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+## Admin Console (separate portal)
+
+The admin dashboard lives at **`/admin`** — same Platinum Crest brand (orange/red glassmorphism) in an internal console layout.
+
+| URL | Description |
+|-----|-------------|
+| `/admin/login` | Admin sign-in |
+| `/admin` | Overview & metrics |
+| `/admin/users` | Customer management (search, filter, edit, suspend, delete, balance adjust) |
+| `/admin/deposits` | Review Bitcoin deposit proofs |
+| `/admin/balance-adjustments` | Balance adjustment history |
+| `/admin/audit-log` | Admin action audit trail |
+| `/admin/settings` | Bitcoin wallet, purchase link, deposit messages |
+| `/admin/accounts` | All bank accounts |
+| `/admin/transactions` | Platform transactions |
+| `/admin/kyc` | KYC review queue |
+| `/admin/messages` | Contact form inbox |
+
+### Create an admin user
+
+After `npm run db:push`, run:
+
+```bash
+npm run admin:create
+```
+
+Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env` first, or defaults are used (change in production).
+
+Then sign in at [http://localhost:3000/admin/login](http://localhost:3000/admin/login).
+
+Configure Bitcoin deposits at **Admin → Settings** (wallet address, purchase link, instructions).
+
+Users deposit at **Dashboard → Deposit** (`/dashboard/deposit`).
+
 ## Scripts
 
 | Command | Description |
@@ -46,6 +114,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `npm run start` | Start production server |
 | `npm run db:push` | Sync Prisma schema to database |
 | `npm run db:studio` | Open Prisma Studio |
+| `npm run admin:create` | Create or promote an admin user |
 
 ## Stack
 

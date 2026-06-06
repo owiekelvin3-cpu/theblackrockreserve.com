@@ -8,7 +8,7 @@ const steps = [
   {
     step: "Step 1",
     title: "Open Your Account",
-    description: "Create your profile in minutes with a streamlined onboarding flow and instant virtual card access.",
+    description: "Create your profile in minutes with a streamlined onboarding flow and instant account access.",
     icon: Globe,
   },
   {

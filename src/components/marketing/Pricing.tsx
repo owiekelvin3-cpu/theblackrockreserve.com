@@ -7,7 +7,7 @@ import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 
 const plans = [
-  { name: "Starter", price: "Free", period: "", description: "Essential banking for getting started", features: ["Checking & savings accounts", "Virtual debit card", "Mobile app access", "Standard support"], popular: false },
+  { name: "Starter", price: "Free", period: "", description: "Essential banking for getting started", features: ["Checking & savings accounts", "Mobile app access", "Secure deposits", "Standard support"], popular: false },
   { name: "Premium", price: "$29", period: "/mo", description: "Full-featured banking and investing", features: ["Everything in Starter", "Investment trading", "Priority support", "Wealth analytics", "Global transfers"], popular: true },
   { name: "Elite", price: "$99", period: "/mo", description: "White-glove wealth management", features: ["Everything in Premium", "Dedicated advisor", "Tax optimization", "Estate planning tools", "Concierge service"], popular: false },
 ];

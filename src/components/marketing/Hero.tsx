@@ -70,10 +70,10 @@ export default function Hero() {
             </Link>
           </div>
           <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link href="/dashboard">
-              <Button variant="outline" size="sm" className="rounded-full">View Dashboard</Button>
+            <Link href="/register">
+              <Button variant="outline" size="sm" className="rounded-full">Open Account</Button>
             </Link>
-            <span className="text-xs text-text-muted">No credit card required</span>
+            <span className="text-xs text-text-muted">Free to open your account</span>
           </div>
         </motion.div>
 

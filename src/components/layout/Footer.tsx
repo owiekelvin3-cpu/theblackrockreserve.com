@@ -5,7 +5,6 @@ import Logo from "./Logo";
 const products = [
   { label: "Smart Banking", href: "/features#banking" },
   { label: "Investments", href: "/investments" },
-  { label: "Virtual Cards", href: "/features#cards" },
   { label: "Wealth Analytics", href: "/features#analytics" },
 ];
 

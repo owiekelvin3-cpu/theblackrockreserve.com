@@ -1,38 +1,68 @@
 "use client";
 
-import { motion } from "framer-motion";
-import CountUp from "@/components/ui/CountUp";
+import { TrendingUp, Users, ShieldCheck, type LucideIcon } from "lucide-react";
 
-const stats = [
-  { value: 2.4, prefix: "$", suffix: "B+", label: "Assets Under Management", decimals: 1 },
-  { value: 50000, prefix: "", suffix: "+", label: "Active Members", decimals: 0 },
-  { value: 99.9, prefix: "", suffix: "%", label: "Uptime Guarantee", decimals: 1 },
+interface StatItem {
+  value: string;
+  label: string;
+  icon: LucideIcon;
+}
+
+const stats: StatItem[] = [
+  { value: "$2.4B+", label: "Assets Under Management", icon: TrendingUp },
+  { value: "50,000+", label: "Active Members", icon: Users },
+  { value: "99.9%", label: "Uptime Guarantee", icon: ShieldCheck },
 ];
 
-export default function Stats() {
+function StatSlide({ stat }: { stat: StatItem }) {
+  const Icon = stat.icon;
+
   return (
-    <section className="py-12 relative">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {stats.map((stat, i) => (
-            <motion.div
-              key={stat.label}
-              className="glow-card p-8 text-center relative"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-            >
-              <div className="light-leak light-leak-orange w-20 h-20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-30" />
-              <div className="glow-card-inner">
-                <p className="font-mono text-4xl sm:text-5xl font-bold gold-gradient-text">
-                  <CountUp end={stat.value} prefix={stat.prefix} suffix={stat.suffix} decimals={stat.decimals} />
-                </p>
-                <p className="mt-2 text-sm text-text-secondary">{stat.label}</p>
-              </div>
-            </motion.div>
+    <div className="stats-marquee-slide group flex shrink-0 items-center gap-5 px-8 sm:px-12">
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] transition-colors group-hover:border-accent-brand/30 group-hover:bg-accent-brand/10">
+        <Icon size={20} className="text-accent-brand" strokeWidth={1.75} />
+      </div>
+      <div className="flex flex-col">
+        <span className="font-mono text-2xl sm:text-3xl font-bold tracking-tight gold-gradient-text whitespace-nowrap">
+          {stat.value}
+        </span>
+        <span className="mt-0.5 text-[11px] sm:text-xs font-medium uppercase tracking-[0.18em] text-text-muted whitespace-nowrap">
+          {stat.label}
+        </span>
+      </div>
+      <div className="stats-marquee-divider hidden sm:block" aria-hidden />
+    </div>
+  );
+}
+
+export default function Stats() {
+  const track = [...stats, ...stats];
+
+  return (
+    <section className="relative py-10 sm:py-14 overflow-hidden" aria-label="Platform statistics">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent-brand/40 to-transparent" />
+
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mb-6">
+        <p className="text-center text-[11px] font-semibold uppercase tracking-[0.25em] text-text-muted">
+          Trusted at scale
+        </p>
+      </div>
+
+      <div className="stats-marquee-mask relative">
+        {/* Edge fades */}
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 sm:w-32 bg-gradient-to-r from-bg-primary to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 sm:w-32 bg-gradient-to-l from-bg-primary to-transparent" />
+
+        <div className="stats-marquee-track flex w-max animate-marquee motion-reduce:animate-none hover:[animation-play-state:paused]">
+          {track.map((stat, i) => (
+            <StatSlide key={`${stat.label}-${i}`} stat={stat} />
           ))}
         </div>
+      </div>
+
+      {/* Bottom glass rail */}
+      <div className="mx-auto mt-8 max-w-3xl px-4">
+        <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       </div>
     </section>
   );

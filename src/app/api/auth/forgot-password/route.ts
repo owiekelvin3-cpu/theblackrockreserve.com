@@ -1,14 +1,26 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { forgotPasswordSchema } from "@/lib/validations";
+import { generateOtp, sendEmail } from "@/lib/email";
+import { passwordResetEmail } from "@/lib/email-templates";
 
 export async function POST(req: Request) {
   try {
-    const { email } = await req.json();
+    const body = await req.json();
+    const parsed = forgotPasswordSchema.safeParse(body);
 
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? "Invalid email" },
+        { status: 400 }
+      );
+    }
+
+    const { email } = parsed.data;
     const user = await prisma.user.findUnique({ where: { email } });
 
     if (user) {
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otp = generateOtp();
       await prisma.user.update({
         where: { id: user.id },
         data: {
@@ -17,16 +29,19 @@ export async function POST(req: Request) {
         },
       });
 
-      if (process.env.NODE_ENV === "development") {
-        console.log(`[DEV] Password reset OTP for ${email}: ${otp}`);
-      }
+      const mail = passwordResetEmail(user.name, otp);
+      await sendEmail({ to: email, ...mail });
     }
 
     return NextResponse.json({
-      message: "If an account exists, a reset link has been sent.",
+      message: "If an account exists, a verification code has been sent to your email.",
     });
   } catch (error) {
     console.error("Forgot password error:", error);
-    return NextResponse.json({ error: "Request failed" }, { status: 500 });
+    const message =
+      error instanceof Error && error.message.includes("Email")
+        ? error.message
+        : "Request failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

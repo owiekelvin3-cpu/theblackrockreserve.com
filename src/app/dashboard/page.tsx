@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Wallet, TrendingUp,
-  ArrowDownLeft, CreditCard, RefreshCw,
+  ArrowDownLeft, Receipt, RefreshCw,
 } from "lucide-react";
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { CHART_BRAND, CHART_MUTED, CHART_TOOLTIP_STYLE } from "@/lib/chart-theme";
@@ -13,11 +13,14 @@ import { fetchJson } from "@/lib/fetch-json";
 import DashboardGate from "@/components/dashboard/DashboardGate";
 import EmptyState from "@/components/dashboard/EmptyState";
 import ChartContainer from "@/components/ui/ChartContainer";
+import Button from "@/components/ui/Button";
 
 interface OverviewData {
   totalBalance: number;
   savingsBalance: number;
   investmentValue: number;
+  bitcoinWalletAddress: string;
+  depositsEnabled: boolean;
   wallets: { id: string; flag: string; currency: string; balance: number; active: boolean; name: string }[];
   cashFlowData: { month: string; value: number }[];
   activities: {
@@ -36,7 +39,7 @@ const activityIcons: Record<string, typeof Wallet> = {
   DEPOSIT: ArrowDownLeft,
   WITHDRAWAL: TrendingUp,
   TRANSFER: RefreshCw,
-  PAYMENT: CreditCard,
+  PAYMENT: Receipt,
 };
 
 export default function DashboardPage() {
@@ -56,7 +59,7 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const hasData =
+  const hasActivity =
     data &&
     (data.totalBalance > 0 ||
       data.savingsBalance > 0 ||
@@ -65,9 +68,30 @@ export default function DashboardPage() {
       data.activities.length > 0);
 
   return (
-    <DashboardGate isLoading={loading} isEmpty={!hasData} emptyTitle="No financial data yet" emptyDescription="Open an account or make your first deposit to see your dashboard overview.">
+    <DashboardGate isLoading={loading}>
       {data && (
         <div className="space-y-6">
+          {!hasActivity && (
+            <div className="dash-card flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border border-accent-brand/20 bg-accent-brand/5">
+              <div>
+                <p className="text-sm font-semibold text-white">Fund your account</p>
+                <p className="text-sm text-text-secondary mt-1">
+                  {data.depositsEnabled
+                    ? "Send Bitcoin to fund your balance. Your deposit wallet is configured and ready."
+                    : "Make a Bitcoin deposit to activate your balance and start using the platform."}
+                </p>
+                {data.depositsEnabled && (
+                  <code className="mt-2 block text-[11px] font-mono text-accent-brand break-all max-w-md">
+                    {data.bitcoinWalletAddress}
+                  </code>
+                )}
+              </div>
+              <Link href="/dashboard/deposit">
+                <Button>{data.depositsEnabled ? "View deposit & QR" : "Go to Deposit"}</Button>
+              </Link>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="dash-card brand-gradient-bg relative overflow-hidden min-h-[160px] flex flex-col justify-between shadow-brand">
               <div className="flex items-start justify-between">
@@ -79,8 +103,8 @@ export default function DashboardPage() {
                 <p className="text-sm text-white/80">My balance</p>
                 <p className="text-3xl font-bold text-white mt-1">{formatCurrency(data.totalBalance)}</p>
               </div>
-              <Link href="/dashboard/accounts" className="text-xs text-white/70 hover:text-white transition-colors mt-2">
-                See details →
+              <Link href="/dashboard/deposit" className="text-xs text-white/70 hover:text-white transition-colors mt-2">
+                Deposit funds →
               </Link>
             </div>
 
@@ -92,6 +116,9 @@ export default function DashboardPage() {
             <div className="dash-card flex flex-col justify-between min-h-[160px]">
               <p className="text-sm text-text-secondary">Investment portfolio</p>
               <p className="text-2xl font-bold text-white">{formatCurrency(data.investmentValue)}</p>
+              <Link href="/dashboard/capital-markets" className="text-xs text-white/70 hover:text-white transition-colors mt-2">
+                Capital Markets →
+              </Link>
             </div>
           </div>
 

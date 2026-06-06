@@ -22,13 +22,6 @@ const featureDetails = [
     reverse: true,
   },
   {
-    id: "cards",
-    title: "Virtual Cards",
-    description: "Issue unlimited virtual Visa and Mastercard cards instantly. Set spending limits, freeze cards on demand, and get real-time notifications for every transaction.",
-    highlights: ["Instant card issuance", "Custom spending limits", "One-time use cards", "Real-time alerts"],
-    reverse: false,
-  },
-  {
     id: "security",
     title: "Bank-Grade Security",
     description: "Your security is our top priority. Multi-factor authentication, biometric login, and AI-powered fraud detection work together to keep your assets safe 24/7.",
@@ -80,7 +73,7 @@ export default function FeaturesPage() {
             <motion.div
               key={feature.id}
               id={feature.id}
-              className={`grid lg:grid-cols-2 gap-12 items-center ${feature.reverse ? "lg:direction-rtl" : ""}`}
+              className={`scroll-mt-24 grid lg:grid-cols-2 gap-12 items-center ${feature.reverse ? "lg:direction-rtl" : ""}`}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}

@@ -340,6 +340,60 @@ body {
   .input-glass::placeholder {
     color: var(--text-muted);
   }
+
+  .stats-marquee-mask {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 8%,
+      black 92%,
+      transparent
+    );
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 8%,
+      black 92%,
+      transparent
+    );
+  }
+
+  .stats-marquee-track {
+    will-change: transform;
+  }
+
+  .stats-marquee-slide {
+    min-width: max-content;
+  }
+
+  .stats-marquee-divider {
+    width: 1px;
+    height: 48px;
+    margin-left: 1.5rem;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgba(255, 255, 255, 0.15) 50%,
+      transparent
+    );
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stats-marquee-track {
+      animation: none !important;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+      max-width: 72rem;
+      margin-inline: auto;
+      gap: 2rem;
+    }
+
+    .stats-marquee-mask {
+      mask-image: none;
+      -webkit-mask-image: none;
+    }
+  }
 }
 
 @layer utilities {

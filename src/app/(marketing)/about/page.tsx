@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { Linkedin } from "lucide-react";
 import Card from "@/components/ui/Card";
@@ -124,7 +125,32 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section id="press" className="section-padding">
+      <section id="careers" className="section-padding scroll-mt-24">
+        <div className="mx-auto max-w-7xl">
+          <h2 className="font-display text-3xl font-bold text-text-primary text-center mb-4">Careers</h2>
+          <p className="text-text-secondary text-center max-w-2xl mx-auto mb-12">
+            Join a team building the future of digital banking. We hire engineers, designers, compliance specialists, and customer success leaders.
+          </p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              { role: "Senior Full-Stack Engineer", location: "Remote · US", type: "Engineering" },
+              { role: "Product Designer", location: "New York, NY", type: "Design" },
+              { role: "Compliance Analyst", location: "Remote · US", type: "Operations" },
+            ].map((job) => (
+              <Card key={job.role} hover className="h-full">
+                <Badge variant="blue" className="mb-3">{job.type}</Badge>
+                <h3 className="font-semibold text-text-primary">{job.role}</h3>
+                <p className="text-sm text-text-secondary mt-2">{job.location}</p>
+                <Link href="/contact" className="inline-block mt-4 text-sm text-accent-brand hover:underline">
+                  Apply via Contact →
+                </Link>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="press" className="section-padding scroll-mt-24">
         <div className="mx-auto max-w-7xl text-center">
           <h2 className="font-display text-3xl font-bold text-text-primary mb-12">In the Press</h2>
           <div className="flex flex-wrap justify-center gap-8">

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Upload, Check } from "lucide-react";
+import { Upload, Check, Mail, RefreshCw } from "lucide-react";
 import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
@@ -18,6 +19,8 @@ import {
 type Step1Data = RegisterStep1Input;
 type Step2Data = RegisterStep2Input;
 
+const RESEND_COOLDOWN = 60;
+
 export default function RegisterForm() {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -26,13 +29,21 @@ export default function RegisterForm() {
   const [kycFiles, setKycFiles] = useState<{ front?: string; back?: string }>({});
   const [otp, setOtp] = useState("");
   const [showOtp, setShowOtp] = useState(false);
+  const [devOtp, setDevOtp] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   const step1Form = useForm<Step1Data>({ resolver: zodResolver(registerStep1Schema) });
   const step2Form = useForm<Step2Data>({
     resolver: zodResolver(registerStep2Schema),
     defaultValues: { accountType: "PERSONAL" },
   });
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
 
   const handleStep1 = (data: Step1Data) => {
     setStep1Data(data);
@@ -57,12 +68,14 @@ export default function RegisterForm() {
     setIsLoading(true);
 
     try {
+      const { confirmPassword, ...step2Payload } = step2Data;
+      void confirmPassword;
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...step1Data,
-          ...step2Data,
+          ...step2Payload,
           kycIdFront: kycFiles.front,
           kycIdBack: kycFiles.back,
         }),
@@ -72,7 +85,9 @@ export default function RegisterForm() {
       if (!res.ok) throw new Error(data.error || "Registration failed");
 
       setShowOtp(true);
-      toast.success("Account created! Please verify your email.");
+      setResendCooldown(RESEND_COOLDOWN);
+      if (data.devOtp) setDevOtp(data.devOtp);
+      toast.success(data.message || "Account saved! Check your email for the verification code.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Registration failed");
     } finally {
@@ -80,8 +95,27 @@ export default function RegisterForm() {
     }
   };
 
+  const handleResendOtp = useCallback(async () => {
+    if (!step1Data?.email || resendCooldown > 0) return;
+
+    try {
+      const res = await fetch("/api/auth/resend-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: step1Data.email, purpose: "verify" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to resend");
+      if (data.devOtp) setDevOtp(data.devOtp);
+      setResendCooldown(RESEND_COOLDOWN);
+      toast.success("New code sent! Check your inbox.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to resend code");
+    }
+  }, [step1Data?.email, resendCooldown]);
+
   const handleVerifyOtp = async () => {
-    if (!step1Data) return;
+    if (!step1Data || !step2Data) return;
     setIsLoading(true);
 
     try {
@@ -94,8 +128,21 @@ export default function RegisterForm() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Verification failed");
 
-      toast.success("Email verified! You can now sign in.");
-      router.push("/login");
+      const result = await signIn("credentials", {
+        email: step1Data.email,
+        password: step2Data.password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        toast.success("Email verified! Please sign in.");
+        router.push("/login");
+        return;
+      }
+
+      toast.success("Welcome to Platinum Crest Bank!");
+      router.push("/dashboard");
+      router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Verification failed");
     } finally {
@@ -106,19 +153,46 @@ export default function RegisterForm() {
   if (showOtp) {
     return (
       <Card>
-        <h1 className="font-display text-2xl font-bold text-text-primary text-center">Verify Email</h1>
+        <div className="flex justify-center mb-4">
+          <div className="h-14 w-14 rounded-2xl bg-accent-brand/15 border border-accent-brand/30 flex items-center justify-center">
+            <Mail size={28} className="text-accent-brand" />
+          </div>
+        </div>
+        <h1 className="font-display text-2xl font-bold text-text-primary text-center">Verify Your Email</h1>
         <p className="text-sm text-text-secondary text-center mt-2">
-          Enter the 6-digit code sent to {step1Data?.email}
+          Your account is saved. Enter the 6-digit code sent to{" "}
+          <span className="text-white font-medium">{step1Data?.email}</span>
         </p>
+        <p className="text-xs text-text-muted text-center mt-1">Check your inbox and spam folder</p>
+        {devOtp && (
+          <div className="mt-4 p-3 rounded-xl bg-accent-brand/10 border border-accent-brand/30 text-center">
+            <p className="text-xs text-text-secondary mb-1">Development verification code</p>
+            <p className="text-2xl font-mono font-bold text-accent-brand tracking-widest">{devOtp}</p>
+          </div>
+        )}
         <div className="mt-8 space-y-4">
           <Input
             label="Verification Code"
             value={otp}
-            onChange={(e) => setOtp(e.target.value)}
+            onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
             placeholder="000000"
             maxLength={6}
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            className="text-center text-2xl tracking-[0.5em] font-mono"
           />
-          <Button onClick={handleVerifyOtp} isLoading={isLoading} className="w-full">Verify Email</Button>
+          <Button onClick={handleVerifyOtp} isLoading={isLoading} className="w-full" disabled={otp.length !== 6}>
+            Verify &amp; Continue
+          </Button>
+          <button
+            type="button"
+            onClick={handleResendOtp}
+            disabled={resendCooldown > 0}
+            className="w-full flex items-center justify-center gap-2 text-sm text-text-secondary hover:text-accent-gold transition-colors disabled:opacity-50 disabled:cursor-not-allowed py-2"
+          >
+            <RefreshCw size={14} />
+            {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : "Resend verification code"}
+          </button>
         </div>
       </Card>
     );

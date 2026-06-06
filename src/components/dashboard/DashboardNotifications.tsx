@@ -1,0 +1,182 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { Bell } from "lucide-react";
+import { toast } from "sonner";
+import { fetchDashboardJson } from "@/lib/fetch-json";
+import { cn } from "@/lib/utils";
+import {
+  playNotificationSound,
+  showBrowserNotification,
+  ensureBrowserNotificationPermission,
+} from "@/lib/notification-sound";
+import { dispatchNotificationsRefresh } from "@/hooks/use-push-notifications";
+
+type Notification = {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  read: boolean;
+  depositId?: string | null;
+  createdAt: string;
+};
+
+export default function DashboardNotifications() {
+  const [open, setOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const seenIdsRef = useRef<Set<string>>(new Set());
+  const pushReadyRef = useRef(false);
+
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    const { data, error: fetchError } = await fetchDashboardJson<{
+      notifications: Notification[];
+      unreadCount: number;
+    }>("/api/dashboard/notifications");
+
+    if (fetchError || !data) {
+      setError(true);
+      if (!silent) setLoading(false);
+      return;
+    }
+
+    setError(false);
+    setNotifications(data.notifications);
+    setUnreadCount(data.unreadCount);
+
+    if (pushReadyRef.current) {
+      const fresh = data.notifications.filter((n) => !seenIdsRef.current.has(n.id) && !n.read);
+      if (fresh.length > 0) {
+        playNotificationSound(
+          fresh.some((n) => n.type === "DEPOSIT_REJECTED")
+            ? "alert"
+            : fresh.some((n) => n.type === "DEPOSIT_APPROVED")
+              ? "success"
+              : "default"
+        );
+        fresh.slice(0, 2).forEach((n) => {
+          toast(n.title, { description: n.message, duration: 6000 });
+          showBrowserNotification(n.title, n.message, n.id);
+        });
+      }
+    }
+
+    data.notifications.forEach((n) => seenIdsRef.current.add(n.id));
+    pushReadyRef.current = true;
+    if (!silent) setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    void ensureBrowserNotificationPermission();
+    load();
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === "visible") load(true);
+    }, 20_000);
+    const onRefresh = () => load(true);
+    window.addEventListener("notifications:refresh", onRefresh);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("notifications:refresh", onRefresh);
+    };
+  }, [load]);
+
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  const markRead = async (ids?: string[]) => {
+    await fetch("/api/dashboard/notifications", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(ids?.length ? { ids } : {}),
+    });
+    load(true);
+  };
+
+  return (
+    <div className="relative" ref={panelRef}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="relative p-2 rounded-xl text-text-secondary hover:text-white hover:bg-bg-tertiary transition-colors"
+        aria-label="Notifications"
+      >
+        <Bell size={18} />
+        {unreadCount > 0 && (
+          <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full brand-gradient-bg text-white text-[10px] font-bold flex items-center justify-center animate-pulse">
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto rounded-xl border border-white/10 bg-bg-secondary shadow-2xl z-50">
+          <div className="p-3 border-b border-white/10 flex items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-white">Notifications</p>
+            {unreadCount > 0 && (
+              <button
+                type="button"
+                onClick={() => markRead()}
+                className="text-[10px] text-accent-brand hover:text-white transition-colors"
+              >
+                Mark all read
+              </button>
+            )}
+          </div>
+          {loading ? (
+            <p className="p-4 text-sm text-text-muted">Loading…</p>
+          ) : error ? (
+            <div className="p-4">
+              <p className="text-sm text-accent-red">Could not load notifications</p>
+              <button type="button" onClick={() => load()} className="text-xs text-accent-brand mt-2">
+                Retry
+              </button>
+            </div>
+          ) : notifications.length === 0 ? (
+            <p className="p-4 text-sm text-text-muted">No notifications yet</p>
+          ) : (
+            <ul className="divide-y divide-white/5">
+              {notifications.map((n) => (
+                <li
+                  key={n.id}
+                  className={cn("p-3 cursor-pointer hover:bg-white/[0.03]", !n.read && "bg-accent-brand/5")}
+                  onClick={() => {
+                    if (!n.read) markRead([n.id]);
+                  }}
+                >
+                  <p className="text-sm font-medium text-white">{n.title}</p>
+                  <p className="text-xs text-text-secondary mt-1 leading-relaxed">{n.message}</p>
+                  <div className="flex items-center justify-between mt-2 gap-2">
+                    <p className="text-[10px] text-text-muted">{new Date(n.createdAt).toLocaleString()}</p>
+                    {n.depositId && (
+                      <Link
+                        href="/dashboard/deposit"
+                        className="text-[10px] text-accent-brand hover:text-white"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        View deposit →
+                      </Link>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export { dispatchNotificationsRefresh };

@@ -52,6 +52,7 @@ const config: Config = {
         "fade-in": "fadeIn 0.5s ease-out",
         float: "float 6s ease-in-out infinite",
         pulseGlow: "pulseGlow 3s ease-in-out infinite",
+        marquee: "marquee 40s linear infinite",
       },
       keyframes: {
         fadeIn: {
@@ -65,6 +66,10 @@ const config: Config = {
         pulseGlow: {
           "0%, 100%": { opacity: "0.6" },
           "50%": { opacity: "1" },
+        },
+        marquee: {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-50%)" },
         },
       },
     },
