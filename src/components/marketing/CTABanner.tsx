@@ -1,10 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { fadeUp, stagger } from "@/components/ui/AnimateIn";
+import { marketingImages } from "@/lib/marketing-images";
 
 export default function CTABanner() {
   return (
@@ -17,7 +19,14 @@ export default function CTABanner() {
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         whileHover={{ scale: 1.01 }}
       >
-        <div className="absolute inset-0 brand-gradient-bg opacity-90" />
+        <Image
+          src={marketingImages.officeWide}
+          alt=""
+          fill
+          className="object-cover"
+          sizes="(max-width: 1024px) 100vw, 1024px"
+        />
+        <div className="absolute inset-0 brand-gradient-bg opacity-85" />
         <motion.div
           className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_60%)]"
           animate={{ opacity: [0.6, 1, 0.6] }}

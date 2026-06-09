@@ -2,7 +2,36 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-const POLL_MS = 60_000;
+const POLL_MS = 90_000;
+const DEDUP_MS = 8_000;
+
+type CacheEntry = { data: unknown; at: number };
+const responseCache = new Map<string, CacheEntry>();
+const inflight = new Map<string, Promise<unknown>>();
+
+async function fetchAdminJson<T>(url: string): Promise<T> {
+  const cached = responseCache.get(url);
+  if (cached && Date.now() - cached.at < DEDUP_MS) {
+    return cached.data as T;
+  }
+
+  let pending = inflight.get(url);
+  if (!pending) {
+    pending = fetch(url, { credentials: "include", cache: "no-store" })
+      .then(async (res) => {
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(typeof json.error === "string" ? json.error : `Failed to load (${res.status})`);
+        responseCache.set(url, { data: json, at: Date.now() });
+        return json;
+      })
+      .finally(() => {
+        inflight.delete(url);
+      });
+    inflight.set(url, pending);
+  }
+
+  return (await pending) as T;
+}
 
 export type AdminFetchState<T> = {
   data: T | null;
@@ -30,17 +59,12 @@ export function useAdminFetch<T>(
       setError(null);
 
       try {
-        const res = await fetch(url, { credentials: "include", cache: "no-store" });
-        const json = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          setError(typeof json.error === "string" ? json.error : `Failed to load (${res.status})`);
-          if (!silent) setData(null);
-          return;
-        }
-        setData(json as T);
+        const json = await fetchAdminJson<T>(url);
+        setData(json);
         setLastUpdated(new Date());
-      } catch {
-        setError("Could not connect to the database API");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Could not connect to the database API");
+        if (!silent) setData(null);
       } finally {
         if (!silent) setLoading(false);
       }
@@ -65,5 +89,19 @@ export function useAdminFetch<T>(
     };
   }, [enabled, load, pollMs]);
 
-  return { data, error, loading, refresh: () => load(), lastUpdated };
+  return {
+    data,
+    error,
+    loading,
+    refresh: () => {
+      if (url) responseCache.delete(url);
+      load();
+    },
+    lastUpdated,
+  };
+}
+
+export function clearAdminFetchCache(url?: string) {
+  if (url) responseCache.delete(url);
+  else responseCache.clear();
 }

@@ -1,10 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Linkedin } from "lucide-react";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
+import { marketingImages } from "@/lib/marketing-images";
 
 const milestones = [
   { year: "2019", title: "Founded", description: "Blackrock Reserve launched with a vision to democratize premium banking." },
@@ -22,12 +24,12 @@ const values = [
 ];
 
 const leadership = [
-  { name: "Victoria Ashford", title: "CEO & Co-Founder", avatar: "VA" },
-  { name: "David Kim", title: "CTO", avatar: "DK" },
-  { name: "Amara Osei", title: "CFO", avatar: "AO" },
-  { name: "Robert Chen", title: "Chief Investment Officer", avatar: "RC" },
-  { name: "Isabella Martinez", title: "Chief Compliance Officer", avatar: "IM" },
-  { name: "Thomas Wright", title: "Head of Product", avatar: "TW" },
+  { name: "Victoria Ashford", title: "CEO & Co-Founder", photo: marketingImages.portraits.victoria },
+  { name: "David Kim", title: "CTO", photo: marketingImages.portraits.david },
+  { name: "Amara Osei", title: "CFO", photo: marketingImages.portraits.amara },
+  { name: "Robert Chen", title: "Chief Investment Officer", photo: marketingImages.portraits.robert },
+  { name: "Isabella Martinez", title: "Chief Compliance Officer", photo: marketingImages.portraits.isabella },
+  { name: "Thomas Wright", title: "Head of Product", photo: marketingImages.portraits.thomas },
 ];
 
 const press = ["Forbes", "TechCrunch", "Bloomberg", "Financial Times", "Wall Street Journal", "CNBC"];
@@ -52,8 +54,16 @@ export default function AboutPage() {
             </p>
           </motion.div>
 
-          <div className="mt-16 glass-card h-64 sm:h-80 flex items-center justify-center">
-            <p className="text-text-muted text-sm">Team Photo Placeholder</p>
+          <div className="mt-16 glass-card relative h-64 sm:h-80 overflow-hidden rounded-2xl">
+            <Image
+              src={marketingImages.teamHero}
+              alt="Blackrock Reserve leadership team collaborating"
+              fill
+              className="object-cover"
+              sizes="(max-width: 1280px) 100vw, 1280px"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-bg-primary/80 via-transparent to-transparent" />
           </div>
         </div>
       </section>
@@ -110,8 +120,8 @@ export default function AboutPage() {
             {leadership.map((person, i) => (
               <motion.div key={person.name} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}>
                 <Card className="text-center">
-                  <div className="mx-auto h-20 w-20 rounded-full bg-gradient-to-br from-accent-gold to-accent-gold-light flex items-center justify-center text-bg-primary text-xl font-bold">
-                    {person.avatar}
+                  <div className="relative mx-auto h-20 w-20 rounded-full overflow-hidden ring-2 ring-accent-gold/50">
+                    <Image src={person.photo} alt={person.name} fill className="object-cover" sizes="80px" />
                   </div>
                   <h3 className="mt-4 font-semibold text-text-primary">{person.name}</h3>
                   <p className="text-sm text-text-secondary">{person.title}</p>

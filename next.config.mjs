@@ -4,6 +4,15 @@ const isProd = process.env.NODE_ENV === "production";
 const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+        pathname: "/**",
+      },
+    ],
+  },
   experimental: {
     optimizePackageImports: ["lucide-react", "recharts", "framer-motion"],
   },

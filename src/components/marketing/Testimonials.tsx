@@ -1,16 +1,18 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { Star } from "lucide-react";
 import { cardHover } from "@/components/ui/AnimateIn";
+import { marketingImages } from "@/lib/marketing-images";
 
 const testimonials = [
-  { name: "Sarah Chen", role: "Tech Executive, San Francisco", avatar: "SC", rating: 5, text: "Blackrock Reserve transformed how I manage my wealth. The investment tools rival anything I've used on Wall Street." },
-  { name: "Marcus Williams", role: "Real Estate Investor, Miami", avatar: "MW", rating: 5, text: "Instant transfers, beautiful interface, and the security features give me complete peace of mind." },
-  { name: "Elena Rodriguez", role: "Startup Founder, Austin", avatar: "ER", rating: 5, text: "Finally, a bank that understands entrepreneurs. The business account features are exactly what I needed." },
-  { name: "James Okonkwo", role: "Portfolio Manager, London", avatar: "JO", rating: 5, text: "The wealth analytics dashboard is exceptional. I can track all my assets in one place with real-time data." },
-  { name: "Priya Sharma", role: "Physician, New York", avatar: "PS", rating: 5, text: "Setting up my account took minutes. The KYC process was smooth and I was banking the same day." },
-  { name: "Alex Turner", role: "CFO, Chicago", avatar: "AT", rating: 5, text: "The automation features saved our team hours every week. Best financial platform we've adopted." },
+  { name: "Sarah Chen", role: "Tech Executive, San Francisco", photo: marketingImages.portraits.sarah, rating: 5, text: "Blackrock Reserve transformed how I manage my wealth. The investment tools rival anything I've used on Wall Street." },
+  { name: "Marcus Williams", role: "Real Estate Investor, Miami", photo: marketingImages.portraits.marcus, rating: 5, text: "Instant transfers, beautiful interface, and the security features give me complete peace of mind." },
+  { name: "Elena Rodriguez", role: "Startup Founder, Austin", photo: marketingImages.portraits.elena, rating: 5, text: "Finally, a bank that understands entrepreneurs. The business account features are exactly what I needed." },
+  { name: "James Okonkwo", role: "Portfolio Manager, London", photo: marketingImages.portraits.james, rating: 5, text: "The wealth analytics dashboard is exceptional. I can track all my assets in one place with real-time data." },
+  { name: "Priya Sharma", role: "Physician, New York", photo: marketingImages.portraits.priya, rating: 5, text: "Setting up my account took minutes. The KYC process was smooth and I was banking the same day." },
+  { name: "Alex Turner", role: "CFO, Chicago", photo: marketingImages.portraits.alex, rating: 5, text: "The automation features saved our team hours every week. Best financial platform we've adopted." },
 ];
 
 export default function Testimonials() {
@@ -58,8 +60,8 @@ export default function Testimonials() {
                 </div>
                 <p className="text-text-secondary text-sm leading-relaxed mb-6">&ldquo;{t.text}&rdquo;</p>
                 <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-full brand-gradient-bg flex items-center justify-center text-white text-xs font-bold shadow-brand">
-                    {t.avatar}
+                  <div className="relative h-9 w-9 rounded-full overflow-hidden ring-2 ring-accent-brand/40 shadow-brand shrink-0">
+                    <Image src={t.photo} alt={t.name} fill className="object-cover" sizes="36px" />
                   </div>
                   <div>
                     <p className="font-semibold text-white text-sm">{t.name}</p>

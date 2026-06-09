@@ -22,7 +22,7 @@ export default function DashboardAuthGuard({ children }: { children: React.React
     }
 
     if (session?.user?.role === "ADMIN") {
-      router.replace("/login?error=admin_console_unavailable");
+      router.replace("/admin");
       return;
     }
 

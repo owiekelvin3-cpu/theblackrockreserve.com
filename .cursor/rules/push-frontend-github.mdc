@@ -1,40 +1,31 @@
 ---
-description: Push frontend changes to the Blackrock Reserve GitHub repo after completing work
+description: Push project changes to the Blackrock Reserve GitHub repo after completing work
 alwaysApply: true
 ---
 
-# Push Frontend to GitHub
+# Push to GitHub (Vercel deploy)
 
-After completing frontend work in this project, commit and push to the `blackrock` remote unless the user explicitly says not to.
+After completing work in this project, commit and push to the `blackrock` remote unless the user explicitly says not to.
 
 ## Remote
 
 - **Remote name:** `blackrock`
 - **Repository:** https://github.com/owiekelvin3-cpu/Blackrock-reserve.git
 - **Branch:** `main` (tracks `blackrock/main`)
+- **Deploy:** Vercel auto-deploys from `main` → https://www.blackrockreserve.site
 
-## Include (frontend)
+## Include
 
-- Marketing pages: `src/app/(marketing)/`, `src/app/(auth)/`
-- Customer dashboard UI: `src/components/dashboard/`, `src/components/auth/`, `src/components/layout/`, `src/components/marketing/`, `src/components/chat/`, `src/components/ui/`
-- User-facing API routes (not admin): `src/app/api/` except `src/app/api/admin/`
-- Shared libs used by the public site: `src/lib/chatbot.ts`, `src/lib/email*.ts`, `src/lib/env.ts`, `src/lib/site-url.ts`, etc.
-- Styles/assets: `src/app/globals.css`, `public/`, `tailwind.config.ts`
-- Project config/docs: `package.json`, `package-lock.json`, `README.md`, `DEPLOYMENT.md`, `.env.example`
+- Full app: marketing, auth, dashboard, **admin console**, API routes, components, libs, scripts
+- Config: `package.json`, `next.config.mjs`, `prisma/`, docs, `.env.example`
 
-## Exclude (admin / local-only)
+## Exclude
 
-- `src/app/admin/`
-- `src/app/api/admin/`
-- `src/components/admin/`
-- `scripts/`
-- Admin-only libs: `src/lib/admin-*.ts`, `src/lib/balance-adjustment.ts`, `src/lib/query-batch.ts`
-- `src/hooks/use-admin-fetch.ts`
+- `.env` and any files with secrets or credentials
+- `node_modules/`, `.next/`
 
 ## Workflow
 
-1. Stage only frontend paths (never `git add .` blindly).
+1. Never `git add .env` or commit secrets.
 2. Commit with a concise message focused on why.
 3. Push: `git push blackrock main`
-4. Do not push to `origin` unless the user asks.
-5. Never commit secrets (`.env`, credentials).

@@ -1,24 +1,26 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { cardHover } from "@/components/ui/AnimateIn";
+import { marketingImages } from "@/lib/marketing-images";
 
 const articles = [
   {
     title: "The Future of AI in Digital Banking",
     category: "Insights",
-    gradient: "from-accent-brand/40 via-accent-brand-red/20 to-transparent",
+    image: marketingImages.blog.aiBanking,
   },
   {
     title: "Building Wealth with Smart Automation",
     category: "Guide",
-    gradient: "from-accent-brand-red/30 via-accent-brand/20 to-transparent",
+    image: marketingImages.blog.wealth,
   },
   {
     title: "Security Best Practices for Investors",
     category: "Security",
-    gradient: "from-accent-brand/30 via-transparent to-accent-brand-red/20",
+    image: marketingImages.blog.security,
   },
 ];
 
@@ -49,26 +51,15 @@ export default function BlogResources() {
               transition={{ delay: i * 0.1 }}
               {...cardHover}
             >
-              <div
-                className={`h-44 sm:h-52 bg-gradient-to-br ${article.gradient} relative flex items-center justify-center`}
-              >
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_60%,rgba(255,95,5,0.25),transparent_70%)]" />
-                <motion.div
-                  className="relative h-20 w-20 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm flex items-center justify-center"
-                  whileHover={{ scale: 1.08, rotate: 3 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                >
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {[0, 1, 2, 3].map((d) => (
-                      <motion.span
-                        key={d}
-                        className="h-2 w-2 rounded-full bg-accent-brand/80"
-                        animate={{ opacity: [0.5, 1, 0.5] }}
-                        transition={{ duration: 2, delay: d * 0.2, repeat: Infinity }}
-                      />
-                    ))}
-                  </div>
-                </motion.div>
+              <div className="relative h-44 sm:h-52 overflow-hidden">
+                <Image
+                  src={article.image}
+                  alt=""
+                  fill
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-bg-primary/90 via-bg-primary/20 to-transparent" />
               </div>
               <div className="p-5">
                 <span className="text-[10px] font-medium uppercase tracking-wider text-accent-brand">

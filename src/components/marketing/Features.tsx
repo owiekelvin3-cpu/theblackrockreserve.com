@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import {
   Brain, Bot, LineChart, Mic, BarChart3, Sparkles,
@@ -7,8 +8,15 @@ import {
 import GlowIcon from "@/components/ui/GlowIcon";
 import { MiniBarChart, MiniLineChart } from "@/components/marketing/MiniCharts";
 import { cardHover } from "@/components/ui/AnimateIn";
+import { marketingImages } from "@/lib/marketing-images";
 
-const avatars = ["SC", "MW", "ER", "JO", "PS"];
+const supportPhotos = [
+  marketingImages.portraits.support1,
+  marketingImages.portraits.support2,
+  marketingImages.portraits.support3,
+  marketingImages.portraits.support4,
+  marketingImages.portraits.support5,
+];
 
 function AiNodes() {
   return (
@@ -118,14 +126,14 @@ export default function Features() {
                   <div className="absolute">
                     <GlowIcon icon={Bot} size={22} />
                   </div>
-                  {avatars.map((a, i) => {
-                    const angle = (i / avatars.length) * 2 * Math.PI - Math.PI / 2;
+                  {supportPhotos.map((photo, i) => {
+                    const angle = (i / supportPhotos.length) * 2 * Math.PI - Math.PI / 2;
                     const x = Math.cos(angle) * 55;
                     const y = Math.sin(angle) * 40;
                     return (
                       <motion.div
-                        key={a}
-                        className="absolute h-8 w-8 rounded-full brand-gradient-bg flex items-center justify-center text-[10px] font-bold text-white shadow-brand border-2 border-bg-primary"
+                        key={photo}
+                        className="absolute relative h-8 w-8 rounded-full overflow-hidden shadow-brand border-2 border-bg-primary"
                         style={{ left: `calc(50% + ${x}px - 16px)`, top: `calc(50% + ${y}px - 16px)` }}
                         initial={{ opacity: 0, scale: 0 }}
                         whileInView={{ opacity: 1, scale: 1 }}
@@ -137,7 +145,7 @@ export default function Features() {
                           y: { duration: 2.5, delay: 0.6 + i * 0.2, repeat: Infinity, ease: "easeInOut" },
                         }}
                       >
-                        {a}
+                        <Image src={photo} alt="" fill className="object-cover" sizes="32px" />
                       </motion.div>
                     );
                   })}
