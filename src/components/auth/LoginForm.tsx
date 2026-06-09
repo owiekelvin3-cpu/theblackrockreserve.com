@@ -2,8 +2,9 @@
 
 import { Suspense } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { signIn, signOut, getSession } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -20,16 +21,19 @@ const AUTH_MESSAGES: Record<string, string> = {
 };
 
 function LoginFormInner() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
   const authError = searchParams.get("error");
   const bannerMessage = authError ? AUTH_MESSAGES[authError] : null;
+  const [redirecting, setRedirecting] = useState(false);
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
   });
 
   const onSubmit = async (data: LoginInput) => {
+    const destination =
+      callbackUrl.startsWith("/dashboard") ? callbackUrl : "/dashboard";
+
     const result = await signIn("credentials", {
       email: data.email,
       password: data.password,
@@ -41,16 +45,8 @@ function LoginFormInner() {
       return;
     }
 
-    const session = await getSession();
-    if (session?.user?.role === "ADMIN") {
-      await signOut({ redirect: false });
-      toast.error("Admin accounts must sign in at /admin/login");
-      return;
-    }
-
-    toast.success("Welcome back!");
-    router.push(callbackUrl.startsWith("/dashboard") ? callbackUrl : "/dashboard");
-    router.refresh();
+    setRedirecting(true);
+    window.location.href = destination;
   };
 
   return (
@@ -79,7 +75,9 @@ function LoginFormInner() {
           </Link>
         </div>
 
-        <Button type="submit" isLoading={isSubmitting} className="w-full">Sign In</Button>
+        <Button type="submit" isLoading={isSubmitting || redirecting} className="w-full">
+          {redirecting ? "Opening dashboard…" : "Sign In"}
+        </Button>
       </form>
 
       <p className="mt-6 text-center text-sm text-text-secondary">

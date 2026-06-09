@@ -1,21 +1,22 @@
-"use client";
+import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import DashboardShell from "@/components/dashboard/DashboardShell";
 
-import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
-import DashboardTopBar from "@/components/dashboard/DashboardTopBar";
-import DashboardAuthGuard from "@/components/dashboard/DashboardAuthGuard";
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const session = await getServerSession(authOptions);
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <DashboardAuthGuard>
-      <div className="min-h-screen bg-bg-primary">
-        <DashboardSidebar />
-        <div className="lg:ml-[260px] min-h-screen">
-          <main className="p-4 sm:p-6 lg:p-8 max-w-[1400px]">
-            <DashboardTopBar />
-            {children}
-          </main>
-        </div>
-      </div>
-    </DashboardAuthGuard>
-  );
+  if (!session?.user) {
+    redirect("/login?error=sign_in_required");
+  }
+
+  if (session.user.role === "ADMIN") {
+    redirect("/admin");
+  }
+
+  if (!session.user.emailVerified) {
+    redirect("/login?error=verify_email");
+  }
+
+  return <DashboardShell session={session}>{children}</DashboardShell>;
 }

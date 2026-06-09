@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,7 +21,6 @@ type Step2Data = RegisterStep2Input;
 const RESEND_COOLDOWN = 60;
 
 export default function RegisterForm() {
-  const router = useRouter();
   const [step, setStep] = useState(1);
   const [step1Data, setStep1Data] = useState<Step1Data | null>(null);
   const [step2Data, setStep2Data] = useState<Step2Data | null>(null);
@@ -136,13 +134,11 @@ export default function RegisterForm() {
 
       if (result?.error) {
         toast.success("Email verified! Please sign in.");
-        router.push("/login");
+        window.location.href = "/login";
         return;
       }
 
-      toast.success("Welcome to Blackrock Reserve!");
-      router.push("/dashboard");
-      router.refresh();
+      window.location.href = "/dashboard";
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Verification failed");
     } finally {
