@@ -13,6 +13,7 @@ import { formatCurrency } from "@/lib/utils";
 import { fetchJson } from "@/lib/fetch-json";
 import DashboardGate from "@/components/dashboard/DashboardGate";
 import DashboardGreeting from "@/components/dashboard/DashboardGreeting";
+import SecurityOptions from "@/components/dashboard/SecurityOptions";
 import EmptyState from "@/components/dashboard/EmptyState";
 import ChartContainer from "@/components/ui/ChartContainer";
 import { cn } from "@/lib/utils";
@@ -201,6 +202,12 @@ export default function DashboardPage() {
                 See details <ArrowUpRight size={12} />
               </Link>
             </div>
+          </div>
+
+          {/* Security */}
+          <div className="dash-panel p-5">
+            <h2 className="text-base font-semibold text-text-primary mb-4">Security</h2>
+            <SecurityOptions compact />
           </div>
 
           {/* Wallet + Cash Flow */}
