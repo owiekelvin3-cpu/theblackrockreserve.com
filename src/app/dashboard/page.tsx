@@ -174,7 +174,7 @@ export default function DashboardPage() {
                 <span className="dash-stat-pill dash-stat-pill-dark">+0.8%</span>
               </div>
               <div>
-                <p className="text-sm text-text-muted">Savings account</p>
+                <p className="text-sm text-text-muted">Invested balance</p>
                 <p className="text-2xl font-bold text-text-primary mt-1 tracking-tight">
                   {formatCurrency(data.savingsBalance)}
                 </p>
@@ -192,7 +192,7 @@ export default function DashboardPage() {
                 <span className="dash-stat-pill dash-stat-pill-dark">+2.1%</span>
               </div>
               <div>
-                <p className="text-sm text-text-muted">Investment portfolio</p>
+                <p className="text-sm text-text-muted">Profit</p>
                 <p className="text-2xl font-bold text-text-primary mt-1 tracking-tight">
                   {formatCurrency(data.investmentValue)}
                 </p>
