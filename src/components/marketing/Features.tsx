@@ -43,7 +43,7 @@ function AiNodes() {
 function SoundWave() {
   return (
     <div className="flex items-center justify-center gap-1 h-16 sm:h-20">
-      {Array.from({ length: 32 }).map((_, i) => (
+      {Array.from({ length: 16 }).map((_, i) => (
         <motion.div
           key={i}
           className="w-1 rounded-full bg-accent-brand"

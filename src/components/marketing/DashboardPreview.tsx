@@ -1,23 +1,10 @@
 "use client";
 
-import { motion } from "framer-motion";
 import {
   LayoutDashboard, Wallet, TrendingUp, ArrowLeftRight,
   BarChart3, Settings, Search, Bell, Wifi, ChevronRight,
 } from "lucide-react";
-import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { CHART_BRAND, CHART_MUTED, CHART_TOOLTIP_STYLE } from "@/lib/chart-theme";
-import ChartContainer from "@/components/ui/ChartContainer";
-
-const chartData = [
-  { day: "Mon", value: 42 },
-  { day: "Tue", value: 58 },
-  { day: "Wed", value: 72 },
-  { day: "Thu", value: 51 },
-  { day: "Fri", value: 64 },
-  { day: "Sat", value: 59 },
-  { day: "Sun", value: 68 },
-];
+import { RevenueBarChart } from "@/components/marketing/MiniCharts";
 
 const sidebarIcons = [LayoutDashboard, Wallet, TrendingUp, ArrowLeftRight, BarChart3, Settings];
 
@@ -29,14 +16,9 @@ const transactions = [
 
 export default function DashboardPreview() {
   return (
-    <motion.div
-      className="relative mx-auto max-w-5xl"
-      initial={{ opacity: 0, y: 60 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.9, delay: 0.4 }}
-    >
+    <div className="relative mx-auto max-w-5xl animate-fade-in">
       <div className="absolute -inset-6 rounded-3xl bg-gradient-to-br from-accent-brand/25 via-transparent to-accent-brand-red/15 blur-3xl" />
-      <div className="relative glow-card overflow-hidden animate-float">
+      <div className="relative glow-card overflow-hidden">
         <div className="light-leak light-leak-orange w-56 h-56 -top-16 -right-16 opacity-50" />
         <div className="glow-card-inner flex">
           <div className="hidden sm:flex flex-col items-center gap-3 py-6 px-3 border-r border-white/10 bg-black/40">
@@ -75,20 +57,9 @@ export default function DashboardPreview() {
             <div className="grid lg:grid-cols-3 gap-4">
               <div className="lg:col-span-2 space-y-3">
                 <p className="text-xs font-medium text-text-secondary">Revenue Flow</p>
-                <ChartContainer className="h-36">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData} barCategoryGap="22%">
-                      <XAxis dataKey="day" stroke="#52525b" fontSize={10} tickLine={false} axisLine={false} />
-                      <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
-                      <Bar
-                        dataKey="value"
-                        fill={CHART_MUTED}
-                        radius={[4, 4, 0, 0]}
-                        activeBar={{ fill: CHART_BRAND }}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
+                <div className="h-36 w-full">
+                  <RevenueBarChart />
+                </div>
               </div>
 
               <div className="glow-card !p-5 flex flex-col justify-between min-h-[160px] relative overflow-hidden">
@@ -131,6 +102,6 @@ export default function DashboardPreview() {
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

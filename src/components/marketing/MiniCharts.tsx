@@ -58,3 +58,45 @@ export function MiniBarChart({ className = "" }: { className?: string }) {
     </svg>
   );
 }
+
+const REVENUE_VALUES = [42, 58, 72, 51, 64, 59, 68];
+const REVENUE_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+export function RevenueBarChart({ className = "" }: { className?: string }) {
+  const w = 320;
+  const h = 120;
+  const max = Math.max(...REVENUE_VALUES);
+  const peak = max;
+  const barW = w / REVENUE_VALUES.length - 6;
+
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className={`w-full h-full ${className}`} preserveAspectRatio="none">
+      {REVENUE_VALUES.map((v, i) => {
+        const barH = (v / max) * (h - 24);
+        const x = i * (barW + 6) + 3;
+        const isPeak = v === peak;
+        return (
+          <g key={REVENUE_DAYS[i]}>
+            <rect
+              x={x}
+              y={h - 18 - barH}
+              width={barW}
+              height={barH}
+              rx="3"
+              fill={isPeak ? BRAND : MUTED}
+            />
+            <text
+              x={x + barW / 2}
+              y={h - 4}
+              textAnchor="middle"
+              fill="#71717a"
+              fontSize="9"
+            >
+              {REVENUE_DAYS[i]}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
