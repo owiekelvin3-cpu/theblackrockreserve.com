@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
+import { cardHover } from "@/components/ui/AnimateIn";
 
 const plans = [
   {
@@ -64,6 +65,7 @@ export default function Pricing() {
               className={`glow-card hover-lift p-6 sm:p-8 relative ${
                 plan.popular ? "border-accent-brand/40 shadow-brand md:scale-[1.02]" : ""
               }`}
+              {...cardHover}
             >
               {plan.popular && (
                 <>

@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { cardHover } from "@/components/ui/AnimateIn";
 
 const articles = [
   {
@@ -46,18 +47,28 @@ export default function BlogResources() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
+              {...cardHover}
             >
               <div
                 className={`h-44 sm:h-52 bg-gradient-to-br ${article.gradient} relative flex items-center justify-center`}
               >
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_60%,rgba(255,95,5,0.25),transparent_70%)]" />
-                <div className="relative h-20 w-20 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm flex items-center justify-center">
+                <motion.div
+                  className="relative h-20 w-20 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm flex items-center justify-center"
+                  whileHover={{ scale: 1.08, rotate: 3 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
                   <div className="grid grid-cols-2 gap-1.5">
                     {[0, 1, 2, 3].map((d) => (
-                      <span key={d} className="h-2 w-2 rounded-full bg-accent-brand/80" />
+                      <motion.span
+                        key={d}
+                        className="h-2 w-2 rounded-full bg-accent-brand/80"
+                        animate={{ opacity: [0.5, 1, 0.5] }}
+                        transition={{ duration: 2, delay: d * 0.2, repeat: Infinity }}
+                      />
                     ))}
                   </div>
-                </div>
+                </motion.div>
               </div>
               <div className="p-5">
                 <span className="text-[10px] font-medium uppercase tracking-wider text-accent-brand">

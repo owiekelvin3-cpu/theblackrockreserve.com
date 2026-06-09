@@ -5,6 +5,7 @@ import {
   Shield, Globe, Zap, CreditCard, PieChart, Headphones,
 } from "lucide-react";
 import GlowIcon from "@/components/ui/GlowIcon";
+import { cardHover } from "@/components/ui/AnimateIn";
 
 const solutions = [
   { icon: Shield, title: "Bank-Grade Security", description: "2FA, biometrics, and real-time fraud detection." },
@@ -42,6 +43,7 @@ export default function SolutionsGrid() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.08 }}
+              {...cardHover}
             >
               <div className="glow-card-inner flex gap-4">
                 <GlowIcon icon={item.icon} size={18} className="shrink-0" />

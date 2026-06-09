@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Star } from "lucide-react";
+import { cardHover } from "@/components/ui/AnimateIn";
 
 const testimonials = [
   { name: "Sarah Chen", role: "Tech Executive, San Francisco", avatar: "SC", rating: 5, text: "Blackrock Reserve transformed how I manage my wealth. The investment tools rival anything I've used on Wall Street." },
@@ -38,12 +39,21 @@ export default function Testimonials() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.08 }}
+              {...cardHover}
             >
               <div className="light-leak light-leak-orange w-16 h-16 -top-2 -right-2 opacity-30" />
               <div className="glow-card-inner">
                 <div className="flex gap-1 mb-4">
                   {Array.from({ length: t.rating }).map((_, j) => (
-                    <Star key={j} size={14} className="fill-accent-brand text-accent-brand" />
+                    <motion.div
+                      key={j}
+                      initial={{ opacity: 0, scale: 0 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: i * 0.08 + j * 0.05 }}
+                    >
+                      <Star size={14} className="fill-accent-brand text-accent-brand" />
+                    </motion.div>
                   ))}
                 </div>
                 <p className="text-text-secondary text-sm leading-relaxed mb-6">&ldquo;{t.text}&rdquo;</p>

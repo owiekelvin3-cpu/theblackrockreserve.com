@@ -25,7 +25,13 @@ export default function TrustBar() {
           Trusted by <span className="text-white font-medium">10,000+</span> Teams Worldwide
         </motion.p>
 
-        <div className="stats-marquee-mask overflow-hidden">
+        <motion.div
+          className="stats-marquee-mask overflow-hidden"
+          initial={{ opacity: 0, scale: 0.98 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.15 }}
+        >
           <div className="stats-marquee-track flex animate-marquee">
             {[...logos, ...logos].map((logo, i) => (
               <div key={i} className="stats-marquee-slide flex items-center px-8 sm:px-12">
@@ -36,7 +42,7 @@ export default function TrustBar() {
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

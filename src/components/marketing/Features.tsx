@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import GlowIcon from "@/components/ui/GlowIcon";
 import { MiniBarChart, MiniLineChart } from "@/components/marketing/MiniCharts";
+import { cardHover } from "@/components/ui/AnimateIn";
 
 const avatars = ["SC", "MW", "ER", "JO", "PS"];
 
@@ -43,7 +44,7 @@ function AiNodes() {
 function SoundWave() {
   return (
     <div className="flex items-center justify-center gap-1 h-16 sm:h-20">
-      {Array.from({ length: 16 }).map((_, i) => (
+      {Array.from({ length: 24 }).map((_, i) => (
         <motion.div
           key={i}
           className="w-1 rounded-full bg-accent-brand"
@@ -84,6 +85,7 @@ export default function Features() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
+              {...cardHover}
             >
               <div className="light-leak light-leak-orange w-40 h-40 -top-8 -right-8 opacity-40" />
               <div className="glow-card-inner">
@@ -103,6 +105,7 @@ export default function Features() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
+              {...cardHover}
             >
               <div className="glow-card-inner">
                 <h3 className="text-base sm:text-lg font-semibold text-white mb-1">
@@ -120,13 +123,22 @@ export default function Features() {
                     const x = Math.cos(angle) * 55;
                     const y = Math.sin(angle) * 40;
                     return (
-                      <div
+                      <motion.div
                         key={a}
                         className="absolute h-8 w-8 rounded-full brand-gradient-bg flex items-center justify-center text-[10px] font-bold text-white shadow-brand border-2 border-bg-primary"
-                        style={{ transform: `translate(${x}px, ${y}px)` }}
+                        style={{ left: `calc(50% + ${x}px - 16px)`, top: `calc(50% + ${y}px - 16px)` }}
+                        initial={{ opacity: 0, scale: 0 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        animate={{ y: [0, -5, 0] }}
+                        transition={{
+                          opacity: { delay: 0.2 + i * 0.08, duration: 0.4 },
+                          scale: { delay: 0.2 + i * 0.08, type: "spring", stiffness: 260 },
+                          y: { duration: 2.5, delay: 0.6 + i * 0.2, repeat: Infinity, ease: "easeInOut" },
+                        }}
                       >
                         {a}
-                      </div>
+                      </motion.div>
                     );
                   })}
                 </div>
@@ -142,13 +154,14 @@ export default function Features() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.15 }}
+              {...cardHover}
             >
               <div className="glow-card-inner">
                 <GlowIcon icon={LineChart} size={18} className="mb-4" />
                 <h3 className="text-sm font-semibold text-white mb-1">Data Integration Made Easy</h3>
                 <p className="text-xs text-text-secondary mb-4">Connect accounts and sync data seamlessly.</p>
                 <div className="h-20 w-full">
-                  <MiniLineChart />
+                  <MiniLineChart animate />
                 </div>
               </div>
             </motion.div>
@@ -159,6 +172,7 @@ export default function Features() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
+              {...cardHover}
             >
               <div className="light-leak light-leak-red w-32 h-32 -bottom-8 right-0 opacity-30" />
               <div className="glow-card-inner flex flex-col sm:flex-row gap-4 items-center">
@@ -183,13 +197,14 @@ export default function Features() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.25 }}
+              {...cardHover}
             >
               <div className="glow-card-inner">
                 <GlowIcon icon={BarChart3} size={18} className="mb-4" />
                 <h3 className="text-sm font-semibold text-white mb-1">Data Visualization</h3>
                 <p className="text-xs text-text-secondary mb-4">Real-time portfolio analytics and insights.</p>
                 <div className="h-20 w-full">
-                  <MiniBarChart />
+                  <MiniBarChart animate />
                 </div>
               </div>
             </motion.div>

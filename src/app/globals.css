@@ -419,6 +419,14 @@ body {
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .hero-halo,
+    .hero-halo-arc,
+    .animate-float,
+    .animate-pulseGlow,
+    .animate-marquee {
+      animation: none !important;
+    }
+
     .stats-marquee-track {
       animation: none !important;
       flex-wrap: wrap;
