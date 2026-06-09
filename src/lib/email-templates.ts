@@ -88,7 +88,7 @@ export function passwordResetEmail(name: string, code: string) {
 }
 
 export function welcomeEmail(name: string) {
-  const siteUrl = process.env.NEXTAUTH_URL ?? "https://blackrockreserve.com";
+  const siteUrl = process.env.NEXTAUTH_URL ?? "https://www.blackrockreserve.site";
   const html = layout(
     `
       <p style="margin:0 0 8px;color:#ffffff;font-size:18px;font-weight:600;">You're all set, ${name}!</p>

@@ -12,7 +12,7 @@ Use this checklist when connecting your custom domain and going live.
 ## 2. Connect your custom domain
 
 1. In Vercel: **Project → Settings → Domains → Add**.
-2. Enter your domain (e.g. `blackrockreserve.com` and `www.blackrockreserve.com`).
+2. Enter your domain (e.g. `blackrockreserve.site` and `www.blackrockreserve.site`).
 3. At your domain registrar (GoDaddy, Namecheap, Cloudflare, etc.), add the DNS records Vercel shows:
    - **A record** `@` → Vercel IP, or
    - **CNAME** `www` → `cname.vercel-dns.com`
@@ -24,8 +24,8 @@ After the domain works, set these in Vercel **Production** environment:
 
 | Variable | Example |
 |----------|---------|
-| `NEXTAUTH_URL` | `https://blackrockreserve.com` |
-| `NEXT_PUBLIC_SITE_URL` | `https://blackrockreserve.com` |
+| `NEXTAUTH_URL` | `https://www.blackrockreserve.site` |
+| `NEXT_PUBLIC_SITE_URL` | `https://www.blackrockreserve.site` |
 | `NEXTAUTH_SECRET` | 32+ char random string (`openssl rand -base64 32`) |
 
 Redeploy after changing env vars (**Deployments → … → Redeploy**).

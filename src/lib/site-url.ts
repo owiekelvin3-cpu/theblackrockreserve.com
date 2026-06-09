@@ -8,5 +8,5 @@ export function getSiteUrl(): string {
   if (vercelHost) return `https://${vercelHost.replace(/\/$/, "")}`;
 
   if (process.env.NODE_ENV !== "production") return "http://localhost:3000";
-  return "https://blackrockreserve.com";
+  return "https://www.blackrockreserve.site";
 }
