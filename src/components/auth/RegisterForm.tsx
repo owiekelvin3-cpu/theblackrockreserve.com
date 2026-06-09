@@ -140,7 +140,7 @@ export default function RegisterForm() {
         return;
       }
 
-      toast.success("Welcome to Platinum Crest Bank!");
+      toast.success("Welcome to Blackrock Reserve!");
       router.push("/dashboard");
       router.refresh();
     } catch (err) {
@@ -201,7 +201,7 @@ export default function RegisterForm() {
   return (
     <Card>
       <h1 className="font-display text-2xl font-bold text-text-primary text-center">Open Your Account</h1>
-      <p className="text-sm text-text-secondary text-center mt-2">Join Platinum Crest Bank in 3 easy steps</p>
+      <p className="text-sm text-text-secondary text-center mt-2">Join Blackrock Reserve in 3 easy steps</p>
 
       <div className="mt-6 flex items-center gap-2">
         {[1, 2, 3].map((s) => (

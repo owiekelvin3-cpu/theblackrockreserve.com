@@ -7,7 +7,7 @@ import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 
 const milestones = [
-  { year: "2019", title: "Founded", description: "Platinum Crest Bank launched with a vision to democratize premium banking." },
+  { year: "2019", title: "Founded", description: "Blackrock Reserve launched with a vision to democratize premium banking." },
   { year: "2020", title: "Series A", description: "Raised $45M to expand digital infrastructure and security systems." },
   { year: "2021", title: "Investment Platform", description: "Launched full-featured investment suite with zero-commission trading." },
   { year: "2022", title: "Global Expansion", description: "Extended services to 50+ countries with multi-currency support." },
@@ -47,7 +47,7 @@ export default function AboutPage() {
               Redefining <span className="gold-gradient-text">Premium Banking</span>
             </h1>
             <p className="mt-6 text-lg text-text-secondary leading-relaxed">
-              Founded in 2019, Platinum Crest Bank was built on a simple belief: everyone deserves access to
+              Founded in 2019, Blackrock Reserve was built on a simple belief: everyone deserves access to
               institutional-grade financial tools, wrapped in an experience worthy of their ambitions.
             </p>
           </motion.div>
@@ -165,7 +165,7 @@ export default function AboutPage() {
         <div className="mx-auto max-w-7xl text-center">
           <h2 className="font-display text-3xl font-bold text-text-primary mb-6">Regulatory Information</h2>
           <p className="text-text-secondary max-w-2xl mx-auto leading-relaxed">
-            Platinum Crest Bank is a member of the FDIC. Deposits are insured up to $250,000 per depositor.
+            Blackrock Reserve is a member of the FDIC. Deposits are insured up to $250,000 per depositor.
             We are registered with FinCEN and comply with all applicable federal and state banking regulations.
           </p>
           <div className="mt-8 flex justify-center gap-4">

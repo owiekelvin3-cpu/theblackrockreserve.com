@@ -23,7 +23,7 @@ function normalize(text: string) {
 export function getWelcomeMessage(): ChatReply {
   return {
     message:
-      "Hi! I'm Crest Assistant, your Platinum Crest Bank guide. I can help with accounts, deposits, withdrawals, transfers, KYC, and security. What would you like to know?",
+      "Hi! I'm Crest Assistant, your Blackrock Reserve guide. I can help with accounts, deposits, withdrawals, transfers, KYC, and security. What would you like to know?",
     suggestions: QUICK_START,
   };
 }
@@ -38,7 +38,7 @@ export function getChatReply(input: string): ChatReply {
   if (/^(hi|hello|hey|good morning|good afternoon|good evening)\b/.test(q) || q === "help") {
     return {
       message:
-        "Hello! Welcome to Platinum Crest Bank. I can walk you through registration, funding your account, transfers, and more.",
+        "Hello! Welcome to Blackrock Reserve. I can walk you through registration, funding your account, transfers, and more.",
       suggestions: QUICK_START,
     };
   }
@@ -172,7 +172,7 @@ export function getChatReply(input: string): ChatReply {
   if (q.includes("invest")) {
     return {
       message:
-        "Platinum Crest offers an investment suite with portfolio tracking and analytics. Visit Investments in the menu or Dashboard → Investments to view holdings and performance.",
+        "Blackrock Reserve offers an investment suite with portfolio tracking and analytics. Visit Investments in the menu or Dashboard → Investments to view holdings and performance.",
       suggestions: [{ label: "Pricing", value: "What are your fees?" }],
     };
   }

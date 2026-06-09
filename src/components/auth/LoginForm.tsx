@@ -56,7 +56,7 @@ function LoginFormInner() {
   return (
     <Card>
       <h1 className="font-display text-2xl font-bold text-text-primary text-center">Welcome Back</h1>
-      <p className="text-sm text-text-secondary text-center mt-2">Sign in to your Platinum Crest account</p>
+      <p className="text-sm text-text-secondary text-center mt-2">Sign in to your Blackrock Reserve account</p>
 
       {bannerMessage && (
         <div className="mt-6 flex items-start gap-2 rounded-xl border border-accent-gold/30 bg-accent-gold/10 p-3 text-sm text-accent-gold">

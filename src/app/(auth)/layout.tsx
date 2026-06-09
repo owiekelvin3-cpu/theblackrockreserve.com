@@ -11,7 +11,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         {children}
       </div>
       <p className="relative z-10 mt-8 text-xs text-text-muted">
-        © {new Date().getFullYear()} Platinum Crest Bank. FDIC Insured.
+        © {new Date().getFullYear()} Blackrock Reserve. FDIC Insured.
       </p>
     </div>
   );

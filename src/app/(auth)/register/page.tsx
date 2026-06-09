@@ -1,7 +1,7 @@
 import RegisterForm from "@/components/auth/RegisterForm";
 
 export const metadata = {
-  title: "Open Account | Platinum Crest Bank",
+  title: "Open Account | Blackrock Reserve",
 };
 
 export default function RegisterPage() {

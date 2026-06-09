@@ -1,4 +1,4 @@
-# Platinum Crest Bank — Production & Domain Guide
+# Blackrock Reserve — Production & Domain Guide
 
 Use this checklist when connecting your custom domain and going live.
 
@@ -7,12 +7,12 @@ Use this checklist when connecting your custom domain and going live.
 1. Push the repo to GitHub.
 2. Import the project at [vercel.com/new](https://vercel.com/new).
 3. Add all variables from `.env.example` in **Project → Settings → Environment Variables** (Production + Preview).
-4. Deploy once with a temporary Vercel URL (e.g. `https://platinum-crest.vercel.app`).
+4. Deploy once with a temporary Vercel URL (e.g. `https://blackrock-reserve.vercel.app`).
 
 ## 2. Connect your custom domain
 
 1. In Vercel: **Project → Settings → Domains → Add**.
-2. Enter your domain (e.g. `platinumcrest.com` and `www.platinumcrest.com`).
+2. Enter your domain (e.g. `blackrockreserve.com` and `www.blackrockreserve.com`).
 3. At your domain registrar (GoDaddy, Namecheap, Cloudflare, etc.), add the DNS records Vercel shows:
    - **A record** `@` → Vercel IP, or
    - **CNAME** `www` → `cname.vercel-dns.com`
@@ -24,8 +24,8 @@ After the domain works, set these in Vercel **Production** environment:
 
 | Variable | Example |
 |----------|---------|
-| `NEXTAUTH_URL` | `https://platinumcrest.com` |
-| `NEXT_PUBLIC_SITE_URL` | `https://platinumcrest.com` |
+| `NEXTAUTH_URL` | `https://blackrockreserve.com` |
+| `NEXT_PUBLIC_SITE_URL` | `https://blackrockreserve.com` |
 | `NEXTAUTH_SECRET` | 32+ char random string (`openssl rand -base64 32`) |
 
 Redeploy after changing env vars (**Deployments → … → Redeploy**).

@@ -9,28 +9,28 @@ function SectionLoader() {
   );
 }
 
-const Stats = dynamic(() => import("@/components/marketing/Stats"), { loading: SectionLoader });
-const ProcessFlow = dynamic(() => import("@/components/marketing/ProcessFlow"), { loading: SectionLoader });
-const WorkflowSteps = dynamic(() => import("@/components/marketing/WorkflowSteps"), { loading: SectionLoader });
+const TrustBar = dynamic(() => import("@/components/marketing/TrustBar"), { loading: SectionLoader });
 const Features = dynamic(() => import("@/components/marketing/Features"), { loading: SectionLoader });
-const InvestmentPreview = dynamic(() => import("@/components/marketing/InvestmentPreview"), { loading: SectionLoader });
-const Testimonials = dynamic(() => import("@/components/marketing/Testimonials"), { loading: SectionLoader });
-const Security = dynamic(() => import("@/components/marketing/Security"), { loading: SectionLoader });
+const SolutionsGrid = dynamic(() => import("@/components/marketing/SolutionsGrid"), { loading: SectionLoader });
 const Pricing = dynamic(() => import("@/components/marketing/Pricing"), { loading: SectionLoader });
+const Testimonials = dynamic(() => import("@/components/marketing/Testimonials"), { loading: SectionLoader });
+const FAQ = dynamic(() => import("@/components/marketing/FAQ"), { loading: SectionLoader });
+const BlogResources = dynamic(() => import("@/components/marketing/BlogResources"), { loading: SectionLoader });
 const CTABanner = dynamic(() => import("@/components/marketing/CTABanner"), { loading: SectionLoader });
 
 export default function HomePage() {
   return (
     <>
       <Hero />
-      <Stats />
-      <ProcessFlow />
-      <WorkflowSteps />
+      <TrustBar />
       <Features />
-      <InvestmentPreview />
-      <Testimonials />
-      <Security />
+      <SolutionsGrid />
       <Pricing />
+      <Testimonials />
+      <div id="faq">
+        <FAQ />
+      </div>
+      <BlogResources />
       <CTABanner />
     </>
   );

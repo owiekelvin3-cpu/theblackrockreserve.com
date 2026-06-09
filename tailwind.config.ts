@@ -52,7 +52,9 @@ const config: Config = {
         "fade-in": "fadeIn 0.5s ease-out",
         float: "float 6s ease-in-out infinite",
         pulseGlow: "pulseGlow 3s ease-in-out infinite",
+        haloPulse: "haloPulse 6s ease-in-out infinite",
         marquee: "marquee 40s linear infinite",
+        barGrow: "barGrow 1.2s ease-out forwards",
       },
       keyframes: {
         fadeIn: {
@@ -70,6 +72,10 @@ const config: Config = {
         marquee: {
           "0%": { transform: "translateX(0)" },
           "100%": { transform: "translateX(-50%)" },
+        },
+        barGrow: {
+          "0%": { transform: "scaleY(0)" },
+          "100%": { transform: "scaleY(1)" },
         },
       },
     },

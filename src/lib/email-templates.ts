@@ -1,4 +1,4 @@
-const BRAND = "Platinum Crest Bank";
+const BRAND = "Blackrock Reserve";
 const ACCENT = "#FF5F05";
 const BG = "#0a0a0f";
 const CARD = "#12121a";
@@ -88,11 +88,11 @@ export function passwordResetEmail(name: string, code: string) {
 }
 
 export function welcomeEmail(name: string) {
-  const siteUrl = process.env.NEXTAUTH_URL ?? "https://platinumcrest.com";
+  const siteUrl = process.env.NEXTAUTH_URL ?? "https://blackrockreserve.com";
   const html = layout(
     `
       <p style="margin:0 0 8px;color:#ffffff;font-size:18px;font-weight:600;">You're all set, ${name}!</p>
-      <p style="margin:0 0 24px;">Your email is verified and your Platinum Crest account is active. Access your dashboard to manage accounts, investments, and deposits.</p>
+      <p style="margin:0 0 24px;">Your email is verified and your Blackrock Reserve account is active. Access your dashboard to manage accounts, investments, and deposits.</p>
       <div style="text-align:center;margin:28px 0;">
         <a href="${siteUrl}/dashboard" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,${ACCENT},#ff0000);color:#ffffff;text-decoration:none;font-weight:600;border-radius:999px;font-size:15px;">Go to Dashboard</a>
       </div>

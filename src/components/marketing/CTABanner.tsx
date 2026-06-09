@@ -9,31 +9,37 @@ export default function CTABanner() {
   return (
     <section className="section-padding">
       <motion.div
-        className="mx-auto max-w-4xl glow-card p-10 sm:p-14 text-center relative"
+        className="mx-auto max-w-5xl relative overflow-hidden rounded-3xl"
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
       >
-        <div className="light-leak light-leak-orange w-48 h-48 top-0 left-1/2 -translate-x-1/2 opacity-50" />
-        <div className="light-leak light-leak-red w-32 h-32 bottom-0 right-8 opacity-30" />
+        <div className="absolute inset-0 brand-gradient-bg opacity-90" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_60%)]" />
+        <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -bottom-20 -left-20 w-60 h-60 rounded-full bg-black/20 blur-3xl" />
 
-        <div className="glow-card-inner relative z-10">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-            Your Financial Future <span className="gold-gradient-text">Starts Today</span>
+        <div className="relative z-10 px-8 sm:px-14 py-12 sm:py-16 text-center">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight">
+            Ready to Elevate Your Business?
           </h2>
-          <p className="mt-4 text-text-secondary max-w-xl mx-auto">
-            Join thousands of members who trust Platinum Crest Bank with their wealth.
+          <p className="mt-4 text-sm sm:text-base text-white/80 max-w-xl mx-auto">
+            Join thousands of members who trust Blackrock Reserve with their wealth. Start your free trial today.
           </p>
 
-          <div className="mt-8 max-w-md mx-auto flex flex-col sm:flex-row gap-2 p-2 rounded-full bg-white/[0.03] border border-white/10">
-            <input
-              type="email"
-              placeholder="you@email.com"
-              className="input-glass flex-1 px-5 py-3 text-sm border-0 bg-transparent focus:shadow-none"
-            />
-            <Link href="/register" className="shrink-0">
-              <Button size="md" className="rounded-full w-full sm:w-auto whitespace-nowrap">
-                Open Account <ArrowRight size={16} />
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link href="/register">
+              <Button size="lg" className="rounded-full px-8 bg-white text-accent-brand hover:bg-white/90 shadow-none min-w-[180px]">
+                Get Started <ArrowRight size={18} />
+              </Button>
+            </Link>
+            <Link href="/contact">
+              <Button
+                variant="outline"
+                size="lg"
+                className="rounded-full px-8 border-white/30 text-white hover:bg-white/10 min-w-[180px]"
+              >
+                Contact Sales
               </Button>
             </Link>
           </div>

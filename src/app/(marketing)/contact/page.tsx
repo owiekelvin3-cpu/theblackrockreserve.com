@@ -81,14 +81,14 @@ export default function ContactPage() {
                     <MapPin size={20} className="text-accent-gold mt-0.5" />
                     <div>
                       <p className="font-medium text-text-primary">Headquarters</p>
-                      <p className="text-sm text-text-secondary">1 Platinum Way, Suite 400<br />New York, NY 10004</p>
+                      <p className="text-sm text-text-secondary">1 Blackrock Plaza, Suite 400<br />New York, NY 10004</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <Mail size={20} className="text-accent-gold mt-0.5" />
                     <div>
                       <p className="font-medium text-text-primary">Email</p>
-                      <p className="text-sm text-text-secondary">support@platinumcrestbank.com</p>
+                      <p className="text-sm text-text-secondary">support@blackrockreserve.com</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">

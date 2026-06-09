@@ -17,7 +17,7 @@ export function isEmailConfigured(): boolean {
 function getFromAddress(): string {
   return (
     process.env.EMAIL_FROM ??
-    `"Platinum Crest Bank" <${process.env.GMAIL_USER}>`
+    `"Blackrock Reserve" <${process.env.GMAIL_USER}>`
   );
 }
 

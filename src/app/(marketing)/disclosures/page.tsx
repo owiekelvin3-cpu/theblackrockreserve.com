@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Disclosures | Platinum Crest Bank",
-  description: "Regulatory disclosures and important information about Platinum Crest Bank.",
+  title: "Disclosures | Blackrock Reserve",
+  description: "Regulatory disclosures and important information about Blackrock Reserve.",
 };
 
 export default function DisclosuresPage() {
@@ -13,7 +13,7 @@ export default function DisclosuresPage() {
         <p className="text-sm text-text-muted mb-10">Last updated: June 5, 2026</p>
         <div className="space-y-6 text-text-secondary text-sm leading-relaxed">
           <p>
-            Platinum Crest Bank provides digital banking and investment services subject to applicable federal and state regulations.
+            Blackrock Reserve provides digital banking and investment services subject to applicable federal and state regulations.
           </p>
           <h2 className="text-lg font-semibold text-white pt-2">FDIC Insurance</h2>
           <p>

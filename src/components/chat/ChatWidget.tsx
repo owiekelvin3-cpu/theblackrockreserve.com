@@ -148,7 +148,7 @@ export default function ChatWidget() {
             transition={{ duration: 0.2 }}
             className="fixed bottom-24 right-4 sm:right-6 z-[9999] flex flex-col w-[min(100vw-2rem,380px)] h-[min(70vh,520px)] rounded-2xl border border-white/10 bg-[#0a0a0c]/95 backdrop-blur-xl shadow-2xl shadow-black/50 overflow-hidden"
             role="dialog"
-            aria-label="Platinum Crest support chat"
+            aria-label="Blackrock Reserve support chat"
           >
             {/* Header */}
             <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10 brand-gradient-bg shrink-0">
@@ -157,7 +157,7 @@ export default function ChatWidget() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-white">Crest Assistant</p>
-                <p className="text-[10px] text-white/70">Online · Platinum Crest Bank</p>
+                <p className="text-[10px] text-white/70">Online · Blackrock Reserve</p>
               </div>
               <button
                 type="button"

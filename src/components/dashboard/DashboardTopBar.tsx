@@ -35,7 +35,7 @@ export default function DashboardTopBar() {
           </button>
         </div>
         <div className="text-sm text-text-secondary">
-          <Link href="/dashboard" className="hover:text-white transition-colors">Platinum Crest</Link>
+          <Link href="/dashboard" className="hover:text-white transition-colors">Blackrock Reserve</Link>
           <span className="mx-2">›</span>
           <span className="text-white">{title}</span>
         </div>

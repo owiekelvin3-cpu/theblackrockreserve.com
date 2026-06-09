@@ -1,4 +1,4 @@
-# Platinum Crest Bank
+# Blackrock Reserve
 
 Premium digital banking platform built with Next.js 14, TypeScript, Tailwind CSS, Prisma, Supabase PostgreSQL, and NextAuth.
 
@@ -16,7 +16,7 @@ Registration, password reset, and welcome emails are sent via **Gmail SMTP**.
 |----------|-------------|
 | `GMAIL_USER` | Your Gmail address |
 | `GMAIL_APP_PASSWORD` | 16-character Google app password |
-| `EMAIL_FROM` | Display name, e.g. `Platinum Crest Bank <you@gmail.com>` |
+| `EMAIL_FROM` | Display name, e.g. `Blackrock Reserve <you@gmail.com>` |
 
 In development without Gmail configured, codes are printed to the server console.
 
@@ -35,7 +35,7 @@ In development without Gmail configured, codes are printed to the server console
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon (public) key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (server only) |
-| `NEXT_PUBLIC_SITE_URL` | Production URL, e.g. `https://platinumcrest.com` |
+| `NEXT_PUBLIC_SITE_URL` | Production URL, e.g. `https://blackrockreserve.com` |
 | `NEXTAUTH_URL` | Same as production URL (auth cookies & email links) |
 | `NEXTAUTH_SECRET` | Random secret (`openssl rand -base64 32`) |
 | `ADMIN_EMAIL` | Admin bootstrap email (for `npm run admin:create`) |
@@ -78,7 +78,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Admin Console (separate portal)
 
-The admin dashboard lives at **`/admin`** — same Platinum Crest brand (orange/red glassmorphism) in an internal console layout.
+The admin dashboard lives at **`/admin`** — same Blackrock Reserve brand (orange/red glassmorphism) in an internal console layout.
 
 | URL | Description |
 |-----|-------------|

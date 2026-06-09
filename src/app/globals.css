@@ -176,6 +176,44 @@ body {
     pointer-events: none;
   }
 
+  .hero-halo {
+    position: absolute;
+    left: 50%;
+    top: 18%;
+    transform: translateX(-50%);
+    width: min(900px, 120vw);
+    height: min(500px, 70vw);
+    border-radius: 50%;
+    background: radial-gradient(
+      ellipse at center,
+      rgba(255, 95, 5, 0.35) 0%,
+      rgba(255, 69, 0, 0.18) 30%,
+      rgba(255, 0, 0, 0.08) 50%,
+      transparent 72%
+    );
+    filter: blur(2px);
+    pointer-events: none;
+    animation: haloPulse 6s ease-in-out infinite;
+  }
+
+  .hero-halo-arc {
+    position: absolute;
+    left: 50%;
+    top: 42%;
+    transform: translateX(-50%);
+    width: min(1100px, 140vw);
+    height: min(600px, 80vw);
+    border-radius: 50%;
+    border: 1px solid transparent;
+    background: transparent;
+    box-shadow:
+      0 -80px 120px rgba(255, 95, 5, 0.25),
+      0 -40px 80px rgba(255, 0, 0, 0.12),
+      inset 0 60px 100px rgba(255, 95, 5, 0.08);
+    pointer-events: none;
+    animation: haloPulse 6s ease-in-out infinite;
+  }
+
   .brand-arc {
     position: absolute;
     left: 50%;
@@ -395,6 +433,17 @@ body {
       mask-image: none;
       -webkit-mask-image: none;
     }
+  }
+}
+
+@keyframes haloPulse {
+  0%, 100% {
+    opacity: 0.7;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.03);
   }
 }
 

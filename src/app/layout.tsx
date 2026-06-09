@@ -8,8 +8,8 @@ const siteUrl = getSiteUrl();
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Platinum Crest Bank | Premium Digital Banking & Investments",
-    template: "%s | Platinum Crest Bank",
+    default: "Blackrock Reserve | Premium Digital Banking & Investments",
+    template: "%s | Blackrock Reserve",
   },
   description:
     "Premium digital banking, smart investments, and wealth management for high-net-worth individuals and modern investors.",
@@ -18,14 +18,14 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: siteUrl,
-    siteName: "Platinum Crest Bank",
-    title: "Platinum Crest Bank | Premium Digital Banking & Investments",
+    siteName: "Blackrock Reserve",
+    title: "Blackrock Reserve | Premium Digital Banking & Investments",
     description:
       "Premium digital banking, smart investments, and wealth management for high-net-worth individuals and modern investors.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Platinum Crest Bank",
+    title: "Blackrock Reserve",
     description: "Premium digital banking, smart investments, and wealth management.",
   },
   robots: {

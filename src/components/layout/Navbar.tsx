@@ -11,16 +11,14 @@ import { cn } from "@/lib/utils";
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
-  { href: "/features", label: "Features" },
-  { href: "/investments", label: "Investments" },
+  { href: "/features", label: "Feature" },
   { href: "/#pricing", label: "Pricing" },
-  { href: "/contact", label: "Contact" },
+  { href: "/features#integration", label: "Integration" },
+  { href: "/#blog", label: "Blog" },
 ];
 
-const ghostLinkClass =
-  "inline-flex items-center justify-center gap-2 font-semibold transition-all btn-ghost px-5 py-2 text-sm rounded-full";
 const primaryLinkClass =
-  "inline-flex items-center justify-center gap-2 font-semibold transition-all btn-gold px-5 py-2 text-sm rounded-full";
+  "inline-flex items-center justify-center gap-2 font-semibold transition-all btn-gold px-5 py-2.5 text-sm rounded-full";
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -43,11 +41,15 @@ export default function Navbar() {
   }, [syncHash]);
 
   const isActive = (href: string) => {
-    if (href === "/#pricing") {
-      return pathname === "/" && hash === "#pricing";
+    if (href.startsWith("/#")) {
+      return pathname === "/" && hash === href.slice(1);
     }
     if (href === "/") {
-      return pathname === "/" && hash !== "#pricing";
+      return pathname === "/" && !hash;
+    }
+    if (href.includes("#")) {
+      const [path, h] = href.split("#");
+      return pathname === path && hash === `#${h}`;
     }
     return pathname === href;
   };
@@ -57,9 +59,8 @@ export default function Navbar() {
       <nav className="relative mx-auto flex max-w-7xl items-center justify-between">
         <Logo />
 
-        {/* Center pill dock — desktop */}
         <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2">
-          <div className="glass-dock flex items-center gap-1 px-2 py-1.5">
+          <div className="glass-dock flex items-center gap-0.5 px-2 py-1.5">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
@@ -77,12 +78,9 @@ export default function Navbar() {
           </div>
         </div>
 
-        <div className="hidden lg:flex items-center gap-3">
-          <Link href="/login" className={ghostLinkClass}>
-            Sign In
-          </Link>
-          <Link href="/register" className={primaryLinkClass}>
-            Open Account <ArrowRight size={16} />
+        <div className="hidden lg:flex items-center">
+          <Link href="/contact" className={primaryLinkClass}>
+            Contact <ArrowRight size={16} />
           </Link>
         </div>
 
@@ -120,12 +118,9 @@ export default function Navbar() {
                   {link.label}
                 </Link>
               ))}
-              <div className="flex flex-col gap-2 pt-3 mt-2 border-t border-white/10">
-                <Link href="/login" className={cn(ghostLinkClass, "w-full")}>
-                  Sign In
-                </Link>
-                <Link href="/register" className={cn(primaryLinkClass, "w-full")}>
-                  Open Account
+              <div className="pt-3 mt-2 border-t border-white/10">
+                <Link href="/contact" className={cn(primaryLinkClass, "w-full")}>
+                  Contact <ArrowRight size={16} />
                 </Link>
               </div>
             </div>

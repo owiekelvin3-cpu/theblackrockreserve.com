@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | Platinum Crest Bank",
-  description: "How Platinum Crest Bank collects, uses, and protects your personal information.",
+  title: "Privacy Policy | Blackrock Reserve",
+  description: "How Blackrock Reserve collects, uses, and protects your personal information.",
 };
 
 export default function PrivacyPage() {
@@ -13,7 +13,7 @@ export default function PrivacyPage() {
         <p className="text-sm text-text-muted mb-10">Last updated: June 5, 2026</p>
         <div className="prose prose-invert max-w-none space-y-6 text-text-secondary text-sm leading-relaxed">
           <p>
-            Platinum Crest Bank (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) is committed to protecting your privacy.
+            Blackrock Reserve (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) is committed to protecting your privacy.
             This policy describes how we collect, use, and safeguard information when you use our website and banking services.
           </p>
           <h2 className="text-lg font-semibold text-white pt-2">Information We Collect</h2>
@@ -34,8 +34,8 @@ export default function PrivacyPage() {
           <h2 className="text-lg font-semibold text-white pt-2">Contact</h2>
           <p>
             For privacy questions, contact us at{" "}
-            <a href="mailto:privacy@platinumcrest.com" className="text-accent-brand hover:underline">
-              privacy@platinumcrest.com
+            <a href="mailto:privacy@blackrockreserve.com" className="text-accent-brand hover:underline">
+              privacy@blackrockreserve.com
             </a>
             .
           </p>

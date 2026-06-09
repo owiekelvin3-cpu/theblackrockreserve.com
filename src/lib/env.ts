@@ -12,25 +12,25 @@ export function validateProductionEnv() {
 
   const missing = REQUIRED_IN_PRODUCTION.filter((key) => !process.env[key]?.trim());
   if (missing.length > 0) {
-    console.error(`[Platinum Crest] Missing required environment variables: ${missing.join(", ")}`);
+    console.error(`[Blackrock Reserve] Missing required environment variables: ${missing.join(", ")}`);
   }
 
   if (process.env.ADMIN_PASSWORDLESS === "true") {
-    console.error("[Platinum Crest] ADMIN_PASSWORDLESS must not be enabled in production.");
+    console.error("[Blackrock Reserve] ADMIN_PASSWORDLESS must not be enabled in production.");
   }
 
   const secret = process.env.NEXTAUTH_SECRET ?? "";
   if (secret.length < 32) {
-    console.error("[Platinum Crest] NEXTAUTH_SECRET should be at least 32 characters.");
+    console.error("[Blackrock Reserve] NEXTAUTH_SECRET should be at least 32 characters.");
   }
 
   const siteUrl = process.env.NEXTAUTH_URL ?? "";
   if (siteUrl.startsWith("http://") && !siteUrl.includes("localhost")) {
-    console.error("[Platinum Crest] NEXTAUTH_URL should use https:// in production.");
+    console.error("[Blackrock Reserve] NEXTAUTH_URL should use https:// in production.");
   }
 
   const recommended = RECOMMENDED_IN_PRODUCTION.filter((key) => !process.env[key]?.trim());
   if (recommended.length > 0) {
-    console.warn(`[Platinum Crest] Recommended for production: ${recommended.join(", ")}`);
+    console.warn(`[Blackrock Reserve] Recommended for production: ${recommended.join(", ")}`);
   }
 }

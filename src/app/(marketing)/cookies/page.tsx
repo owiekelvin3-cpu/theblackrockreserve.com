@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Cookie Policy | Platinum Crest Bank",
-  description: "How Platinum Crest Bank uses cookies and similar technologies.",
+  title: "Cookie Policy | Blackrock Reserve",
+  description: "How Blackrock Reserve uses cookies and similar technologies.",
 };
 
 export default function CookiesPage() {

@@ -34,7 +34,7 @@ export default function DashboardSidebar() {
           <Zap size={18} className="text-white" fill="white" />
         </div>
         <span className="text-lg font-bold text-white tracking-tight">
-          Platinum<span className="text-accent-brand">Crest</span>
+          Blackrock<span className="text-accent-brand">Reserve</span>
         </span>
       </div>
 
