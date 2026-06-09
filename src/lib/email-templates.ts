@@ -1,4 +1,4 @@
-const BRAND = "Blackrock Reserve";
+const BRAND = "BlackrockReserve";
 const ACCENT = "#FF5F05";
 const BG = "#0a0a0f";
 const CARD = "#12121a";
@@ -20,7 +20,7 @@ function layout(content: string, preheader: string) {
           <tr>
             <td style="padding:32px 32px 24px;text-align:center;background:linear-gradient(135deg,rgba(255,95,5,0.15),transparent);">
               <div style="width:48px;height:48px;margin:0 auto 16px;border-radius:14px;background:linear-gradient(135deg,${ACCENT},#ff0000);display:flex;align-items:center;justify-content:center;">
-                <span style="color:#fff;font-weight:800;font-size:20px;">P</span>
+                <span style="color:#fff;font-weight:800;font-size:20px;">B</span>
               </div>
               <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;">${BRAND}</h1>
             </td>

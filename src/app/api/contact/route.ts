@@ -19,7 +19,8 @@ export async function POST(req: Request) {
     const data = parsed.data;
     await prisma.contactMessage.create({ data });
 
-    const notifyEmail = process.env.ADMIN_EMAIL ?? process.env.GMAIL_USER;
+    const notifyEmail =
+      process.env.NOTIFY_EMAIL ?? process.env.ADMIN_EMAIL ?? process.env.GMAIL_USER;
     if (notifyEmail && isEmailConfigured()) {
       try {
         const mail = contactNotificationEmail(data);

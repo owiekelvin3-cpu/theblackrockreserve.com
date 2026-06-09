@@ -30,7 +30,38 @@ After the domain works, set these in Vercel **Production** environment:
 
 Redeploy after changing env vars (**Deployments → … → Redeploy**).
 
-## 4. Database & admin setup
+## 4. Resend email (your domain)
+
+All transactional email uses [Resend](https://resend.com): sign-up verification, password reset, deposit/withdrawal alerts, and contact notifications.
+
+### Add your domain in Resend
+
+1. Sign in at [resend.com](https://resend.com) → **Domains** → **Add Domain**.
+2. Enter `blackrockreserve.site`.
+3. Resend will show DNS records (typically **DKIM**, **SPF**, and sometimes **MX**). Add them at the same place you manage DNS for the site (registrar or Cloudflare).
+4. Wait until Resend shows the domain as **Verified** (often 5–30 minutes).
+
+### Create API key & Vercel env vars
+
+1. **API Keys** → **Create API Key** → copy the key (starts with `re_`).
+2. In Vercel **Environment Variables** (Production + Preview), add:
+
+| Variable | Value |
+|----------|--------|
+| `RESEND_API_KEY` | Your `re_...` key |
+| `EMAIL_FROM` | `BlackrockReserve <noreply@blackrockreserve.site>` |
+| `NOTIFY_EMAIL` | `admin@blackrockreserve.site` (contact form alerts) |
+
+3. Redeploy.
+
+**Sender addresses you can use** (after domain is verified):
+
+- `noreply@blackrockreserve.site` — verification & password emails
+- `notifications@blackrockreserve.site` — transaction alerts (set in `EMAIL_FROM` if you prefer)
+
+Resend takes priority over Gmail when `RESEND_API_KEY` is set. Gmail vars are optional fallback for local dev.
+
+## 5. Database & admin setup
 
 ```bash
 # From your machine with production DATABASE_URL in .env
@@ -42,7 +73,7 @@ Then sign in at `https://yourdomain.com/admin/login`.
 
 Configure **Admin → Settings** (Bitcoin wallet, deposit messages) before customers use deposits.
 
-## 5. Pre-launch verification
+## 6. Pre-launch verification
 
 - [ ] `npm run build` passes locally
 - [ ] Register → verify email → login works
@@ -50,10 +81,11 @@ Configure **Admin → Settings** (Bitcoin wallet, deposit messages) before custo
 - [ ] Contact form saves messages
 - [ ] Admin can credit balance and customer gets notification
 - [ ] `NEXTAUTH_URL` uses `https://` (not `http://`)
-- [ ] Gmail app password configured for verification emails
+- [ ] Resend domain verified and `RESEND_API_KEY` set in Vercel
+- [ ] Test register → verification email arrives from `@blackrockreserve.site`
 - [ ] Supabase project is **not paused**
 
-## 6. Optional: Google OAuth
+## 7. Optional: Google OAuth
 
 If using Google sign-in, add authorized redirect URI in Google Cloud Console:
 
