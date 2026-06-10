@@ -5,7 +5,17 @@ const u = (id: string, w = 800) =>
 export const marketingImages = {
   teamHero: u("photo-1521791136064-7986c2920216", 1400),
   officeWide: u("photo-1497366216548-37526070297c", 1400),
+  contactHero: u("photo-1423666639761-f5410758f34d", 1400),
+  contactLocation: u("photo-1494522358652-f30e804ade64", 1000),
+  investmentsHero: u("photo-1642790103337-e686be66d197", 1400),
   analytics: u("photo-1551288049-bebda4e38f71", 900),
+  features: {
+    banking: u("photo-1601597111158-2fceff292cdc", 900),
+    investments: u("photo-1611974789855-9c2a0a7236a3", 900),
+    security: u("photo-1563013547-824ae1b704d3", 900),
+    integration: u("photo-1526304640581-d334cdbbf45f", 900),
+    analytics: u("photo-1551288049-bebda4e38f71", 900),
+  },
   blog: {
     aiBanking: u("photo-1677442136019-21780ecad995", 800),
     wealth: u("photo-1460925895917-afdab827c52f", 800),

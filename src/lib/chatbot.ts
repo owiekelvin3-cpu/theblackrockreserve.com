@@ -173,14 +173,14 @@ export function getChatReply(input: string): ChatReply {
     return {
       message:
         "Blackrock Reserve offers an investment suite with portfolio tracking and analytics. Visit Investments in the menu or Dashboard → Investments to view holdings and performance.",
-      suggestions: [{ label: "Pricing", value: "What are your fees?" }],
+      suggestions: [{ label: "Fees", value: "What are your fees?" }],
     };
   }
 
   if (q.includes("fee") || q.includes("pricing") || q.includes("cost") || q.includes("plan")) {
     return {
       message:
-        "We offer Starter (free), Premium ($29/mo), and Elite ($99/mo) plans. Starter includes checking & savings, mobile access, and standard support. See the Pricing section on our homepage for full details.",
+        "Blackrock Reserve does not charge monthly subscription fees for standard banking and investment accounts. Investment products may carry fund-level expenses or spreads as disclosed before you invest. See Disclosures or contact support for details on a specific product.",
       suggestions: [{ label: "Open account", value: "How do I open an account?" }],
     };
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,13 +11,14 @@ import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { contactSchema, type ContactInput } from "@/lib/validations";
+import { marketingImages } from "@/lib/marketing-images";
 
 const faqs = [
   { q: "How do I open an account?", a: "Click 'Open Account' and complete our 3-step registration process. You'll need a valid government ID for KYC verification." },
-  { q: "What are the fees?", a: "Our Starter plan is free. Premium is $29/month and Elite is $99/month. Investment trades have zero commission on all plans." },
+  { q: "What are the fees?", a: "Standard banking and investment accounts have no monthly subscription fee. Investment products may carry fund-level expenses disclosed before you invest." },
   { q: "Is my money insured?", a: "Yes. Deposits are FDIC insured up to $250,000 per depositor, per account category." },
   { q: "How long do transfers take?", a: "Domestic transfers are instant. International transfers typically arrive within 1-3 business days depending on the destination." },
-  { q: "Can I invest in cryptocurrency?", a: "Yes. We offer curated crypto index funds on Premium and Elite plans. Direct crypto trading is coming soon." },
+  { q: "Can I invest in cryptocurrency?", a: "Yes. Explore curated crypto index funds and digital asset products through the Investments and Capital Markets sections of your dashboard." },
 ];
 
 export default function ContactPage() {
@@ -51,6 +53,31 @@ export default function ContactPage() {
           >
             Get in <span className="gold-gradient-text">Touch</span>
           </motion.h1>
+          <motion.p
+            className="mt-4 text-text-secondary text-center max-w-2xl mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+          >
+            Our banking and investment specialists are here to help with account setup, transfers, and portfolio questions.
+          </motion.p>
+
+          <motion.div
+            className="mt-12 glass-card relative h-48 sm:h-64 overflow-hidden rounded-2xl"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Image
+              src={marketingImages.contactHero}
+              alt="Customer support team ready to assist"
+              fill
+              className="object-cover"
+              sizes="(max-width: 1280px) 100vw, 1280px"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-bg-primary/80 via-bg-primary/30 to-transparent" />
+          </motion.div>
 
           <div className="mt-16 grid lg:grid-cols-2 gap-12">
             <Card>
@@ -101,8 +128,19 @@ export default function ContactPage() {
                 </div>
               </Card>
 
-              <Card className="h-48 flex items-center justify-center">
-                <p className="text-text-muted text-sm">Map Embed Placeholder</p>
+              <Card className="relative h-48 sm:h-56 overflow-hidden p-0">
+                <Image
+                  src={marketingImages.contactLocation}
+                  alt="New York financial district skyline near our headquarters"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-bg-primary/90 via-bg-primary/20 to-transparent" />
+                <div className="absolute bottom-4 left-4 right-4">
+                  <p className="text-sm font-medium text-text-primary">New York Headquarters</p>
+                  <p className="text-xs text-text-secondary mt-1">1 Blackrock Plaza, Suite 400 · New York, NY 10004</p>
+                </div>
               </Card>
             </div>
           </div>

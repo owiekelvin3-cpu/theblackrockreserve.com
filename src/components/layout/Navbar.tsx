@@ -9,28 +9,18 @@ import Logo from "./Logo";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { cn } from "@/lib/utils";
 
+const NAV_OFFSET = 96;
+
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
-  { href: "/features", label: "Feature" },
-  { href: "/#pricing", label: "Pricing" },
-  { href: "/features#integration", label: "Integration" },
-  { href: "/#blog", label: "Blog" },
+  { href: "/features", label: "Features" },
+  { href: "/investments", label: "Investments" },
+  { href: "/contact", label: "Contact" },
 ];
 
 const primaryLinkClass =
   "inline-flex items-center justify-center gap-2 font-semibold transition-all btn-gold px-5 py-2.5 text-sm rounded-full";
-
-function scrollToHash(href: string) {
-  const hashIndex = href.indexOf("#");
-  if (hashIndex === -1) return;
-
-  const id = href.slice(hashIndex + 1);
-  const target = document.getElementById(id);
-  if (target) {
-    target.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-}
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -55,18 +45,24 @@ export default function Navbar() {
   useEffect(() => {
     if (!hash) return;
     const id = hash.replace("#", "");
-    requestAnimationFrame(() => {
+    const timer = window.setTimeout(() => {
       const target = document.getElementById(id);
       if (target) {
-        target.scrollIntoView({ behavior: "smooth", block: "start" });
+        const top = target.getBoundingClientRect().top + window.scrollY - NAV_OFFSET;
+        window.scrollTo({ behavior: "smooth", top });
       }
-    });
+    }, 100);
+    return () => window.clearTimeout(timer);
   }, [pathname, hash]);
 
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
+
   const isActive = (href: string) => {
-    if (href.startsWith("/#")) {
-      return pathname === "/" && hash === href.slice(1);
-    }
     if (href === "/") {
       return pathname === "/" && !hash;
     }
@@ -77,34 +73,21 @@ export default function Navbar() {
     return pathname === href || pathname.startsWith(`${href}/`);
   };
 
-  const handleNavClick = (href: string) => {
-    setMobileOpen(false);
-
-    const hashIndex = href.indexOf("#");
-    if (hashIndex === -1) return;
-
-    const path = href.slice(0, hashIndex) || "/";
-    if (pathname === path || (path === "/" && pathname === "/")) {
-      window.setTimeout(() => scrollToHash(href), 0);
-    }
-  };
-
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 px-4 pt-5 sm:px-6 pointer-events-none">
-      <nav className="relative mx-auto flex max-w-7xl items-center justify-between gap-4 md:grid md:grid-cols-[auto_1fr_auto] md:gap-6 pointer-events-auto">
-        <div className="relative z-20 shrink-0">
+    <header className="fixed top-0 left-0 right-0 z-50 px-4 pt-4 sm:pt-5 sm:px-6">
+      <nav className="relative mx-auto flex max-w-7xl items-center justify-between gap-3 lg:grid lg:grid-cols-[auto_1fr_auto] lg:gap-6">
+        <div className="relative z-[60] shrink-0">
           <Logo />
         </div>
 
-        <div className="hidden md:flex min-w-0 justify-center">
-          <div className="glass-dock flex max-w-full items-center gap-0.5 overflow-x-auto px-2 py-1.5">
+        <div className="hidden lg:flex min-w-0 justify-center">
+          <div className="glass-dock flex max-w-full items-center gap-1 px-2 py-1.5">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                onClick={() => handleNavClick(link.href)}
                 className={cn(
-                  "shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all",
+                  "shrink-0 px-3.5 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap",
                   isActive(link.href)
                     ? "bg-accent-brand/15 text-white border border-accent-brand/30 shadow-[0_0_20px_rgba(255,95,5,0.2)]"
                     : "text-text-secondary hover:text-white hover:bg-white/5"
@@ -116,17 +99,20 @@ export default function Navbar() {
           </div>
         </div>
 
-        <div className="relative z-20 flex shrink-0 items-center justify-end gap-2 sm:gap-3">
+        <div className="relative z-[60] flex shrink-0 items-center justify-end gap-2 sm:gap-3">
           <ThemeToggle size="sm" className="hidden sm:inline-flex" />
-          <Link href="/login" className="hidden md:inline-flex text-sm font-medium text-text-secondary hover:text-text-primary transition-colors px-3 py-2">
+          <Link
+            href="/login"
+            className="hidden lg:inline-flex text-sm font-medium text-text-secondary hover:text-text-primary transition-colors px-3 py-2"
+          >
             Sign in
           </Link>
-          <Link href="/register" className={cn(primaryLinkClass, "hidden md:inline-flex")}>
+          <Link href="/register" className={cn(primaryLinkClass, "hidden lg:inline-flex")}>
             Sign up <ArrowRight size={16} />
           </Link>
           <button
             type="button"
-            className="md:hidden p-2 text-text-primary"
+            className="lg:hidden p-2.5 rounded-xl text-text-primary hover:bg-white/5 transition-colors"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Toggle menu"
             aria-expanded={mobileOpen}
@@ -138,46 +124,57 @@ export default function Navbar() {
 
       <AnimatePresence>
         {mobileOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="md:hidden mt-4 mx-auto max-w-7xl glass-card p-4 pointer-events-auto"
-          >
-            <div className="flex flex-col gap-1">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => handleNavClick(link.href)}
-                  className={cn(
-                    "px-4 py-3 rounded-xl text-sm font-medium transition-colors",
-                    isActive(link.href)
-                      ? "bg-accent-brand/15 text-accent-brand"
-                      : "text-text-secondary hover:text-white hover:bg-white/5"
-                  )}
-                >
-                  {link.label}
-                </Link>
-              ))}
-              <div className="pt-3 mt-2 border-t border-white/10 flex flex-col gap-3">
-                <div className="flex items-center justify-between px-1">
-                  <span className="text-xs font-medium text-text-secondary">Appearance</span>
-                  <ThemeToggle size="sm" />
+          <>
+            <motion.button
+              type="button"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+              aria-label="Close menu"
+              onClick={() => setMobileOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="lg:hidden relative z-50 mt-3 mx-auto max-w-7xl glass-card p-4 max-h-[calc(100vh-6rem)] overflow-y-auto"
+            >
+              <div className="flex flex-col gap-1">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMobileOpen(false)}
+                    className={cn(
+                      "px-4 py-3 rounded-xl text-sm font-medium transition-colors",
+                      isActive(link.href)
+                        ? "bg-accent-brand/15 text-accent-brand"
+                        : "text-text-secondary hover:text-white hover:bg-white/5"
+                    )}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+                <div className="pt-3 mt-2 border-t border-white/10 flex flex-col gap-3">
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-xs font-medium text-text-secondary">Appearance</span>
+                    <ThemeToggle size="sm" />
+                  </div>
+                  <Link
+                    href="/login"
+                    className="w-full text-center px-5 py-2.5 text-sm font-medium text-text-secondary hover:text-text-primary rounded-full border border-white/10 transition-colors"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Sign in
+                  </Link>
+                  <Link href="/register" className={cn(primaryLinkClass, "w-full")} onClick={() => setMobileOpen(false)}>
+                    Sign up <ArrowRight size={16} />
+                  </Link>
                 </div>
-                <Link
-                  href="/login"
-                  className="w-full text-center px-5 py-2.5 text-sm font-medium text-text-secondary hover:text-text-primary rounded-full border border-white/10 transition-colors"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  Sign in
-                </Link>
-                <Link href="/register" className={cn(primaryLinkClass, "w-full")} onClick={() => setMobileOpen(false)}>
-                  Sign up <ArrowRight size={16} />
-                </Link>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </header>

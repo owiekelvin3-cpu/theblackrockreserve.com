@@ -26,7 +26,7 @@ const articles = [
 
 export default function BlogResources() {
   return (
-    <section id="blog" className="section-padding">
+    <section id="blog" className="section-padding scroll-mt-28">
       <div className="mx-auto max-w-7xl">
         <motion.div
           className="text-center mb-12"

@@ -9,6 +9,7 @@ import { fadeUp, stagger } from "@/components/ui/AnimateIn";
 const products = [
   { label: "Smart Banking", href: "/features#banking" },
   { label: "Investments", href: "/investments" },
+  { label: "Capital Markets", href: "/features#investments" },
   { label: "Wealth Analytics", href: "/features#analytics" },
 ];
 
@@ -22,7 +23,6 @@ const company = [
 const resources = [
   { label: "Blog", href: "/#blog" },
   { label: "Features", href: "/features" },
-  { label: "Pricing", href: "/#pricing" },
   { label: "FAQ", href: "/#faq" },
 ];
 

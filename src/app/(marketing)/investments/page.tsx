@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -10,6 +11,7 @@ import Badge from "@/components/ui/Badge";
 import CountUp from "@/components/ui/CountUp";
 import ChartContainer from "@/components/ui/ChartContainer";
 import { formatCurrency } from "@/lib/utils";
+import { marketingImages } from "@/lib/marketing-images";
 
 const assetClasses = [
   { name: "Stocks", description: "Individual equities from global markets", icon: "📈" },
@@ -68,6 +70,23 @@ export default function InvestmentsPage() {
           >
             From individual stocks to curated ETF bundles — invest with confidence using institutional-grade tools.
           </motion.p>
+
+          <motion.div
+            className="mt-12 glass-card relative mx-auto max-w-4xl h-52 sm:h-72 overflow-hidden rounded-2xl"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+          >
+            <Image
+              src={marketingImages.investmentsHero}
+              alt="Investment portfolio and market performance charts"
+              fill
+              className="object-cover"
+              sizes="(max-width: 896px) 100vw, 896px"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-bg-primary/80 via-transparent to-transparent" />
+          </motion.div>
         </div>
       </section>
 
