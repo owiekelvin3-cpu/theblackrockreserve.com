@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import {
-  LayoutDashboard, Wallet, TrendingUp,
+  LayoutDashboard, TrendingUp,
   Landmark, Settings, LogOut, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import Logo from "@/components/layout/Logo";
