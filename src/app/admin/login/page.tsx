@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { signIn, signOut, getSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Shield, AlertCircle } from "lucide-react";
+import { Shield, AlertCircle, Eye, EyeOff } from "lucide-react";
 
 async function waitForAdminSession(maxAttempts = 12) {
   for (let i = 0; i < maxAttempts; i++) {
@@ -20,6 +20,7 @@ function LoginForm() {
   const error = searchParams.get("error");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState("");
   const [authReady, setAuthReady] = useState(true);
@@ -121,17 +122,28 @@ function LoginForm() {
           </div>
           <div>
             <label className="block text-xs font-medium text-[var(--admin-muted)] mb-1.5">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="admin-input"
-              placeholder="••••••••••••"
-              autoComplete="current-password"
-              required
-              minLength={8}
-              disabled={!authReady || loading}
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="admin-input pr-11 w-full"
+                placeholder="••••••••••••"
+                autoComplete="current-password"
+                required
+                minLength={8}
+                disabled={!authReady || loading}
+              />
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-[var(--admin-muted)] hover:text-white transition-colors"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
           <button
             type="submit"
