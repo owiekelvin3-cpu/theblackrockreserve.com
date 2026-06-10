@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUserId, unauthorizedResponse } from "@/lib/api-auth";
 import { withdrawalChargePaymentSubmitSchema } from "@/lib/validations";
+import { requireTransactionPin } from "@/lib/transaction-pin";
 import { createUserNotification } from "@/lib/user-notifications";
 import { formatCurrency } from "@/lib/utils";
 import { prisma } from "@/lib/prisma";
@@ -15,6 +16,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
     }
+
+    const pinError = await requireTransactionPin(userId, parsed.data.transactionPin);
+    if (pinError) return pinError;
 
     const withdrawal = await prisma.withdrawalRequest.findFirst({
       where: { id: params.id, userId },

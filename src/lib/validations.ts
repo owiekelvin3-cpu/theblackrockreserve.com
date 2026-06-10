@@ -107,6 +107,11 @@ export const balanceAdjustmentSchema = z.object({
   reason: z.string().min(3, "Reason must be at least 3 characters"),
 });
 
+const contactFaqSchema = z.object({
+  question: z.string().min(1, "Question is required"),
+  answer: z.string().min(1, "Answer is required"),
+});
+
 export const platformSettingsSchema = z.object({
   bitcoinWalletAddress: z.string().optional(),
   bitcoinPurchaseLink: z
@@ -115,11 +120,53 @@ export const platformSettingsSchema = z.object({
     .refine((v) => !v || v === "" || /^https?:\/\/.+/.test(v), "Must be a valid URL"),
   depositInstructions: z.string().optional(),
   depositConfirmationMessage: z.string().optional(),
+  contactEmail: z
+    .string()
+    .optional()
+    .refine((v) => !v || v === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), "Must be a valid email"),
+  contactPhone: z.string().optional(),
+  contactAddressLine1: z.string().optional(),
+  contactAddressLine2: z.string().optional(),
+  contactHqTitle: z.string().optional(),
+  contactHqAddress: z.string().optional(),
+  contactFaqs: z.array(contactFaqSchema).optional(),
 });
+
+export const transactionPinSchema = z
+  .string()
+  .length(4, "Transaction PIN must be 4 digits")
+  .regex(/^\d{4}$/, "Transaction PIN must be 4 digits");
+
+export const setTransactionPinSchema = z
+  .object({
+    password: z.string().min(1, "Login password is required"),
+    pin: transactionPinSchema,
+    confirmPin: transactionPinSchema,
+  })
+  .refine((data) => data.pin === data.confirmPin, {
+    message: "PINs do not match",
+    path: ["confirmPin"],
+  });
+
+export const changeTransactionPinSchema = z
+  .object({
+    currentPin: transactionPinSchema,
+    newPin: transactionPinSchema,
+    confirmPin: transactionPinSchema,
+  })
+  .refine((data) => data.newPin === data.confirmPin, {
+    message: "PINs do not match",
+    path: ["confirmPin"],
+  })
+  .refine((data) => data.currentPin !== data.newPin, {
+    message: "New PIN must be different from current PIN",
+    path: ["newPin"],
+  });
 
 export const savingsTransferSchema = z.object({
   direction: z.enum(["to-savings", "to-checking"]),
   amount: z.number().positive("Amount must be greater than zero"),
+  transactionPin: transactionPinSchema,
 });
 
 export const depositSubmitSchema = z.object({
@@ -127,6 +174,7 @@ export const depositSubmitSchema = z.object({
   amountUsd: z.number().positive("Amount must be greater than zero").optional(),
   txHash: z.string().min(10, "Transaction reference must be at least 10 characters").optional().or(z.literal("")),
   proofNote: z.string().optional(),
+  transactionPin: transactionPinSchema,
 });
 
 /** @deprecated use depositSubmitSchema */
@@ -146,6 +194,7 @@ export const depositReviewSchema = z
 
 export const withdrawalRequestSchema = z.object({
   chargeAcknowledged: z.boolean().optional(),
+  transactionPin: transactionPinSchema,
   accountId: z.string().min(1, "Account is required"),
   method: z.enum([
     "ACH",
@@ -180,6 +229,32 @@ export const withdrawalChargePaymentSubmitSchema = z.object({
   txHash: z.string().min(10, "Transaction reference must be at least 10 characters"),
   proofNote: z.string().optional(),
   paymentMethod: z.string().min(1).default("BITCOIN"),
+  transactionPin: transactionPinSchema,
+});
+
+export const investSubmitSchema = z.object({
+  symbol: z.string().min(1).max(12),
+  amountUsd: z.coerce.number().positive().max(10_000_000),
+  accountId: z.string().optional(),
+  idempotencyKey: z.string().max(64).optional(),
+  transactionPin: transactionPinSchema,
+});
+
+export const jointMoneyActionSchema = z.object({
+  amount: z.coerce.number().positive().max(10_000_000),
+  personalAccountId: z.string().optional(),
+  transactionPin: transactionPinSchema,
+});
+
+export const jointInvestSchema = z.object({
+  symbol: z.string().min(1).max(12),
+  amountUsd: z.coerce.number().positive().max(10_000_000),
+  transactionPin: transactionPinSchema,
+});
+
+export const jointApprovalActionSchema = z.object({
+  action: z.enum(["APPROVE", "REJECT"]),
+  transactionPin: transactionPinSchema.optional(),
 });
 
 export const withdrawalChargePaymentReviewSchema = z

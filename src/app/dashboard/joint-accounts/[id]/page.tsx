@@ -15,6 +15,8 @@ import DashboardGate from "@/components/dashboard/DashboardGate";
 import StockIcon from "@/components/capital-markets/StockIcon";
 import { formatCurrency, cn } from "@/lib/utils";
 import { fetchDashboardJson } from "@/lib/fetch-json";
+import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
+import { useTransactionPin } from "@/hooks/use-transaction-pin";
 
 interface JointDetail {
   id: string;
@@ -46,6 +48,7 @@ export default function JointAccountDetailPage() {
   const [investAmount, setInvestAmount] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [tab, setTab] = useState<"overview" | "holdings" | "history" | "activity">("overview");
+  const { open: pinOpen, loading: pinLoading, error: pinError, requestPin, closePin, confirmPin } = useTransactionPin();
 
   const load = useCallback(() => {
     setLoading(true);
@@ -59,30 +62,32 @@ export default function JointAccountDetailPage() {
     load();
   }, [load]);
 
-  const postAction = async (path: string, body: Record<string, unknown>, successMsg: string) => {
-    setSubmitting(true);
-    try {
-      const res = await fetch(path, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(body),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Failed");
-      if (json.pendingApproval) {
-        toast.success("Submitted for co-owner approval");
-      } else {
-        toast.success(successMsg);
+  const postAction = (path: string, body: Record<string, unknown>, successMsg: string) => {
+    requestPin(async (transactionPin) => {
+      setSubmitting(true);
+      try {
+        const res = await fetch(path, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ ...body, transactionPin }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Failed");
+        if (json.pendingApproval) {
+          toast.success("Submitted for co-owner approval");
+        } else {
+          toast.success(successMsg);
+        }
+        setAmount("");
+        setInvestAmount("");
+        load();
+      } catch (err) {
+        throw err instanceof Error ? err : new Error("Failed");
+      } finally {
+        setSubmitting(false);
       }
-      setAmount("");
-      setInvestAmount("");
-      load();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed");
-    } finally {
-      setSubmitting(false);
-    }
+    });
   };
 
   const totalValue = (data?.balance ?? 0) + (data?.portfolioValue ?? 0);
@@ -313,6 +318,14 @@ export default function JointAccountDetailPage() {
           </>
         )}
       </div>
+
+      <TransactionPinModal
+        open={pinOpen}
+        onClose={closePin}
+        onConfirm={confirmPin}
+        loading={pinLoading || submitting}
+        error={pinError}
+      />
     </DashboardGate>
   );
 }

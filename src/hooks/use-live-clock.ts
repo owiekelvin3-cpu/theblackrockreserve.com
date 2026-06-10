@@ -1,13 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  buildGreetingMessage,
-  getGreetingPeriod,
-  resolveBrowserLocale,
-  resolveBrowserTimezone,
-  type GreetingPeriod,
-} from "@/lib/greeting";
+import { getGreetingPeriod, type GreetingPeriod } from "@/lib/greeting";
+import { getLocaleDefinition, type LocaleCode } from "@/lib/i18n/locales";
 
 export type LiveClockState = {
   greeting: string;
@@ -17,6 +12,14 @@ export type LiveClockState = {
   timezone: string;
   locale: string;
 };
+
+function resolveBrowserTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
+}
 
 function getHourInTimezone(now: Date, timezone: string, locale: string): number {
   try {
@@ -33,8 +36,8 @@ function getHourInTimezone(now: Date, timezone: string, locale: string): number 
   return now.getHours();
 }
 
-function formatClock(now: Date, timezone: string, locale: string) {
-  const dateLine = new Intl.DateTimeFormat(locale, {
+function formatClock(now: Date, timezone: string, bcp47: string) {
+  const dateLine = new Intl.DateTimeFormat(bcp47, {
     timeZone: timezone,
     weekday: "long",
     year: "numeric",
@@ -42,7 +45,7 @@ function formatClock(now: Date, timezone: string, locale: string) {
     day: "numeric",
   }).format(now);
 
-  const timeLine = new Intl.DateTimeFormat(locale, {
+  const timeLine = new Intl.DateTimeFormat(bcp47, {
     timeZone: timezone,
     hour: "numeric",
     minute: "2-digit",
@@ -50,26 +53,53 @@ function formatClock(now: Date, timezone: string, locale: string) {
     hour12: true,
   }).format(now);
 
-  const hour = getHourInTimezone(now, timezone, locale);
+  const hour = getHourInTimezone(now, timezone, bcp47);
   return { dateLine, timeLine, hour };
 }
 
-function buildState(now: Date, timezone: string, locale: string, firstName: string | null): LiveClockState {
-  const { dateLine, timeLine, hour } = formatClock(now, timezone, locale);
+const GREETING_KEYS: Record<GreetingPeriod, string> = {
+  morning: "dashboard.greetingMorning",
+  afternoon: "dashboard.greetingAfternoon",
+  evening: "dashboard.greetingEvening",
+  night: "dashboard.greetingNight",
+};
+
+function buildGreeting(
+  period: GreetingPeriod,
+  firstName: string | null,
+  t: (key: string, vars?: Record<string, string | number>) => string
+): string {
+  if (!firstName) return t("dashboard.welcomeBack");
+  const label = t(GREETING_KEYS[period]);
+  return `${label}, ${firstName} 👋`;
+}
+
+function buildState(
+  now: Date,
+  timezone: string,
+  localeCode: LocaleCode,
+  firstName: string | null,
+  t: (key: string, vars?: Record<string, string | number>) => string
+): LiveClockState {
+  const bcp47 = getLocaleDefinition(localeCode).bcp47;
+  const { dateLine, timeLine, hour } = formatClock(now, timezone, bcp47);
   const period = getGreetingPeriod(hour);
   return {
-    greeting: buildGreetingMessage(period, firstName),
+    greeting: buildGreeting(period, firstName, t),
     period,
     dateLine,
     timeLine,
     timezone,
-    locale,
+    locale: bcp47,
   };
 }
 
-export function useLiveClock(firstName: string | null) {
+export function useLiveClock(
+  firstName: string | null,
+  localeCode: LocaleCode,
+  t: (key: string, vars?: Record<string, string | number>) => string
+) {
   const timezone = useMemo(() => resolveBrowserTimezone(), []);
-  const locale = useMemo(() => resolveBrowserLocale(), []);
   const firstNameRef = useRef(firstName);
   firstNameRef.current = firstName;
 
@@ -81,13 +111,13 @@ export function useLiveClock(firstName: string | null) {
 
   useEffect(() => {
     const tick = () => {
-      setClock(buildState(new Date(), timezone, locale, firstNameRef.current));
+      setClock(buildState(new Date(), timezone, localeCode, firstNameRef.current, t));
     };
 
     tick();
     const id = window.setInterval(tick, 1000);
     return () => window.clearInterval(id);
-  }, [timezone, locale, firstName]);
+  }, [timezone, localeCode, firstName, t]);
 
-  return { clock, timezone, locale, ready: clock !== null };
+  return { clock, timezone, locale: getLocaleDefinition(localeCode).bcp47, ready: clock !== null };
 }

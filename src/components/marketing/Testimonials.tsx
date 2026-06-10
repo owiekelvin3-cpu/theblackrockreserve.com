@@ -5,17 +5,20 @@ import { motion } from "framer-motion";
 import { Star } from "lucide-react";
 import { cardHover } from "@/components/ui/AnimateIn";
 import { marketingImages } from "@/lib/marketing-images";
+import { useI18n } from "@/components/providers/I18nProvider";
 
-const testimonials = [
-  { name: "Sarah Chen", role: "Tech Executive, San Francisco", photo: marketingImages.portraits.sarah, rating: 5, text: "Blackrock Reserve transformed how I manage my wealth. The investment tools rival anything I've used on Wall Street." },
-  { name: "Marcus Williams", role: "Real Estate Investor, Miami", photo: marketingImages.portraits.marcus, rating: 5, text: "Instant transfers, beautiful interface, and the security features give me complete peace of mind." },
-  { name: "Elena Rodriguez", role: "Startup Founder, Austin", photo: marketingImages.portraits.elena, rating: 5, text: "Finally, a bank that understands entrepreneurs. The business account features are exactly what I needed." },
-  { name: "James Okonkwo", role: "Portfolio Manager, London", photo: marketingImages.portraits.james, rating: 5, text: "The wealth analytics dashboard is exceptional. I can track all my assets in one place with real-time data." },
-  { name: "Priya Sharma", role: "Physician, New York", photo: marketingImages.portraits.priya, rating: 5, text: "Setting up my account took minutes. The KYC process was smooth and I was banking the same day." },
-  { name: "Alex Turner", role: "CFO, Chicago", photo: marketingImages.portraits.alex, rating: 5, text: "The automation features saved our team hours every week. Best financial platform we've adopted." },
+const testimonialMeta = [
+  { name: "Sarah Chen", photo: marketingImages.portraits.sarah, roleKey: "marketing.testimonials.t1Role", textKey: "marketing.testimonials.t1Text" },
+  { name: "Marcus Williams", photo: marketingImages.portraits.marcus, roleKey: "marketing.testimonials.t2Role", textKey: "marketing.testimonials.t2Text" },
+  { name: "Elena Rodriguez", photo: marketingImages.portraits.elena, roleKey: "marketing.testimonials.t3Role", textKey: "marketing.testimonials.t3Text" },
+  { name: "James Okonkwo", photo: marketingImages.portraits.james, roleKey: "marketing.testimonials.t4Role", textKey: "marketing.testimonials.t4Text" },
+  { name: "Priya Sharma", photo: marketingImages.portraits.priya, roleKey: "marketing.testimonials.t5Role", textKey: "marketing.testimonials.t5Text" },
+  { name: "Alex Turner", photo: marketingImages.portraits.alex, roleKey: "marketing.testimonials.t6Role", textKey: "marketing.testimonials.t6Text" },
 ];
 
 export default function Testimonials() {
+  const { t } = useI18n();
+
   return (
     <section className="section-padding overflow-hidden">
       <div className="mx-auto max-w-7xl">
@@ -25,17 +28,17 @@ export default function Testimonials() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          <span className="pill-label mb-4">Testimonials</span>
+          <span className="pill-label mb-4">{t("marketing.testimonials.badge")}</span>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight mt-4">
-            Trusted by Thousands of{" "}
-            <span className="gold-gradient-text">Happy Users</span>
+            {t("marketing.testimonials.title")}{" "}
+            <span className="gold-gradient-text">{t("marketing.testimonials.titleHighlight")}</span>
           </h2>
         </motion.div>
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {testimonials.map((t, i) => (
+          {testimonialMeta.map((item, i) => (
             <motion.div
-              key={t.name}
+              key={item.name}
               className="glow-card hover-lift p-6 relative"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -46,7 +49,7 @@ export default function Testimonials() {
               <div className="light-leak light-leak-orange w-16 h-16 -top-2 -right-2 opacity-30" />
               <div className="glow-card-inner">
                 <div className="flex gap-1 mb-4">
-                  {Array.from({ length: t.rating }).map((_, j) => (
+                  {Array.from({ length: 5 }).map((_, j) => (
                     <motion.div
                       key={j}
                       initial={{ opacity: 0, scale: 0 }}
@@ -58,14 +61,14 @@ export default function Testimonials() {
                     </motion.div>
                   ))}
                 </div>
-                <p className="text-text-secondary text-sm leading-relaxed mb-6">&ldquo;{t.text}&rdquo;</p>
+                <p className="text-text-secondary text-sm leading-relaxed mb-6">&ldquo;{t(item.textKey)}&rdquo;</p>
                 <div className="flex items-center gap-3">
                   <div className="relative h-9 w-9 rounded-full overflow-hidden ring-2 ring-accent-brand/40 shadow-brand shrink-0">
-                    <MarketingImage src={t.photo} alt={t.name} fill className="object-cover" sizes="36px" />
+                    <MarketingImage src={item.photo} alt={item.name} fill className="object-cover" sizes="36px" />
                   </div>
                   <div>
-                    <p className="font-semibold text-white text-sm">{t.name}</p>
-                    <p className="text-xs text-text-muted">{t.role}</p>
+                    <p className="font-semibold text-white text-sm">{item.name}</p>
+                    <p className="text-xs text-text-muted">{t(item.roleKey)}</p>
                   </div>
                 </div>
               </div>

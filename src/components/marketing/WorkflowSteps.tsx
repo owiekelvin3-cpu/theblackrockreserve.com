@@ -3,29 +3,34 @@
 import { motion } from "framer-motion";
 import { Globe, LineChart, Rocket } from "lucide-react";
 import GlowIcon from "@/components/ui/GlowIcon";
+import { useI18n } from "@/components/providers/I18nProvider";
 
-const steps = [
-  {
-    step: "Step 1",
-    title: "Open Your Account",
-    description: "Create your profile in minutes with a streamlined onboarding flow and instant account access.",
-    icon: Globe,
-  },
-  {
-    step: "Step 2",
-    title: "Fund & Verify",
-    description: "Securely link accounts, complete identity verification, and enable multi-factor protection.",
-    icon: LineChart,
-  },
-  {
-    step: "Step 3",
-    title: "Grow Your Wealth",
-    description: "Invest, transfer globally, and track performance with real-time analytics and AI insights.",
-    icon: Rocket,
-  },
-];
+const stepIcons = [Globe, LineChart, Rocket];
 
 export default function WorkflowSteps() {
+  const { t } = useI18n();
+
+  const steps = [
+    {
+      step: t("marketing.workflow.step1Label"),
+      title: t("marketing.workflow.step1Title"),
+      description: t("marketing.workflow.step1Desc"),
+      icon: stepIcons[0],
+    },
+    {
+      step: t("marketing.workflow.step2Label"),
+      title: t("marketing.workflow.step2Title"),
+      description: t("marketing.workflow.step2Desc"),
+      icon: stepIcons[1],
+    },
+    {
+      step: t("marketing.workflow.step3Label"),
+      title: t("marketing.workflow.step3Title"),
+      description: t("marketing.workflow.step3Desc"),
+      icon: stepIcons[2],
+    },
+  ];
+
   return (
     <section className="section-padding relative">
       <div className="mx-auto max-w-7xl">
@@ -35,9 +40,10 @@ export default function WorkflowSteps() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          <span className="pill-label mb-4">Our Working Flow</span>
+          <span className="pill-label mb-4">{t("marketing.workflow.badge")}</span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight mt-4">
-            Turn Your Goals Into <span className="gold-gradient-text">Financial Growth</span>
+            {t("marketing.workflow.title")}{" "}
+            <span className="gold-gradient-text">{t("marketing.workflow.titleHighlight")}</span>
           </h2>
         </motion.div>
 

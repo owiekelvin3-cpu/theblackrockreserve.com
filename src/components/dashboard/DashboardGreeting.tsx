@@ -7,11 +7,13 @@ import { Clock } from "lucide-react";
 import { getFirstName } from "@/lib/greeting";
 import { useLiveClock } from "@/hooks/use-live-clock";
 import { fadeUp } from "@/components/ui/AnimateIn";
+import { useI18n } from "@/components/providers/I18nProvider";
 
 export default function DashboardGreeting() {
   const { data: session } = useSession();
+  const { t, locale } = useI18n();
   const firstName = useMemo(() => getFirstName(session?.user?.name), [session?.user?.name]);
-  const { clock, ready } = useLiveClock(firstName);
+  const { clock, ready } = useLiveClock(firstName, locale, t);
 
   if (!ready || !clock) {
     return (
@@ -25,7 +27,7 @@ export default function DashboardGreeting() {
       animate="visible"
       variants={fadeUp}
       className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4 w-full"
-      aria-label="Personalized welcome"
+      aria-label={t("dashboard.welcomeBack")}
     >
       <div className="min-w-0">
         <h1 className="text-xl sm:text-[1.65rem] font-bold text-text-primary tracking-tight leading-snug" aria-live="polite">
@@ -50,10 +52,6 @@ export default function DashboardGreeting() {
           {clock.timeLine}
         </time>
       </div>
-
-      <span className="sr-only">
-        {clock.greeting}. Today is {clock.dateLine}. The current time is {clock.timeLine}.
-      </span>
     </motion.div>
   );
 }

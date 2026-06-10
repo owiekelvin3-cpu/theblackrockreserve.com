@@ -6,10 +6,13 @@ import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { cardHover } from "@/components/ui/AnimateIn";
 import { blogPosts } from "@/lib/blog-posts";
+import { useI18n } from "@/components/providers/I18nProvider";
 
 const featuredPosts = blogPosts.slice(0, 3);
 
 export default function BlogResources() {
+  const { t } = useI18n();
+
   return (
     <section id="blog" className="section-padding scroll-mt-28">
       <div className="mx-auto max-w-7xl">
@@ -19,9 +22,10 @@ export default function BlogResources() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          <span className="pill-label mb-4">Resources</span>
+          <span className="pill-label mb-4">{t("marketing.blog.badge")}</span>
           <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight mt-4">
-            Latest from <span className="gold-gradient-text">Our Blog</span>
+            {t("marketing.blog.title")}{" "}
+            <span className="gold-gradient-text">{t("marketing.blog.titleHighlight")}</span>
           </h2>
         </motion.div>
 
@@ -55,7 +59,7 @@ export default function BlogResources() {
                     {article.title}
                   </h3>
                   <span className="mt-3 inline-flex items-center gap-1 text-xs text-text-muted group-hover:text-white transition-colors">
-                    Read more <ArrowRight size={12} />
+                    {t("marketing.blog.readMore")} <ArrowRight size={12} />
                   </span>
                 </div>
               </Link>
@@ -74,7 +78,7 @@ export default function BlogResources() {
             href="/blog"
             className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-6 py-3 text-sm font-semibold text-text-primary hover:border-accent-brand/40 hover:bg-accent-brand/10 hover:text-white transition-all"
           >
-            View more
+            {t("common.viewMore")}
             <ArrowRight size={16} className="text-accent-brand" />
           </Link>
         </motion.div>

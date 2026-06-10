@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
   const sp = request.nextUrl.searchParams;
   const page = Number(sp.get("page") ?? "1");
-  const limit = Number(sp.get("limit") ?? "5");
+  const limit = Number(sp.get("limit") ?? "2");
   const category = (sp.get("category") ?? "all") as ActivityCategory | "all";
   const status = (sp.get("status") ?? "all") as TransactionStatus | "all";
   const search = sp.get("search") ?? undefined;
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     const data = await queryActivities({
       userId,
       page: Number.isFinite(page) ? page : 1,
-      limit: Number.isFinite(limit) ? limit : 5,
+      limit: Number.isFinite(limit) ? limit : 2,
       category,
       status,
       search,

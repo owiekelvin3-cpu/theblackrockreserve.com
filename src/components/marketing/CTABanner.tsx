@@ -7,8 +7,11 @@ import { ArrowRight } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { fadeUp, stagger } from "@/components/ui/AnimateIn";
 import { marketingImages } from "@/lib/marketing-images";
+import { useI18n } from "@/components/providers/I18nProvider";
 
 export default function CTABanner() {
+  const { t } = useI18n();
+
   return (
     <section className="section-padding">
       <motion.div
@@ -46,13 +49,13 @@ export default function CTABanner() {
             variants={fadeUp}
             className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight"
           >
-            Ready to Elevate Your Business?
+            {t("marketing.cta.title")}
           </motion.h2>
           <motion.p
             variants={fadeUp}
             className="mt-4 text-sm sm:text-base text-white/80 max-w-xl mx-auto"
           >
-            Join thousands of members who trust Blackrock Reserve with their wealth. Start your free trial today.
+            {t("marketing.cta.subtitle")}
           </motion.p>
 
           <motion.div
@@ -63,7 +66,7 @@ export default function CTABanner() {
               href="/register"
               className="inline-flex items-center justify-center gap-2 font-semibold rounded-full px-8 py-4 text-base bg-white text-accent-brand hover:bg-white/90 min-w-[180px] transition-colors"
             >
-              Get Started <ArrowRight size={18} />
+              {t("common.getStarted")} <ArrowRight size={18} />
             </Link>
             <Link href="/contact">
               <Button
@@ -71,7 +74,7 @@ export default function CTABanner() {
                 size="lg"
                 className="rounded-full px-8 border-white/30 text-white hover:bg-white/10 min-w-[180px]"
               >
-                Contact Sales
+                {t("marketing.cta.contactSales")}
               </Button>
             </Link>
           </motion.div>

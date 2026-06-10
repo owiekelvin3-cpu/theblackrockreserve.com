@@ -1,17 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { getSessionUserId, unauthorizedResponse } from "@/lib/api-auth";
 import { executeInvestment } from "@/lib/investment-service";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/admin-audit";
 import { sendInvestmentConfirmationEmail } from "@/lib/money-notifications";
-
-const investSchema = z.object({
-  symbol: z.string().min(1).max(12),
-  amountUsd: z.coerce.number().positive().max(10_000_000),
-  accountId: z.string().optional(),
-  idempotencyKey: z.string().max(64).optional(),
-});
+import { investSubmitSchema } from "@/lib/validations";
+import { requireTransactionPin } from "@/lib/transaction-pin";
 
 export async function POST(req: NextRequest) {
   const userId = await getSessionUserId();
@@ -34,13 +28,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const parsed = investSchema.safeParse(body);
+  const parsed = investSubmitSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { error: parsed.error.issues[0]?.message ?? "Invalid investment data" },
       { status: 400 }
     );
   }
+
+  const pinError = await requireTransactionPin(userId, parsed.data.transactionPin);
+  if (pinError) return pinError;
 
   try {
     const result = await executeInvestment({

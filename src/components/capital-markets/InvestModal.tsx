@@ -6,6 +6,8 @@ import { X, Wallet, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { formatCurrency, cn } from "@/lib/utils";
 import { calculateInvestmentFee } from "@/lib/market-assets";
 import Button from "@/components/ui/Button";
+import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
+import { useTransactionPin } from "@/hooks/use-transaction-pin";
 import StockIcon from "@/components/capital-markets/StockIcon";
 import type { MarketAssetCardData } from "@/components/capital-markets/MarketAssetCard";
 
@@ -27,6 +29,7 @@ export default function InvestModal({ asset, walletBalance, open, onClose, onSuc
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ orderId: string; shares: number; totalCost: number } | null>(null);
+  const { open: pinOpen, loading: pinLoading, error: pinError, requestPin, closePin, confirmPin } = useTransactionPin();
 
   useEffect(() => {
     if (!open) {
@@ -70,7 +73,7 @@ export default function InvestModal({ asset, walletBalance, open, onClose, onSuc
     setStep("summary");
   };
 
-  const confirmInvest = async () => {
+  const confirmInvest = () => {
     if (!asset) return;
     const err = validateAmount();
     if (err) {
@@ -79,35 +82,37 @@ export default function InvestModal({ asset, walletBalance, open, onClose, onSuc
       return;
     }
 
-    setSubmitting(true);
-    setError("");
-    try {
-      const res = await fetch("/api/dashboard/capital-markets/invest", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          symbol: asset.symbol,
-          amountUsd: amountNum,
-          idempotencyKey: `${asset.symbol}-${amountNum}-${Date.now()}`,
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Investment failed");
+    requestPin(async (transactionPin) => {
+      setSubmitting(true);
+      setError("");
+      try {
+        const res = await fetch("/api/dashboard/capital-markets/invest", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            symbol: asset.symbol,
+            amountUsd: amountNum,
+            idempotencyKey: `${asset.symbol}-${amountNum}-${Date.now()}`,
+            transactionPin,
+          }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Investment failed");
 
-      setResult({
-        orderId: json.investment.orderId,
-        shares: json.investment.shares,
-        totalCost: json.investment.totalCost,
-      });
-      setStep("success");
-      onSuccess();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Investment failed");
-      setStep("amount");
-    } finally {
-      setSubmitting(false);
-    }
+        setResult({
+          orderId: json.investment.orderId,
+          shares: json.investment.shares,
+          totalCost: json.investment.totalCost,
+        });
+        setStep("success");
+        onSuccess();
+      } catch (e) {
+        throw e instanceof Error ? e : new Error("Investment failed");
+      } finally {
+        setSubmitting(false);
+      }
+    });
   };
 
   if (!asset) return null;
@@ -277,6 +282,13 @@ export default function InvestModal({ asset, walletBalance, open, onClose, onSuc
           </motion.div>
         </div>
       )}
+      <TransactionPinModal
+        open={pinOpen}
+        onClose={closePin}
+        onConfirm={confirmPin}
+        loading={pinLoading || submitting}
+        error={pinError}
+      />
     </AnimatePresence>
   );
 }

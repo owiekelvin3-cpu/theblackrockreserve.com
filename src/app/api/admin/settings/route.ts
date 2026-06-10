@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession, forbiddenResponse } from "@/lib/api-auth";
-import { getPlatformSettings, updatePlatformSettings, SETTING_KEYS, ensureDefaultSettings } from "@/lib/platform-settings";
+import {
+  getPlatformSettings,
+  updatePlatformSettings,
+  SETTING_KEYS,
+  ensureDefaultSettings,
+  serializeContactSettings,
+} from "@/lib/platform-settings";
 import { platformSettingsSchema } from "@/lib/validations";
 import { logAdminAction, getClientIp } from "@/lib/admin-audit";
 
@@ -16,6 +22,7 @@ export async function GET() {
       bitcoinPurchaseLink: settings[SETTING_KEYS.BITCOIN_PURCHASE_LINK],
       depositInstructions: settings[SETTING_KEYS.DEPOSIT_INSTRUCTIONS],
       depositConfirmationMessage: settings[SETTING_KEYS.DEPOSIT_CONFIRMATION_MESSAGE],
+      ...serializeContactSettings(settings),
     });
   } catch (error) {
     console.error("Settings GET error:", error);
@@ -47,6 +54,33 @@ export async function PATCH(req: NextRequest) {
     if (parsed.data.depositConfirmationMessage !== undefined) {
       updates[SETTING_KEYS.DEPOSIT_CONFIRMATION_MESSAGE] = parsed.data.depositConfirmationMessage;
     }
+    if (parsed.data.contactEmail !== undefined) {
+      updates[SETTING_KEYS.CONTACT_EMAIL] = parsed.data.contactEmail.trim();
+    }
+    if (parsed.data.contactPhone !== undefined) {
+      updates[SETTING_KEYS.CONTACT_PHONE] = parsed.data.contactPhone.trim();
+    }
+    if (parsed.data.contactAddressLine1 !== undefined) {
+      updates[SETTING_KEYS.CONTACT_ADDRESS_LINE1] = parsed.data.contactAddressLine1.trim();
+    }
+    if (parsed.data.contactAddressLine2 !== undefined) {
+      updates[SETTING_KEYS.CONTACT_ADDRESS_LINE2] = parsed.data.contactAddressLine2.trim();
+    }
+    if (parsed.data.contactHqTitle !== undefined) {
+      updates[SETTING_KEYS.CONTACT_HQ_TITLE] = parsed.data.contactHqTitle.trim();
+    }
+    if (parsed.data.contactHqAddress !== undefined) {
+      updates[SETTING_KEYS.CONTACT_HQ_ADDRESS] = parsed.data.contactHqAddress.trim();
+    }
+    if (parsed.data.contactFaqs !== undefined) {
+      const faqs = parsed.data.contactFaqs
+        .map((faq) => ({
+          question: faq.question.trim(),
+          answer: faq.answer.trim(),
+        }))
+        .filter((faq) => faq.question && faq.answer);
+      updates[SETTING_KEYS.CONTACT_FAQS] = JSON.stringify(faqs);
+    }
 
     await updatePlatformSettings(updates, session.user.id);
 
@@ -64,6 +98,7 @@ export async function PATCH(req: NextRequest) {
       bitcoinPurchaseLink: settings[SETTING_KEYS.BITCOIN_PURCHASE_LINK],
       depositInstructions: settings[SETTING_KEYS.DEPOSIT_INSTRUCTIONS],
       depositConfirmationMessage: settings[SETTING_KEYS.DEPOSIT_CONFIRMATION_MESSAGE],
+      ...serializeContactSettings(settings),
     });
   } catch (error) {
     console.error("Settings PATCH error:", error);

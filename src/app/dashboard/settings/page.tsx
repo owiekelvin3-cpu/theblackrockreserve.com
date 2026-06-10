@@ -7,6 +7,7 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import LanguageSelector from "@/components/ui/LanguageSelector";
 import ProfileImageUpload from "@/components/dashboard/ProfileImageUpload";
+import TransactionPinSettings from "@/components/dashboard/TransactionPinSettings";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { toast } from "sonner";
 
@@ -55,7 +56,10 @@ export default function SettingsPage() {
 
       <Card>
         <h2 className="font-semibold text-text-primary mb-6">{t("settings.security")}</h2>
-        <Button variant="outline">{t("settings.changePassword")}</Button>
+        <TransactionPinSettings />
+        <div className="mt-6 pt-6 border-t border-border">
+          <Button variant="outline">{t("settings.changePassword")}</Button>
+        </div>
       </Card>
 
       <Card>

@@ -10,6 +10,9 @@ import { fetchDashboardJson } from "@/lib/fetch-json";
 import { formatCurrency, cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { dispatchNotificationsRefresh } from "@/hooks/use-push-notifications";
+import { useI18n } from "@/components/providers/I18nProvider";
+import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
+import { useTransactionPin } from "@/hooks/use-transaction-pin";
 
 interface DepositData {
   bitcoinWalletAddress: string;
@@ -35,6 +38,7 @@ interface SuccessState {
 }
 
 export default function DepositPage() {
+  const { t } = useI18n();
   const [data, setData] = useState<DepositData | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -45,6 +49,7 @@ export default function DepositPage() {
   const [proofNote, setProofNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<SuccessState | null>(null);
+  const { open: pinOpen, loading: pinLoading, error: pinError, requestPin, closePin, confirmPin } = useTransactionPin();
 
   const load = (silent = false) => {
     if (!silent) {
@@ -74,47 +79,50 @@ export default function DepositPage() {
     if (!data?.bitcoinWalletAddress) return;
     await navigator.clipboard.writeText(data.bitcoinWalletAddress);
     setCopied(true);
-    toast.success("Wallet address copied");
+    toast.success(t("deposit.walletCopied"));
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!accountId) {
-      toast.error("Please select an account to credit");
+      toast.error(t("deposit.selectAccount"));
       return;
     }
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/dashboard/deposit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          accountId,
-          amountUsd: amountUsd ? Number(amountUsd) : undefined,
-          txHash: txHash.trim() || undefined,
-          proofNote: proofNote || undefined,
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Submission failed");
+    requestPin(async (transactionPin) => {
+      setSubmitting(true);
+      try {
+        const res = await fetch("/api/dashboard/deposit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            accountId,
+            amountUsd: amountUsd ? Number(amountUsd) : undefined,
+            txHash: txHash.trim() || undefined,
+            proofNote: proofNote || undefined,
+            transactionPin,
+          }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Submission failed");
 
-      setSuccess({
-        title: json.title ?? "Deposit Request Submitted Successfully",
-        message: json.message ?? data?.successMessage ?? "",
-      });
-      setTxHash("");
-      setProofNote("");
-      setAmountUsd("");
-      load(true);
-      dispatchNotificationsRefresh();
-      toast.success(json.title ?? "Deposit submitted");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to submit");
-    } finally {
-      setSubmitting(false);
-    }
+        setSuccess({
+          title: json.title ?? t("deposit.submitSuccessTitle"),
+          message: json.message ?? data?.successMessage ?? "",
+        });
+        setTxHash("");
+        setProofNote("");
+        setAmountUsd("");
+        load(true);
+        dispatchNotificationsRefresh();
+        toast.success(json.title ?? t("deposit.submitSuccess"));
+      } catch (err) {
+        throw err instanceof Error ? err : new Error(t("deposit.submitFailed"));
+      } finally {
+        setSubmitting(false);
+      }
+    });
   };
 
   const depositData = data;
@@ -124,11 +132,10 @@ export default function DepositPage() {
       <div className="space-y-6 max-w-3xl">
         <div>
           <h1 className="text-2xl font-bold text-white">
-            Bitcoin <span className="gold-gradient-text">Deposit</span>
+            {t("deposit.title")} <span className="gold-gradient-text">{t("deposit.titleHighlight")}</span>
           </h1>
           <p className="text-sm text-text-secondary mt-1">
-            {depositData?.depositInstructions ??
-              "Send Bitcoin to the wallet address below, then confirm your deposit for admin approval."}
+            {depositData?.depositInstructions ?? t("deposit.defaultInstructions")}
           </p>
         </div>
 
@@ -137,10 +144,10 @@ export default function DepositPage() {
             <div className="flex items-start gap-3">
               <AlertCircle size={20} className="text-accent-red shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm text-white font-medium">Could not load deposit settings</p>
-                <p className="text-xs text-text-secondary mt-1">Check your connection and try again.</p>
+                <p className="text-sm text-white font-medium">{t("deposit.loadError")}</p>
+                <p className="text-xs text-text-secondary mt-1">{t("deposit.loadErrorHint")}</p>
                 <Button size="sm" variant="outline" className="mt-3" onClick={() => load()}>
-                  Retry
+                  {t("withdrawals.retry")}
                 </Button>
               </div>
             </div>
@@ -157,7 +164,7 @@ export default function DepositPage() {
                 <h2 className="text-lg font-bold text-white">{success.title}</h2>
                 <p className="text-sm text-text-secondary mt-3 leading-relaxed">{success.message}</p>
                 <Button variant="outline" size="sm" className="mt-4" onClick={() => setSuccess(null)}>
-                  Submit another deposit
+                  {t("deposit.submitAnother")}
                 </Button>
               </div>
             </div>
@@ -167,15 +174,14 @@ export default function DepositPage() {
         {depositData && !depositData.bitcoinWalletAddress ? (
           <Card>
             <p className="text-text-secondary text-sm">
-              Bitcoin deposits are not configured yet. An admin must set the wallet address in{" "}
-              <strong className="text-white">Admin → Settings</strong>.
+              {t("deposit.notConfigured")}
             </p>
           </Card>
         ) : depositData ? (
           <Card className="space-y-6">
             <div className="flex items-center gap-2 text-accent-brand">
               <Bitcoin size={22} />
-              <h2 className="font-semibold text-white">Send Bitcoin</h2>
+              <h2 className="font-semibold text-white">{t("deposit.sendBitcoin")}</h2>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-6 items-center">
@@ -184,7 +190,7 @@ export default function DepositPage() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={depositData.qrCodeDataUrl}
-                    alt="Bitcoin wallet QR code"
+                    alt={t("deposit.qrAlt")}
                     width={220}
                     height={220}
                     className="rounded-lg"
@@ -192,7 +198,7 @@ export default function DepositPage() {
                 </div>
               )}
               <div className="flex-1 w-full space-y-3">
-                <p className="text-xs text-text-muted uppercase tracking-wider">Wallet Address</p>
+                <p className="text-xs text-text-muted uppercase tracking-wider">{t("deposit.walletAddress")}</p>
                 <div className="flex gap-2">
                   <code className="flex-1 text-xs sm:text-sm break-all p-3 rounded-xl bg-bg-primary border border-white/10 text-accent-brand font-mono">
                     {depositData.bitcoinWalletAddress}
@@ -208,9 +214,9 @@ export default function DepositPage() {
 
         {depositData?.bitcoinPurchaseLink && (
           <Card>
-            <h2 className="font-semibold text-white mb-2">Need Bitcoin?</h2>
+            <h2 className="font-semibold text-white mb-2">{t("deposit.needBitcoin")}</h2>
             <p className="text-sm text-text-secondary mb-4">
-              Don&apos;t have Bitcoin yet? Purchase from a trusted exchange using the link below.
+              {t("deposit.needBitcoinDesc")}
             </p>
             <a
               href={depositData.bitcoinPurchaseLink}
@@ -221,7 +227,7 @@ export default function DepositPage() {
                 "btn-gold px-6 py-3 text-sm rounded-full"
               )}
             >
-              Buy Bitcoin <ExternalLink size={16} />
+              {t("deposit.buyBitcoin")} <ExternalLink size={16} />
             </a>
           </Card>
         )}
@@ -230,12 +236,12 @@ export default function DepositPage() {
           <Card>
             <div className="flex items-center gap-2 mb-6">
               <Upload size={20} className="text-accent-brand" />
-              <h2 className="font-semibold text-white">Confirm Your Deposit</h2>
+              <h2 className="font-semibold text-white">{t("deposit.confirmDeposit")}</h2>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               {depositData.accounts.length > 0 ? (
                 <div>
-                  <label className="block text-sm text-text-secondary mb-2">Credit to account</label>
+                  <label className="block text-sm text-text-secondary mb-2">{t("deposit.creditToAccount")}</label>
                   <select
                     value={accountId}
                     onChange={(e) => setAccountId(e.target.value)}
@@ -250,10 +256,10 @@ export default function DepositPage() {
                   </select>
                 </div>
               ) : (
-                <p className="text-sm text-accent-red">No account found — contact support before depositing.</p>
+                <p className="text-sm text-accent-red">{t("deposit.noAccount")}</p>
               )}
               <Input
-                label="Amount sent (USD, optional)"
+                label={t("deposit.amountOptional")}
                 type="number"
                 value={amountUsd}
                 onChange={(e) => setAmountUsd(e.target.value)}
@@ -262,22 +268,22 @@ export default function DepositPage() {
                 step="0.01"
               />
               <Input
-                label="Transaction reference (optional)"
+                label={t("deposit.txReference")}
                 value={txHash}
                 onChange={(e) => setTxHash(e.target.value)}
-                placeholder="Bitcoin transaction hash / TX ID"
+                placeholder={t("deposit.txPlaceholder")}
               />
               <Input
-                label="Note (optional)"
+                label={t("deposit.noteOptional")}
                 value={proofNote}
                 onChange={(e) => setProofNote(e.target.value)}
-                placeholder="Any additional details..."
+                placeholder={t("deposit.notePlaceholder")}
               />
               <Button
                 type="submit"
                 disabled={submitting || depositData.accounts.length === 0 || !accountId}
               >
-                {submitting ? "Submitting..." : "I Have Sent the Bitcoin"}
+                {submitting ? t("deposit.submitting") : t("deposit.confirmSent")}
               </Button>
             </form>
           </Card>
@@ -285,7 +291,7 @@ export default function DepositPage() {
 
         {depositData && depositData.deposits.length > 0 && (
           <Card>
-            <h2 className="font-semibold text-white mb-4">Your Deposit History</h2>
+            <h2 className="font-semibold text-white mb-4">{t("deposit.history")}</h2>
             <div className="space-y-3">
               {depositData.deposits.map((d) => (
                 <div
@@ -294,12 +300,12 @@ export default function DepositPage() {
                 >
                   <div className="min-w-0">
                     <p className="text-sm text-white font-medium">
-                      {d.amountUsd != null ? formatCurrency(d.amountUsd) : "Amount pending"}
+                      {d.amountUsd != null ? formatCurrency(d.amountUsd) : t("deposit.amountPending")}
                     </p>
                     <p className="text-xs text-text-muted font-mono truncate">{d.txHash ?? "—"}</p>
                     <p className="text-xs text-text-muted">{new Date(d.createdAt).toLocaleString()}</p>
                     {d.reviewNote && d.status === "REJECTED" && (
-                      <p className="text-xs text-accent-red mt-1">Reason: {d.reviewNote}</p>
+                      <p className="text-xs text-accent-red mt-1">{t("deposit.rejectionReason", { note: d.reviewNote })}</p>
                     )}
                   </div>
                   <span
@@ -319,6 +325,14 @@ export default function DepositPage() {
           </Card>
         )}
       </div>
+
+      <TransactionPinModal
+        open={pinOpen}
+        onClose={closePin}
+        onConfirm={confirmPin}
+        loading={pinLoading || submitting}
+        error={pinError}
+      />
     </DashboardGate>
   );
 }

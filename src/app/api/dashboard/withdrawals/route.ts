@@ -5,6 +5,7 @@ import { getWithdrawalMethodLabel } from "@/lib/withdrawal-methods";
 import { getActiveUserWithdrawalCharge, formatWithdrawalStatus, formatChargePaymentStatus } from "@/lib/withdrawal-charge";
 import { getPublicDepositSettings } from "@/lib/platform-settings";
 import { withdrawalRequestSchema } from "@/lib/validations";
+import { requireTransactionPin } from "@/lib/transaction-pin";
 import { createUserNotification, sendUserNotificationEmail } from "@/lib/user-notifications";
 import { formatCurrency } from "@/lib/utils";
 import { prisma } from "@/lib/prisma";
@@ -134,6 +135,9 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
     }
+
+    const pinError = await requireTransactionPin(userId, parsed.data.transactionPin);
+    if (pinError) return pinError;
 
     const account = await prisma.bankAccount.findFirst({
       where: { id: parsed.data.accountId, userId },

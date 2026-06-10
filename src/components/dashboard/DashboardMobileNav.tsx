@@ -7,28 +7,30 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDashboardLayout } from "@/components/dashboard/DashboardLayoutContext";
+import { useI18n } from "@/components/providers/I18nProvider";
 
 const tabs = [
-  { href: "/dashboard", label: "Home", icon: LayoutDashboard, match: (p: string) => p === "/dashboard" },
-  { href: "/dashboard/deposit", label: "Deposit", icon: Wallet, match: (p: string) => p.startsWith("/dashboard/deposit") },
-  { href: "/dashboard/withdrawals", label: "Withdraw", icon: ArrowUpFromLine, match: (p: string) => p.startsWith("/dashboard/withdrawals") },
-  { href: "/dashboard/capital-markets", label: "Markets", icon: LineChart, match: (p: string) => p.startsWith("/dashboard/capital-markets") },
+  { href: "/dashboard", labelKey: "nav.home", icon: LayoutDashboard, match: (p: string) => p === "/dashboard" },
+  { href: "/dashboard/deposit", labelKey: "nav.deposit", icon: Wallet, match: (p: string) => p.startsWith("/dashboard/deposit") },
+  { href: "/dashboard/withdrawals", labelKey: "nav.withdraw", icon: ArrowUpFromLine, match: (p: string) => p.startsWith("/dashboard/withdrawals") },
+  { href: "/dashboard/capital-markets", labelKey: "nav.markets", icon: LineChart, match: (p: string) => p.startsWith("/dashboard/capital-markets") },
 ] as const;
 
 export default function DashboardMobileNav() {
   const pathname = usePathname();
   const { openSidebar, sidebarOpen } = useDashboardLayout();
+  const { t } = useI18n();
 
   const moreActive =
     sidebarOpen ||
-    (!tabs.some((t) => t.match(pathname)) &&
+    (!tabs.some((tab) => tab.match(pathname)) &&
       pathname.startsWith("/dashboard") &&
       pathname !== "/dashboard");
 
   return (
     <nav
       className="dash-mobile-nav lg:hidden"
-      aria-label="Primary mobile navigation"
+      aria-label={t("nav.menu")}
     >
       <div className="dash-mobile-nav-inner">
         {tabs.map((tab) => {
@@ -40,7 +42,7 @@ export default function DashboardMobileNav() {
               className={cn("dash-mobile-nav-item", active && "dash-mobile-nav-item-active")}
             >
               <tab.icon size={20} strokeWidth={active ? 2.25 : 1.75} />
-              <span>{tab.label}</span>
+              <span>{t(tab.labelKey)}</span>
             </Link>
           );
         })}
@@ -48,11 +50,11 @@ export default function DashboardMobileNav() {
           type="button"
           onClick={openSidebar}
           className={cn("dash-mobile-nav-item", moreActive && "dash-mobile-nav-item-active")}
-          aria-label="Open full menu"
+          aria-label={t("dashboard.sidebar.closeMenu")}
           aria-expanded={sidebarOpen}
         >
           <Menu size={20} strokeWidth={moreActive ? 2.25 : 1.75} />
-          <span>Menu</span>
+          <span>{t("nav.menu")}</span>
         </button>
       </div>
     </nav>

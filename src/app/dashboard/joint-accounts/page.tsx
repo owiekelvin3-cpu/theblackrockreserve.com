@@ -13,6 +13,8 @@ import Badge from "@/components/ui/Badge";
 import DashboardGate from "@/components/dashboard/DashboardGate";
 import { formatCurrency, cn } from "@/lib/utils";
 import { fetchDashboardJson } from "@/lib/fetch-json";
+import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
+import { useTransactionPin } from "@/hooks/use-transaction-pin";
 
 interface JointAccountSummary {
   id: string;
@@ -63,6 +65,7 @@ export default function JointAccountsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [notFound, setNotFound] = useState<{ email: string } | null>(null);
   const [activeTab, setActiveTab] = useState<"accounts" | "invitations" | "approvals">("accounts");
+  const { open: pinOpen, loading: pinLoading, error: pinError, requestPin, closePin, confirmPin } = useTransactionPin();
 
   const load = useCallback(() => {
     setLoading(true);
@@ -161,24 +164,34 @@ export default function JointAccountsPage() {
     }
   };
 
-  const respondApproval = async (id: string, action: "APPROVE" | "REJECT") => {
+  const executeApproval = async (id: string, action: "APPROVE" | "REJECT", transactionPin?: string) => {
     setSubmitting(true);
     try {
       const res = await fetch(`/api/dashboard/joint-accounts/approvals/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ action, ...(transactionPin ? { transactionPin } : {}) }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed");
       toast.success(action === "APPROVE" ? "Approved" : "Rejected");
       load();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed");
+      throw err instanceof Error ? err : new Error("Failed");
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const respondApproval = (id: string, action: "APPROVE" | "REJECT") => {
+    if (action === "REJECT") {
+      executeApproval(id, action).catch((err) => toast.error(err.message));
+      return;
+    }
+    requestPin(async (transactionPin) => {
+      await executeApproval(id, action, transactionPin);
+    });
   };
 
   const pendingCount = received.filter((i) => i.status === "PENDING").length;
@@ -421,6 +434,14 @@ export default function JointAccountsPage() {
           </Card>
         )}
       </div>
+
+      <TransactionPinModal
+        open={pinOpen}
+        onClose={closePin}
+        onConfirm={confirmPin}
+        loading={pinLoading || submitting}
+        error={pinError}
+      />
     </DashboardGate>
   );
 }

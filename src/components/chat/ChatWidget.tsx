@@ -4,8 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { MessageCircle, X, Send, Bot, User, Minimize2 } from "lucide-react";
-import { getWelcomeMessage, type ChatSuggestion } from "@/lib/chatbot";
+import type { ChatSuggestion } from "@/lib/chatbot";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/components/providers/I18nProvider";
+import { getLocalizedWelcome } from "@/lib/i18n/chat-i18n";
 
 type ChatMessage = {
   id: string;
@@ -31,13 +33,13 @@ function saveMessages(messages: ChatMessage[]) {
 }
 
 export default function ChatWidget() {
+  const { t } = useI18n();
   const pathname = usePathname();
   const router = useRouter();
+  const welcome = getLocalizedWelcome(t);
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [suggestions, setSuggestions] = useState<ChatSuggestion[]>(
-    getWelcomeMessage().suggestions ?? []
-  );
+  const [suggestions, setSuggestions] = useState<ChatSuggestion[]>(welcome.suggestions ?? []);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
   const [initialized, setInitialized] = useState(false);
@@ -51,14 +53,12 @@ export default function ChatWidget() {
     if (stored.length > 0) {
       setMessages(stored);
     } else {
-      const welcome = getWelcomeMessage();
-      setMessages([
-        { id: "welcome", role: "bot", content: welcome.message },
-      ]);
-      setSuggestions(welcome.suggestions ?? []);
+      const w = getLocalizedWelcome(t);
+      setMessages([{ id: "welcome", role: "bot", content: w.message }]);
+      setSuggestions(w.suggestions ?? []);
     }
     setInitialized(true);
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (initialized) saveMessages(messages);
@@ -93,13 +93,13 @@ export default function ChatWidget() {
         {
           id: `err-${Date.now()}`,
           role: "bot",
-          content: "Sorry, I'm having trouble connecting. Please try again or visit our Contact page.",
+          content: t("chat.connectionError"),
         },
       ]);
     } finally {
       setTyping(false);
     }
-  }, []);
+  }, [t]);
 
   const sendMessage = useCallback(
     async (text: string) => {
@@ -122,17 +122,17 @@ export default function ChatWidget() {
           {
             id: `bot-${Date.now()}`,
             role: "bot",
-            content: "Taking you to our Contact page now—you can send a detailed message to our team.",
+            content: t("chat.contactRedirect"),
           },
         ]);
         router.push("/contact");
-        setSuggestions(getWelcomeMessage().suggestions ?? []);
+        setSuggestions(getLocalizedWelcome(t).suggestions ?? []);
         return;
       }
 
       await addBotReply(trimmed);
     },
-    [addBotReply, typing, router]
+    [addBotReply, typing, router, t]
   );
 
   if (hidden) return null;
@@ -148,7 +148,7 @@ export default function ChatWidget() {
             transition={{ duration: 0.2 }}
             className="fixed bottom-24 right-4 sm:right-6 z-[9999] flex flex-col w-[min(100vw-2rem,380px)] h-[min(70vh,520px)] rounded-2xl border border-border bg-bg-elevated/95 backdrop-blur-xl shadow-2xl shadow-black/20 overflow-hidden"
             role="dialog"
-            aria-label="Blackrock Reserve support chat"
+            aria-label={t("chat.ariaLabel")}
           >
             {/* Header */}
             <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10 brand-gradient-bg shrink-0">
@@ -156,14 +156,14 @@ export default function ChatWidget() {
                 <Bot size={18} className="text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white">Crest Assistant</p>
-                <p className="text-[10px] text-white/70">Online · Blackrock Reserve</p>
+                <p className="text-sm font-semibold text-white">{t("chat.assistantName")}</p>
+                <p className="text-[10px] text-white/70">{t("chat.onlineStatus")}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 className="p-1.5 rounded-lg text-white/80 hover:bg-white/10 transition-colors"
-                aria-label="Minimize chat"
+                aria-label={t("chat.minimizeChat")}
               >
                 <Minimize2 size={16} />
               </button>
@@ -171,7 +171,7 @@ export default function ChatWidget() {
                 type="button"
                 onClick={() => setOpen(false)}
                 className="p-1.5 rounded-lg text-white/80 hover:bg-white/10 transition-colors"
-                aria-label="Close chat"
+                aria-label={t("chat.closeChat")}
               >
                 <X size={16} />
               </button>
@@ -256,7 +256,7 @@ export default function ChatWidget() {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about accounts, deposits, KYC..."
+                placeholder={t("chat.placeholder")}
                 className="flex-1 rounded-xl border border-border bg-surface-overlay px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent-brand/50 focus:outline-none focus:ring-1 focus:ring-accent-brand/30"
                 maxLength={1000}
                 disabled={typing}
@@ -265,7 +265,7 @@ export default function ChatWidget() {
                 type="submit"
                 disabled={!input.trim() || typing}
                 className="h-10 w-10 rounded-xl brand-gradient-bg flex items-center justify-center text-white disabled:opacity-40 transition-opacity shadow-brand"
-                aria-label="Send message"
+                aria-label={t("chat.sendMessage")}
               >
                 <Send size={16} />
               </button>
@@ -282,7 +282,7 @@ export default function ChatWidget() {
           "fixed bottom-6 right-4 sm:right-6 z-[9999] h-14 w-14 rounded-full brand-gradient-bg shadow-brand flex items-center justify-center text-white transition-transform hover:scale-105",
           open && "scale-0 pointer-events-none"
         )}
-        aria-label={open ? "Close chat" : "Open support chat"}
+        aria-label={open ? t("chat.closeChat") : t("chat.openChat")}
         whileTap={{ scale: 0.95 }}
       >
         {open ? <X size={22} /> : <MessageCircle size={22} />}

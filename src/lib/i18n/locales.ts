@@ -13,10 +13,7 @@ export type LocaleCode =
   | "ko"
   | "hi"
   | "tr"
-  | "sw"
-  | "yo"
-  | "ig"
-  | "ha";
+  | "sw";
 
 export type LocaleDefinition = {
   code: LocaleCode;
@@ -44,9 +41,6 @@ export const LOCALES: LocaleDefinition[] = [
   { code: "hi", bcp47: "hi-IN", nativeName: "हिन्दी", englishName: "Hindi", flag: "🇮🇳", dir: "ltr" },
   { code: "tr", bcp47: "tr-TR", nativeName: "Türkçe", englishName: "Turkish", flag: "🇹🇷", dir: "ltr" },
   { code: "sw", bcp47: "sw-KE", nativeName: "Kiswahili", englishName: "Swahili", flag: "🇰🇪", dir: "ltr" },
-  { code: "yo", bcp47: "yo-NG", nativeName: "Yorùbá", englishName: "Yoruba", flag: "🇳🇬", dir: "ltr" },
-  { code: "ig", bcp47: "ig-NG", nativeName: "Igbo", englishName: "Igbo", flag: "🇳🇬", dir: "ltr" },
-  { code: "ha", bcp47: "ha-NG", nativeName: "Hausa", englishName: "Hausa", flag: "🇳🇬", dir: "ltr" },
 ];
 
 export const DEFAULT_LOCALE: LocaleCode = "en";

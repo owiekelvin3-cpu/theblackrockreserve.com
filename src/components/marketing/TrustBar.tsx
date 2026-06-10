@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useI18n } from "@/components/providers/I18nProvider";
 
 const usCompanies = [
   "JPMorgan Chase",
@@ -20,6 +21,7 @@ const usCompanies = [
 ];
 
 export default function TrustBar() {
+  const { t } = useI18n();
   const slides = [...usCompanies, ...usCompanies];
 
   return (
@@ -31,7 +33,7 @@ export default function TrustBar() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          Trusted by <span className="text-white font-medium">10,000+</span> Teams Worldwide
+          {t("marketing.trustBar.trusted", { count: "10,000+" })}
         </motion.p>
 
         <motion.div

@@ -80,13 +80,22 @@ export async function getDashboardOverview(userId: string) {
 
   const now = new Date();
   const cashFlowData = MONTHS.map((month, index) => {
-    const monthTotal = transactions
-      .filter((t) => {
-        const d = new Date(t.createdAt);
-        return d.getFullYear() === now.getFullYear() && d.getMonth() === index;
-      })
-      .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
-    return { month, value: monthTotal };
+    const monthTx = transactions.filter((t) => {
+      const d = new Date(t.createdAt);
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === index;
+    });
+    const monthTotal = monthTx.reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
+    const inflow = monthTx.reduce((sum, t) => {
+      const amt = Number(t.amount);
+      if (t.type === "DEPOSIT" || t.type === "PROFIT_CREDIT") return sum + amt;
+      return sum - Math.abs(amt);
+    }, 0);
+    const tooltipDate = new Date(now.getFullYear(), index, 23).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+    return { month, value: monthTotal, inflow, tooltipDate };
   });
 
   const activities = transactions.map((t) => ({

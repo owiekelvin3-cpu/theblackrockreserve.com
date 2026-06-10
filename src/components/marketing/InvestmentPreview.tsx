@@ -9,6 +9,7 @@ import ChartContainer from "@/components/ui/ChartContainer";
 import GlowIcon from "@/components/ui/GlowIcon";
 import { CHART_BRAND } from "@/lib/chart-theme";
 import { useChartTheme } from "@/hooks/use-chart-theme";
+import { useI18n } from "@/components/providers/I18nProvider";
 
 const chartData = [
   { month: "Jan", value: 4200 }, { month: "Feb", value: 4350 }, { month: "Mar", value: 4100 },
@@ -21,6 +22,8 @@ const tickers = ["AAPL", "MSFT", "TSLA", "BTC", "ETH"];
 
 export default function InvestmentPreview() {
   const chartTheme = useChartTheme();
+  const { t } = useI18n();
+
   return (
     <section className="section-padding relative overflow-hidden">
       <div className="neon-streak top-1/3 right-[-15%] w-[70%] h-20 opacity-20 rotate-12" />
@@ -35,8 +38,8 @@ export default function InvestmentPreview() {
             <div className="light-leak light-leak-orange w-32 h-32 -bottom-8 -left-8 opacity-40" />
             <div className="glow-card-inner">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-sm text-text-secondary">S&P 500 Index</span>
-                <span className="font-mono text-sm text-accent-green">+36.2% YTD</span>
+                <span className="text-sm text-text-secondary">{t("marketing.investment.indexLabel")}</span>
+                <span className="font-mono text-sm text-accent-green">{t("marketing.investment.ytd")}</span>
               </div>
               <ChartContainer className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
@@ -60,10 +63,11 @@ export default function InvestmentPreview() {
           <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
             <GlowIcon icon={TrendingUp} size={22} className="mb-6" />
             <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-              Invest in What <span className="gold-gradient-text">Moves the World</span>
+              {t("marketing.investment.title")}{" "}
+              <span className="gold-gradient-text">{t("marketing.investment.titleHighlight")}</span>
             </h2>
             <p className="mt-4 text-text-secondary leading-relaxed">
-              Access global markets with zero commission trades, curated ETF bundles, and real-time portfolio analytics.
+              {t("marketing.investment.subtitle")}
             </p>
             <div className="mt-6 flex flex-wrap gap-2">
               {tickers.map((ticker) => (
@@ -71,7 +75,7 @@ export default function InvestmentPreview() {
               ))}
             </div>
             <Link href="/investments" className="inline-block mt-8">
-              <Button>Start Investing Today <ArrowRight size={18} /></Button>
+              <Button>{t("marketing.investment.cta")} <ArrowRight size={18} /></Button>
             </Link>
           </motion.div>
         </div>

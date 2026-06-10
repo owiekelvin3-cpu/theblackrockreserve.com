@@ -1,20 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Wallet, TrendingUp, ArrowUpRight, ChevronDown, RotateCcw } from "lucide-react";
-import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { CHART_BRAND } from "@/lib/chart-theme";
-import { useChartTheme } from "@/hooks/use-chart-theme";
 import { fetchJson } from "@/lib/fetch-json";
 import DashboardGate from "@/components/dashboard/DashboardGate";
 import DashboardGreeting from "@/components/dashboard/DashboardGreeting";
 import SavingsPanel, { type SavingsData } from "@/components/dashboard/SavingsPanel";
+import CashFlowPanel, { type CashFlowMonth } from "@/components/dashboard/CashFlowPanel";
 import RecentActivityPanel from "@/components/dashboard/RecentActivityPanel";
-import EmptyState from "@/components/dashboard/EmptyState";
-import ChartContainer from "@/components/ui/ChartContainer";
 import { useI18n } from "@/components/providers/I18nProvider";
-import { cn } from "@/lib/utils";
 
 interface OverviewData {
   totalBalance: number;
@@ -23,18 +18,13 @@ interface OverviewData {
   bitcoinWalletAddress: string;
   depositsEnabled: boolean;
   savings: SavingsData;
-  cashFlowData: { month: string; value: number }[];
+  cashFlowData: CashFlowMonth[];
 }
-
-const CHART_MUTED_BAR = "#2a2a2e";
 
 export default function DashboardPage() {
   const { t, formatCurrency } = useI18n();
-  const chartTheme = useChartTheme();
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeMonth, setActiveMonth] = useState("");
-  const [chartMode, setChartMode] = useState<"monthly" | "yearly">("monthly");
   const [period, setPeriod] = useState("this-month");
 
   const loadData = () => {
@@ -42,10 +32,6 @@ export default function DashboardPage() {
     fetchJson<OverviewData>("/api/dashboard/overview")
       .then((json) => {
         setData(json);
-        if (json?.cashFlowData?.length) {
-          const active = json.cashFlowData.find((m) => m.value > 0);
-          setActiveMonth(active?.month ?? json.cashFlowData[0].month);
-        }
       })
       .finally(() => setLoading(false));
   };
@@ -53,11 +39,6 @@ export default function DashboardPage() {
   useEffect(() => {
     loadData();
   }, []);
-
-  const cashFlowTotal = useMemo(
-    () => data?.cashFlowData.reduce((s, m) => s + m.value, 0) ?? 0,
-    [data]
-  );
 
   const hasActivity =
     data &&
@@ -158,60 +139,12 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-4">
-            <SavingsPanel data={data.savings} onUpdated={loadData} />
-
-            <div className="dash-panel p-5">
-              <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
-                <div>
-                  <h2 className="text-base font-semibold text-text-primary">{t("dashboard.cashFlow")}</h2>
-                  <p className="text-xl font-bold text-text-primary mt-1 tracking-tight">
-                    {formatCurrency(cashFlowTotal)}
-                  </p>
-                </div>
-                <div className="dash-period-toggle">
-                  <button
-                    type="button"
-                    onClick={() => setChartMode("monthly")}
-                    className={cn("dash-period-btn", chartMode === "monthly" && "dash-period-btn-active")}
-                  >
-                    {t("dashboard.monthly")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setChartMode("yearly")}
-                    className={cn("dash-period-btn", chartMode === "yearly" && "dash-period-btn-active")}
-                  >
-                    {t("dashboard.yearly")}
-                  </button>
-                </div>
-              </div>
-              {data.cashFlowData.every((m) => m.value === 0) ? (
-                <EmptyState title={t("dashboard.noCashFlow")} description={t("dashboard.noCashFlowDesc")} />
-              ) : (
-                <ChartContainer className="h-52 min-h-[208px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={data.cashFlowData} barCategoryGap="22%">
-                      <XAxis dataKey="month" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
-                      <Tooltip
-                        contentStyle={chartTheme.tooltip}
-                        cursor={{ fill: "rgba(255,95,5,0.06)" }}
-                        formatter={(v) => [formatCurrency(Number(v ?? 0)), t("dashboard.cashFlow")]}
-                      />
-                      <Bar dataKey="value" radius={[8, 8, 0, 0]} maxBarSize={48}>
-                        {data.cashFlowData.map((entry) => (
-                          <Cell
-                            key={entry.month}
-                            fill={entry.month === activeMonth ? CHART_BRAND : CHART_MUTED_BAR}
-                            onClick={() => setActiveMonth(entry.month)}
-                            style={{ cursor: "pointer" }}
-                          />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              )}
+          <div className="grid lg:grid-cols-5 gap-4">
+            <div className="lg:col-span-2">
+              <SavingsPanel data={data.savings} onUpdated={loadData} />
+            </div>
+            <div className="lg:col-span-3">
+              <CashFlowPanel data={data.cashFlowData} />
             </div>
           </div>
 

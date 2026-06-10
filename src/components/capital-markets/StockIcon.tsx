@@ -49,7 +49,7 @@ export default function StockIcon({ symbol, name, logoDomain, size = "md", class
       alt={`${name ?? symbol} logo`}
       className={cn(
         box,
-        "rounded-xl object-contain bg-white/5 border border-[var(--border-subtle)] p-1.5 shrink-0",
+        "stock-icon-img rounded-xl object-contain p-1.5 shrink-0",
         className
       )}
       loading="lazy"

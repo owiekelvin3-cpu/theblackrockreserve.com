@@ -9,6 +9,7 @@ import GlowIcon from "@/components/ui/GlowIcon";
 import { MiniBarChart, MiniLineChart } from "@/components/marketing/MiniCharts";
 import { cardHover } from "@/components/ui/AnimateIn";
 import { marketingImages } from "@/lib/marketing-images";
+import { useI18n } from "@/components/providers/I18nProvider";
 
 const supportPhotos = [
   marketingImages.portraits.support1,
@@ -66,6 +67,8 @@ function SoundWave() {
 }
 
 export default function Features() {
+  const { t } = useI18n();
+
   return (
     <section className="section-padding relative">
       <div className="mx-auto max-w-7xl">
@@ -77,16 +80,15 @@ export default function Features() {
         >
           <span className="pill-label mb-4">
             <Sparkles size={12} className="inline mr-1.5 text-accent-brand" />
-            Features
+            {t("marketing.features.badge")}
           </span>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight mt-4 max-w-3xl mx-auto text-balance">
-            Accelerate your setup using streamlined{" "}
-            <span className="gold-gradient-text">low-code processes</span>
+            {t("marketing.features.title")}{" "}
+            <span className="gold-gradient-text">{t("marketing.features.titleHighlight")}</span>
           </h2>
         </motion.div>
 
         <div className="space-y-5">
-          {/* Row 1: AI Solutions + Custom Support */}
           <div className="grid lg:grid-cols-5 gap-5">
             <motion.div
               className="glow-card hover-lift lg:col-span-3 p-6 sm:p-8 relative"
@@ -98,10 +100,10 @@ export default function Features() {
               <div className="light-leak light-leak-orange w-40 h-40 -top-8 -right-8 opacity-40" />
               <div className="glow-card-inner">
                 <h3 className="text-base sm:text-lg font-semibold text-white mb-1">
-                  Blackrock AI Solutions
+                  {t("marketing.features.aiTitle")}
                 </h3>
                 <p className="text-sm text-text-secondary mb-4 max-w-md">
-                  Intelligent workflows that optimize cash flow, savings, and investment decisions automatically.
+                  {t("marketing.features.aiDesc")}
                 </p>
                 <AiNodes />
               </div>
@@ -117,10 +119,10 @@ export default function Features() {
             >
               <div className="glow-card-inner">
                 <h3 className="text-base sm:text-lg font-semibold text-white mb-1">
-                  Custom Support Solutions
+                  {t("marketing.features.supportTitle")}
                 </h3>
                 <p className="text-sm text-text-secondary mb-6">
-                  Dedicated support powered by AI with human experts on standby.
+                  {t("marketing.features.supportDesc")}
                 </p>
                 <div className="relative flex items-center justify-center h-28">
                   <div className="absolute">
@@ -156,7 +158,6 @@ export default function Features() {
             </motion.div>
           </div>
 
-          {/* Row 2: Integration, Automation, Visualization */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             <motion.div
               className="glow-card hover-lift p-6 relative"
@@ -168,8 +169,8 @@ export default function Features() {
             >
               <div className="glow-card-inner">
                 <GlowIcon icon={LineChart} size={18} className="mb-4" />
-                <h3 className="text-sm font-semibold text-white mb-1">Data Integration Made Easy</h3>
-                <p className="text-xs text-text-secondary mb-4">Connect accounts and sync data seamlessly.</p>
+                <h3 className="text-sm font-semibold text-white mb-1">{t("marketing.features.integrationTitle")}</h3>
+                <p className="text-xs text-text-secondary mb-4">{t("marketing.features.integrationDesc")}</p>
                 <div className="h-20 w-full">
                   <MiniLineChart animate />
                 </div>
@@ -189,10 +190,10 @@ export default function Features() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <GlowIcon icon={Mic} size={18} />
-                    <h3 className="text-sm font-semibold text-white">Intelligent Automation</h3>
+                    <h3 className="text-sm font-semibold text-white">{t("marketing.features.automationTitle")}</h3>
                   </div>
                   <p className="text-xs text-text-secondary">
-                    Execute transfers, check balances, and manage accounts with voice commands.
+                    {t("marketing.features.automationDesc")}
                   </p>
                 </div>
                 <div className="flex-1 w-full">
@@ -211,8 +212,8 @@ export default function Features() {
             >
               <div className="glow-card-inner">
                 <GlowIcon icon={BarChart3} size={18} className="mb-4" />
-                <h3 className="text-sm font-semibold text-white mb-1">Data Visualization</h3>
-                <p className="text-xs text-text-secondary mb-4">Real-time portfolio analytics and insights.</p>
+                <h3 className="text-sm font-semibold text-white mb-1">{t("marketing.features.visualizationTitle")}</h3>
+                <p className="text-xs text-text-secondary mb-4">{t("marketing.features.visualizationDesc")}</p>
                 <div className="h-20 w-full">
                   <MiniBarChart animate />
                 </div>

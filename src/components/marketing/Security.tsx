@@ -3,33 +3,43 @@
 import { motion } from "framer-motion";
 import { Shield, Fingerprint, Lock } from "lucide-react";
 import GlowIcon from "@/components/ui/GlowIcon";
+import { useI18n } from "@/components/providers/I18nProvider";
 
-const securityFeatures = [
-  "256-bit AES encryption on all data",
-  "Multi-factor authentication (2FA)",
-  "Biometric login support",
-  "Real-time fraud monitoring",
-  "FDIC insurance up to $250,000",
-  "SOC 2 Type II certified infrastructure",
-];
+const featureKeys = [
+  "marketing.security.feature1",
+  "marketing.security.feature2",
+  "marketing.security.feature3",
+  "marketing.security.feature4",
+  "marketing.security.feature5",
+  "marketing.security.feature6",
+] as const;
+
+const iconLabels = [
+  "marketing.security.biometric",
+  "marketing.security.encrypted",
+  "marketing.security.protected",
+] as const;
 
 export default function Security() {
+  const { t } = useI18n();
+
   return (
     <section className="section-padding relative overflow-hidden">
       <div className="mx-auto max-w-7xl">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
-            <span className="pill-label mb-4">Security</span>
+            <span className="pill-label mb-4">{t("marketing.security.badge")}</span>
             <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight mt-4">
-              Security You Can <span className="gold-gradient-text">Trust</span>
+              {t("marketing.security.title")}{" "}
+              <span className="gold-gradient-text">{t("marketing.security.titleHighlight")}</span>
             </h2>
             <p className="mt-4 text-text-secondary leading-relaxed">
-              Your assets are protected by the same standards used by the world&apos;s largest financial institutions.
+              {t("marketing.security.subtitle")}
             </p>
             <ul className="mt-8 space-y-4">
-              {securityFeatures.map((feature, i) => (
+              {featureKeys.map((key, i) => (
                 <motion.li
-                  key={feature}
+                  key={key}
                   className="flex items-stretch gap-4"
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
@@ -37,7 +47,7 @@ export default function Security() {
                   transition={{ delay: i * 0.05 }}
                 >
                   <div className="accent-bar shrink-0 self-stretch min-h-[2.5rem]" />
-                  <span className="text-text-secondary text-sm py-1">{feature}</span>
+                  <span className="text-text-secondary text-sm py-1">{t(key)}</span>
                 </motion.li>
               ))}
             </ul>
@@ -65,13 +75,13 @@ export default function Security() {
                         <Icon size={18} className="text-accent-brand" strokeWidth={1.5} />
                       </div>
                       <span className="text-[10px] text-text-muted text-center">
-                        {["Biometric", "Encrypted", "Protected"][i]}
+                        {t(iconLabels[i])}
                       </span>
                     </div>
                   ))}
                 </div>
                 <div className="w-full h-px bg-gradient-to-r from-transparent via-accent-brand/50 to-transparent" />
-                <p className="text-xs text-text-muted text-center">Zero-knowledge architecture for sensitive data</p>
+                <p className="text-xs text-text-muted text-center">{t("marketing.security.zeroKnowledge")}</p>
               </div>
             </div>
           </motion.div>

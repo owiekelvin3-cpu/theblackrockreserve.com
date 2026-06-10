@@ -5,6 +5,7 @@ import { DEPOSIT_SUCCESS_MESSAGE, formatDepositStatus } from "@/lib/deposit-stat
 import { getPublicDepositSettings } from "@/lib/platform-settings";
 import { ensureUserBankAccounts } from "@/lib/dashboard-data";
 import { depositSubmitSchema } from "@/lib/validations";
+import { requireTransactionPin } from "@/lib/transaction-pin";
 import { createUserNotification, sendUserNotificationEmail } from "@/lib/user-notifications";
 import { formatCurrency } from "@/lib/utils";
 import { prisma } from "@/lib/prisma";
@@ -98,6 +99,9 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
     }
+
+    const pinError = await requireTransactionPin(userId, parsed.data.transactionPin);
+    if (pinError) return pinError;
 
     const [user, settings] = await Promise.all([
       prisma.user.findUnique({ where: { id: userId }, select: { id: true, status: true, name: true } }),

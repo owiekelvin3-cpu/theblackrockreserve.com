@@ -35,7 +35,7 @@ interface MarketAssetCardProps {
 function riskColor(risk: string) {
   if (risk === "Low") return "text-accent-green border-accent-green/30 bg-accent-green/10";
   if (risk === "High") return "text-accent-red border-accent-red/30 bg-accent-red/10";
-  return "text-amber-400 border-amber-400/30 bg-amber-400/10";
+  return "market-risk-medium";
 }
 
 export default function MarketAssetCard({ asset, marketStatus, onInvest, index = 0 }: MarketAssetCardProps) {
@@ -47,7 +47,7 @@ export default function MarketAssetCard({ asset, marketStatus, onInvest, index =
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: Math.min(index * 0.04, 0.4) }}
       whileHover={{ y: -4 }}
-      className="group relative rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-elevated)] p-5 shadow-sm hover:shadow-lg hover:border-accent-brand/25 transition-all duration-300 overflow-hidden"
+      className="market-asset-card group relative rounded-2xl p-5 hover:border-accent-brand/25 transition-all duration-300 overflow-hidden"
     >
       <div className="absolute inset-0 bg-gradient-to-br from-accent-brand/0 via-transparent to-accent-brand/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
@@ -97,10 +97,10 @@ export default function MarketAssetCard({ asset, marketStatus, onInvest, index =
           <Shield size={10} className="inline mr-1 -mt-0.5" />
           {asset.riskRating} Risk
         </span>
-        <span className="text-[10px] text-[var(--text-muted)] px-2 py-1 rounded-full border border-[var(--border-subtle)] bg-[var(--surface-base)]">
+        <span className="market-asset-chip text-[10px] px-2 py-1 rounded-full">
           Min {formatCurrency(asset.minInvestment)}
         </span>
-        <span className="text-[10px] text-[var(--text-muted)] px-2 py-1 rounded-full border border-[var(--border-subtle)] bg-[var(--surface-base)] inline-flex items-center gap-1">
+        <span className="market-asset-chip text-[10px] px-2 py-1 rounded-full inline-flex items-center gap-1">
           <Clock size={10} />
           {marketStatus}
         </span>

@@ -40,7 +40,7 @@ export default function DashboardTopBar() {
       <div className="flex items-center justify-between gap-2 sm:gap-3 min-w-0 py-2 sm:py-0">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] sm:text-xs font-medium text-text-muted uppercase tracking-wider truncate">
-            Blackrock Reserve
+            {t("brand.name")}
           </p>
           <h1 className="text-base sm:text-lg font-semibold text-text-primary truncate leading-tight">
             {title}
@@ -53,7 +53,7 @@ export default function DashboardTopBar() {
           <Link
             href="/contact"
             className="hidden sm:flex p-2.5 rounded-xl text-text-muted hover:text-text-primary hover:bg-white/5 transition-colors min-h-[44px] min-w-[44px] items-center justify-center"
-            aria-label="Help"
+            aria-label={t("common.help")}
           >
             <HelpCircle size={18} />
           </Link>

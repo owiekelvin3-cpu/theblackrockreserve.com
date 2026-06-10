@@ -1,5 +1,6 @@
 import Logo from "@/components/layout/Logo";
 import ThemeToggle from "@/components/ui/ThemeToggle";
+import AuthCopyright from "@/app/(auth)/AuthCopyright";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -14,9 +15,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </div>
         {children}
       </div>
-      <p className="relative z-10 mt-8 text-xs text-text-muted">
-        © {new Date().getFullYear()} Blackrock Reserve. FDIC Insured.
-      </p>
+      <AuthCopyright />
     </div>
   );
 }

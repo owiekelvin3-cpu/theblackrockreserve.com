@@ -34,6 +34,10 @@ model User {
   lastSeenAt       DateTime?
   profileImage     String?
   preferredLocale  String    @default("en")
+  transactionPinHash        String?
+  transactionPinSetAt       DateTime?
+  transactionPinAttempts    Int       @default(0)
+  transactionPinLockedUntil DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 

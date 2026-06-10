@@ -14,18 +14,19 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Skeleton from "@/components/ui/Skeleton";
 import { loginSchema, type LoginInput } from "@/lib/validations";
-
-const AUTH_MESSAGES: Record<string, string> = {
-  sign_in_required: "Please sign in to access your dashboard.",
-  verify_email: "Verify your email before accessing the dashboard. Check your inbox for the verification code.",
-  Configuration: "Sign-in is temporarily unavailable. The site administrator must set NEXTAUTH_SECRET and NEXTAUTH_URL in Vercel.",
-};
+import { useI18n } from "@/components/providers/I18nProvider";
 
 function LoginFormInner() {
+  const { t } = useI18n();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
   const authError = searchParams.get("error");
-  const bannerMessage = authError ? AUTH_MESSAGES[authError] : null;
+  const authMessages: Record<string, string> = {
+    sign_in_required: t("auth.signInRequired"),
+    verify_email: t("auth.verifyEmailBanner"),
+    Configuration: t("auth.configError"),
+  };
+  const bannerMessage = authError ? authMessages[authError] : null;
   const [redirecting, setRedirecting] = useState(false);
   const [authReady, setAuthReady] = useState(true);
 
@@ -63,13 +64,13 @@ function LoginFormInner() {
 
   return (
     <Card>
-      <h1 className="font-display text-2xl font-bold text-text-primary text-center">Welcome Back</h1>
-      <p className="text-sm text-text-secondary text-center mt-2">Sign in to your Blackrock Reserve account</p>
+      <h1 className="font-display text-2xl font-bold text-text-primary text-center">{t("auth.welcomeBack")}</h1>
+      <p className="text-sm text-text-secondary text-center mt-2">{t("auth.signInSubtitle")}</p>
 
       {!authReady && (
         <div className="mt-6 flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
           <AlertCircle size={16} className="mt-0.5 shrink-0" />
-          <p>{AUTH_MESSAGES.Configuration}</p>
+          <p>{t("auth.configError")}</p>
         </div>
       )}
 
@@ -81,27 +82,27 @@ function LoginFormInner() {
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
-        <Input label="Email" type="email" {...register("email")} error={errors.email?.message} placeholder="you@example.com" />
-        <Input label="Password" type="password" {...register("password")} error={errors.password?.message} placeholder="••••••••" />
+        <Input label={t("auth.email")} type="email" {...register("email")} error={errors.email?.message} placeholder="you@example.com" />
+        <Input label={t("auth.password")} type="password" {...register("password")} error={errors.password?.message} placeholder="••••••••" />
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <label className="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
             <input type="checkbox" {...register("remember")} className="rounded border-border accent-accent-gold" />
-            Remember me
+            {t("auth.rememberMe")}
           </label>
           <Link href="/forgot-password" className="text-sm text-accent-gold hover:text-accent-gold-light transition-colors shrink-0">
-            Forgot password?
+            {t("auth.forgotPassword")}
           </Link>
         </div>
 
         <Button type="submit" isLoading={isSubmitting || redirecting} disabled={!authReady} className="w-full">
-          {redirecting ? "Opening dashboard…" : "Sign In"}
+          {redirecting ? t("auth.openingDashboard") : t("auth.login")}
         </Button>
       </form>
 
       <p className="mt-6 text-center text-sm text-text-secondary">
-        Don&apos;t have an account?{" "}
-        <Link href="/register" className="text-accent-gold hover:text-accent-gold-light transition-colors">Open Account</Link>
+        {t("auth.noAccount")}{" "}
+        <Link href="/register" className="text-accent-gold hover:text-accent-gold-light transition-colors">{t("auth.openAccountLink")}</Link>
       </p>
     </Card>
   );

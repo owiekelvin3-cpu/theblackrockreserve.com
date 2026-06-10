@@ -22,6 +22,7 @@ import { CHART_BRAND, CHART_COLORS } from "@/lib/chart-theme";
 import { useChartTheme } from "@/hooks/use-chart-theme";
 import { SECTOR_FILTERS } from "@/lib/market-assets";
 import { toast } from "sonner";
+import { useI18n } from "@/components/providers/I18nProvider";
 
 interface Holding {
   id: string;
@@ -80,14 +81,6 @@ interface CapitalMarketsData {
 type Tab = "marketplace" | "portfolio" | "analytics";
 type SortKey = "popular" | "return" | "return-asc" | "alpha" | "marketcap";
 
-const SORT_OPTIONS: { id: SortKey; label: string }[] = [
-  { id: "popular", label: "Most Popular" },
-  { id: "return", label: "Highest Return" },
-  { id: "return-asc", label: "Lowest Return" },
-  { id: "alpha", label: "Alphabetical" },
-  { id: "marketcap", label: "Market Cap" },
-];
-
 function ChangeBadge({ value, percent }: { value?: number; percent: number }) {
   const positive = percent >= 0;
   return (
@@ -106,7 +99,27 @@ function ChangeBadge({ value, percent }: { value?: number; percent: number }) {
 }
 
 export default function CapitalMarketsPage() {
+  const { t } = useI18n();
   const chartTheme = useChartTheme();
+
+  const SECTOR_LABEL_KEYS: Record<string, string> = {
+    all: "capitalMarkets.sectorAll",
+    Technology: "capitalMarkets.sectorTechnology",
+    "Financial Services": "capitalMarkets.sectorFinance",
+    Healthcare: "capitalMarkets.sectorHealthcare",
+    Energy: "capitalMarkets.sectorEnergy",
+    "Consumer & Retail": "capitalMarkets.sectorConsumer",
+    Industrial: "capitalMarkets.sectorIndustrial",
+    Entertainment: "capitalMarkets.sectorEntertainment",
+  };
+
+  const SORT_OPTIONS: { id: SortKey; label: string }[] = [
+    { id: "popular", label: t("capitalMarkets.sortPopular") },
+    { id: "return", label: t("capitalMarkets.sortReturnHigh") },
+    { id: "return-asc", label: t("capitalMarkets.sortReturnLow") },
+    { id: "alpha", label: t("capitalMarkets.sortAlpha") },
+    { id: "marketcap", label: t("capitalMarkets.sortMarketCap") },
+  ];
   const [data, setData] = useState<CapitalMarketsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>("marketplace");
@@ -119,9 +132,9 @@ export default function CapitalMarketsPage() {
     setLoading(true);
     fetchDashboardJson<CapitalMarketsData>("/api/dashboard/capital-markets")
       .then(({ data: json }) => setData(json))
-      .catch(() => toast.error("Failed to load capital markets"))
+      .catch(() => toast.error(t("capitalMarkets.loadError")))
       .finally(() => setLoading(false));
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     load();
@@ -165,7 +178,7 @@ export default function CapitalMarketsPage() {
     return list;
   }, [data?.assets, sector, search, sort]);
 
-  const marketLabel = data?.marketStatus?.label ?? "Market Closed";
+  const marketLabel = data?.marketStatus?.label ?? t("capitalMarkets.marketClosed");
 
   return (
     <DashboardGate isLoading={loading}>
@@ -173,16 +186,17 @@ export default function CapitalMarketsPage() {
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-accent-brand mb-1">
-              Capital Markets
+              {t("capitalMarkets.badge")}
             </p>
             <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)]">
-              Investment <span className="gold-gradient-text">Marketplace</span>
+              {t("capitalMarkets.title")}{" "}
+              <span className="gold-gradient-text">{t("capitalMarkets.titleHighlight")}</span>
             </h1>
             <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
-              Browse institutional-grade equities, invest directly from your wallet, and track portfolio performance in real time.
+              {t("capitalMarkets.subtitle")}
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 px-4 py-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-elevated)] w-full lg:w-auto">
+          <div className="marketplace-status-bar flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 px-4 py-3 w-full lg:w-auto">
             <div className="flex items-center gap-2">
               <span
                 className={cn(
@@ -204,7 +218,7 @@ export default function CapitalMarketsPage() {
               <Card className="border border-accent-brand/15 bg-accent-brand/5">
                 <div className="flex items-center gap-2 text-[var(--text-secondary)] text-sm mb-1">
                   <PieChart size={16} className="text-accent-brand" />
-                  Portfolio Value
+                  {t("capitalMarkets.portfolioValue")}
                 </div>
                 <p className="font-mono text-2xl font-bold text-[var(--text-primary)]">
                   {formatCurrency(data.analytics.currentPortfolioValue)}
@@ -216,27 +230,27 @@ export default function CapitalMarketsPage() {
               <Card>
                 <div className="flex items-center gap-2 text-[var(--text-secondary)] text-sm mb-1">
                   <BarChart3 size={16} />
-                  Total Invested
+                  {t("capitalMarkets.totalInvested")}
                 </div>
                 <p className="font-mono text-2xl font-bold text-[var(--text-primary)]">
                   {formatCurrency(data.analytics.totalInvested)}
                 </p>
-                <p className="text-xs text-[var(--text-muted)] mt-2">{data.positionsCount} active positions</p>
+                <p className="text-xs text-[var(--text-muted)] mt-2">{t("capitalMarkets.activePositions", { count: data.positionsCount })}</p>
               </Card>
               <Card>
                 <div className="flex items-center gap-2 text-[var(--text-secondary)] text-sm mb-1">
                   <Wallet size={16} />
-                  Available Cash
+                  {t("capitalMarkets.availableCash")}
                 </div>
                 <p className="font-mono text-2xl font-bold text-[var(--text-primary)]">
                   {formatCurrency(data.availableCash)}
                 </p>
-                <p className="text-xs text-[var(--text-muted)] mt-2">Ready to deploy</p>
+                <p className="text-xs text-[var(--text-muted)] mt-2">{t("capitalMarkets.readyToDeploy")}</p>
               </Card>
               <Card>
                 <div className="flex items-center gap-2 text-[var(--text-secondary)] text-sm mb-1">
                   <TrendingUp size={16} />
-                  Net P&amp;L
+                  {t("capitalMarkets.netPnl")}
                 </div>
                 <p
                   className={cn(
@@ -249,7 +263,7 @@ export default function CapitalMarketsPage() {
                 </p>
                 <p className="text-xs text-[var(--text-muted)] mt-2">
                   {data.analytics.netGainLossPercent >= 0 ? "+" : ""}
-                  {data.analytics.netGainLossPercent.toFixed(2)}% ROI
+                  {data.analytics.netGainLossPercent.toFixed(2)}% {t("capitalMarkets.roi")}
                 </p>
               </Card>
             </div>
@@ -257,9 +271,9 @@ export default function CapitalMarketsPage() {
             <div className="dash-scroll-tabs border-b border-[var(--border-subtle)] pb-1">
               {(
                 [
-                  { id: "marketplace" as const, label: "Marketplace", icon: LayoutGrid },
-                  { id: "portfolio" as const, label: "Portfolio", icon: PieChart },
-                  { id: "analytics" as const, label: "Analytics", icon: LineChart },
+                  { id: "marketplace" as const, label: t("capitalMarkets.tabMarketplace"), icon: LayoutGrid },
+                  { id: "portfolio" as const, label: t("capitalMarkets.tabPortfolio"), icon: PieChart },
+                  { id: "analytics" as const, label: t("capitalMarkets.tabAnalytics"), icon: LineChart },
                 ] as const
               ).map((tab) => (
                 <button
@@ -288,8 +302,8 @@ export default function CapitalMarketsPage() {
                       type="search"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Search by name, symbol, or sector…"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-elevated)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-accent-brand/30"
+                      placeholder={t("capitalMarkets.searchPlaceholder")}
+                      className="marketplace-field w-full pl-10 pr-4 py-2.5 text-sm"
                     />
                   </div>
                   <div className="flex items-center gap-2">
@@ -297,7 +311,7 @@ export default function CapitalMarketsPage() {
                     <select
                       value={sort}
                       onChange={(e) => setSort(e.target.value as SortKey)}
-                      className="px-3 py-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-elevated)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-accent-brand/30"
+                      className="marketplace-field px-3 py-2.5 text-sm"
                     >
                       {SORT_OPTIONS.map((o) => (
                         <option key={o.id} value={o.id}>
@@ -315,13 +329,11 @@ export default function CapitalMarketsPage() {
                       type="button"
                       onClick={() => setSector(f.id)}
                       className={cn(
-                        "text-xs font-medium px-3 py-1.5 rounded-full border transition-colors",
-                        sector === f.id
-                          ? "border-accent-brand bg-accent-brand/15 text-accent-brand"
-                          : "border-[var(--border-subtle)] bg-[var(--surface-elevated)] text-[var(--text-secondary)] hover:border-accent-brand/30"
+                        "marketplace-sector-btn text-xs font-medium px-3 py-1.5 rounded-full",
+                        sector === f.id && "marketplace-sector-btn-active"
                       )}
                     >
-                      {f.label}
+                      {t(SECTOR_LABEL_KEYS[f.id] ?? f.id)}
                     </button>
                   ))}
                 </div>
@@ -329,8 +341,8 @@ export default function CapitalMarketsPage() {
                 {filteredAssets.length === 0 ? (
                   <Card className="text-center py-16">
                     <LayoutGrid size={40} className="mx-auto text-[var(--text-muted)] mb-4" />
-                    <h3 className="font-semibold text-[var(--text-primary)]">No assets match your filters</h3>
-                    <p className="text-sm text-[var(--text-secondary)] mt-2">Try adjusting search or sector filters.</p>
+                    <h3 className="font-semibold text-[var(--text-primary)]">{t("capitalMarkets.noAssetsTitle")}</h3>
+                    <p className="text-sm text-[var(--text-secondary)] mt-2">{t("capitalMarkets.noAssetsDesc")}</p>
                   </Card>
                 ) : (
                   <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -352,19 +364,19 @@ export default function CapitalMarketsPage() {
               <div className="space-y-6">
                 <div className="grid sm:grid-cols-3 gap-4">
                   <Card>
-                    <p className="text-xs text-[var(--text-muted)] uppercase tracking-wide">Unrealized Gain</p>
+                    <p className="text-xs text-[var(--text-muted)] uppercase tracking-wide">{t("capitalMarkets.unrealizedGain")}</p>
                     <p className="font-mono text-xl font-bold text-accent-green mt-1">
                       +{formatCurrency(data.analytics.totalProfit)}
                     </p>
                   </Card>
                   <Card>
-                    <p className="text-xs text-[var(--text-muted)] uppercase tracking-wide">Unrealized Loss</p>
+                    <p className="text-xs text-[var(--text-muted)] uppercase tracking-wide">{t("capitalMarkets.unrealizedLoss")}</p>
                     <p className="font-mono text-xl font-bold text-accent-red mt-1">
                       -{formatCurrency(data.analytics.totalLoss)}
                     </p>
                   </Card>
                   <Card>
-                    <p className="text-xs text-[var(--text-muted)] uppercase tracking-wide">Market ROI</p>
+                    <p className="text-xs text-[var(--text-muted)] uppercase tracking-wide">{t("capitalMarkets.marketRoi")}</p>
                     <p
                       className={cn(
                         "font-mono text-xl font-bold mt-1",
@@ -380,14 +392,14 @@ export default function CapitalMarketsPage() {
                 <Card>
                   <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                     <PieChart size={18} />
-                    Active Investments
+                    {t("capitalMarkets.activeInvestments")}
                   </h2>
                   {data.holdings.length === 0 ? (
                     <div className="text-center py-12">
                       <BarChart3 size={40} className="mx-auto text-[var(--text-muted)] mb-4" />
-                      <h3 className="font-semibold text-[var(--text-primary)]">No investments yet</h3>
+                      <h3 className="font-semibold text-[var(--text-primary)]">{t("capitalMarkets.noInvestmentsTitle")}</h3>
                       <p className="text-sm text-[var(--text-secondary)] mt-2">
-                        Browse the marketplace and invest in leading global equities.
+                        {t("capitalMarkets.noInvestmentsDesc")}
                       </p>
                     </div>
                   ) : (
@@ -395,12 +407,12 @@ export default function CapitalMarketsPage() {
                       <table className="w-full text-sm min-w-[640px]">
                         <thead>
                           <tr className="border-b border-[var(--border-subtle)] text-[var(--text-secondary)]">
-                            <th className="text-left py-3 font-medium">Asset</th>
-                            <th className="text-right py-3 font-medium">Shares</th>
-                            <th className="text-right py-3 font-medium hidden md:table-cell">Cost Basis</th>
-                            <th className="text-right py-3 font-medium">Value</th>
-                            <th className="text-right py-3 font-medium">P&amp;L</th>
-                            <th className="text-right py-3 font-medium hidden sm:table-cell">ROI</th>
+                            <th className="text-left py-3 font-medium">{t("investments.asset")}</th>
+                            <th className="text-right py-3 font-medium">{t("investments.shares")}</th>
+                            <th className="text-right py-3 font-medium hidden md:table-cell">{t("capitalMarkets.costBasis")}</th>
+                            <th className="text-right py-3 font-medium">{t("investments.value")}</th>
+                            <th className="text-right py-3 font-medium">{t("capitalMarkets.pl")}</th>
+                            <th className="text-right py-3 font-medium hidden sm:table-cell">{t("capitalMarkets.roi")}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -448,20 +460,20 @@ export default function CapitalMarketsPage() {
                 <Card>
                   <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                     <History size={18} />
-                    Investment History
+                    {t("capitalMarkets.investmentHistory")}
                   </h2>
                   {data.history.length === 0 ? (
-                    <p className="text-sm text-[var(--text-secondary)] py-6 text-center">No investment history yet.</p>
+                    <p className="text-sm text-[var(--text-secondary)] py-6 text-center">{t("capitalMarkets.noHistory")}</p>
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm min-w-[560px]">
                         <thead>
                           <tr className="border-b border-[var(--border-subtle)] text-[var(--text-secondary)]">
-                            <th className="text-left py-3 font-medium">Date</th>
-                            <th className="text-left py-3 font-medium">Asset</th>
-                            <th className="text-right py-3 font-medium">Amount</th>
-                            <th className="text-right py-3 font-medium hidden sm:table-cell">Fee</th>
-                            <th className="text-right py-3 font-medium">Total</th>
+                            <th className="text-left py-3 font-medium">{t("capitalMarkets.date")}</th>
+                            <th className="text-left py-3 font-medium">{t("investments.asset")}</th>
+                            <th className="text-right py-3 font-medium">{t("common.amount")}</th>
+                            <th className="text-right py-3 font-medium hidden sm:table-cell">{t("capitalMarkets.fee")}</th>
+                            <th className="text-right py-3 font-medium">{t("capitalMarkets.total")}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -495,7 +507,7 @@ export default function CapitalMarketsPage() {
               <div className="space-y-6">
                 <div className="grid lg:grid-cols-2 gap-6">
                   <Card>
-                    <h2 className="font-semibold text-[var(--text-primary)] mb-4">Monthly Growth</h2>
+                    <h2 className="font-semibold text-[var(--text-primary)] mb-4">{t("capitalMarkets.monthlyGrowth")}</h2>
                     <ChartContainer className="h-56 min-h-[224px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={data.analytics.monthlyGrowth}>
@@ -508,24 +520,24 @@ export default function CapitalMarketsPage() {
                           <XAxis dataKey="month" stroke={chartTheme.axis} fontSize={12} tickLine={false} axisLine={false} />
                           <YAxis stroke={chartTheme.axis} fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} />
                           <Tooltip contentStyle={chartTheme.tooltip} formatter={(v) => [formatCurrency(Number(v ?? 0)), ""]} />
-                          <Area type="monotone" dataKey="invested" stroke={chartTheme.muted} fill="transparent" strokeWidth={1.5} strokeDasharray="4 4" name="Invested" />
-                          <Area type="monotone" dataKey="value" stroke={CHART_BRAND} fill="url(#growthGradient)" strokeWidth={2} name="Portfolio Value" />
+                          <Area type="monotone" dataKey="invested" stroke={chartTheme.muted} fill="transparent" strokeWidth={1.5} strokeDasharray="4 4" name={t("capitalMarkets.chartInvested")} />
+                          <Area type="monotone" dataKey="value" stroke={CHART_BRAND} fill="url(#growthGradient)" strokeWidth={2} name={t("capitalMarkets.chartPortfolioValue")} />
                         </AreaChart>
                       </ResponsiveContainer>
                     </ChartContainer>
                   </Card>
 
                   <Card>
-                    <h2 className="font-semibold text-[var(--text-primary)] mb-4">Asset Allocation by Sector</h2>
+                    <h2 className="font-semibold text-[var(--text-primary)] mb-4">{t("capitalMarkets.assetAllocation")}</h2>
                     {data.analytics.assetAllocation.length === 0 ? (
-                      <p className="text-sm text-[var(--text-secondary)] py-12 text-center">Invest to see allocation breakdown.</p>
+                      <p className="text-sm text-[var(--text-secondary)] py-12 text-center">{t("capitalMarkets.allocationEmpty")}</p>
                     ) : (
                       <ChartContainer className="h-56 min-h-[224px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={data.analytics.assetAllocation} layout="vertical">
                             <XAxis type="number" stroke={chartTheme.axis} fontSize={12} tickFormatter={(v) => `${v}%`} />
                             <YAxis type="category" dataKey="sector" stroke={chartTheme.axis} fontSize={11} width={100} tickLine={false} />
-                            <Tooltip contentStyle={chartTheme.tooltip} formatter={(v) => [`${Number(v ?? 0).toFixed(1)}%`, "Allocation"]} />
+                            <Tooltip contentStyle={chartTheme.tooltip} formatter={(v) => [`${Number(v ?? 0).toFixed(1)}%`, t("capitalMarkets.allocation")]} />
                             <Bar dataKey="percent" fill={CHART_BRAND} radius={[0, 4, 4, 0]} />
                           </BarChart>
                         </ResponsiveContainer>
@@ -535,9 +547,9 @@ export default function CapitalMarketsPage() {
                 </div>
 
                 <Card>
-                  <h2 className="font-semibold text-[var(--text-primary)] mb-4">Portfolio Distribution</h2>
+                  <h2 className="font-semibold text-[var(--text-primary)] mb-4">{t("capitalMarkets.portfolioDistribution")}</h2>
                   {data.analytics.portfolioDistribution.length === 0 ? (
-                    <p className="text-sm text-[var(--text-secondary)] py-12 text-center">No holdings to display.</p>
+                    <p className="text-sm text-[var(--text-secondary)] py-12 text-center">{t("capitalMarkets.noHoldings")}</p>
                   ) : (
                     <div className="grid md:grid-cols-2 gap-6 items-center">
                       <ChartContainer className="h-64 min-h-[256px]">
@@ -557,7 +569,7 @@ export default function CapitalMarketsPage() {
                                 <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                               ))}
                             </Pie>
-                            <Tooltip contentStyle={chartTheme.tooltip} formatter={(v) => [formatCurrency(Number(v ?? 0)), "Value"]} />
+                            <Tooltip contentStyle={chartTheme.tooltip} formatter={(v) => [formatCurrency(Number(v ?? 0)), t("capitalMarkets.chartValue")]} />
                           </RePieChart>
                         </ResponsiveContainer>
                       </ChartContainer>

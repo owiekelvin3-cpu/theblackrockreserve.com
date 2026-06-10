@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { getSessionUserId, unauthorizedResponse } from "@/lib/api-auth";
 import { getClientIp } from "@/lib/admin-audit";
 import { investFromJointAccount } from "@/lib/joint-account-service";
 import { checkRateLimit } from "@/lib/rate-limit";
-
-const schema = z.object({
-  symbol: z.string().min(1).max(12),
-  amountUsd: z.coerce.number().positive().max(10_000_000),
-});
+import { jointInvestSchema } from "@/lib/validations";
+import { requireTransactionPin } from "@/lib/transaction-pin";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const userId = await getSessionUserId();
@@ -21,10 +17,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   try {
     const body = await req.json();
-    const parsed = schema.safeParse(body);
+    const parsed = jointInvestSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
     }
+
+    const pinError = await requireTransactionPin(userId, parsed.data.transactionPin);
+    if (pinError) return pinError;
 
     const result = await investFromJointAccount({
       jointAccountId: params.id,

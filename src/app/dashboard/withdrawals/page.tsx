@@ -9,6 +9,8 @@ import DashboardGate from "@/components/dashboard/DashboardGate";
 import EmptyState from "@/components/dashboard/EmptyState";
 import WithdrawalMethodIcon from "@/components/dashboard/WithdrawalMethodIcon";
 import { PayWithdrawalChargeModal, WithdrawalChargeNoticeModal } from "@/components/dashboard/WithdrawalChargeModals";
+import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
+import { useTransactionPin } from "@/hooks/use-transaction-pin";
 import {
   WITHDRAWAL_CATEGORIES,
   WITHDRAWAL_METHODS,
@@ -16,8 +18,9 @@ import {
   type WithdrawalMethodId,
 } from "@/lib/withdrawal-methods";
 import { fetchDashboardJson } from "@/lib/fetch-json";
-import { formatCurrency, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useI18n } from "@/components/providers/I18nProvider";
 
 interface ChargePayment {
   id: string;
@@ -59,11 +62,11 @@ const emptyData: WithdrawalData = {
   userCharge: null,
   chargePaymentMethods: { bitcoinWalletAddress: "", bitcoinPurchaseLink: "", depositInstructions: "" },
   withdrawals: [],
-  confirmationMessage:
-    "Your withdrawal request has been submitted. Our team will review and process it according to your selected payout method.",
+  confirmationMessage: "",
 };
 
 export default function WithdrawalsPage() {
+  const { t, formatCurrency } = useI18n();
   const [data, setData] = useState<WithdrawalData | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -133,24 +136,27 @@ export default function WithdrawalsPage() {
     setDestinationExtra("");
   };
 
-  const buildPayload = (chargeAcknowledged?: boolean) => ({
+  const { open: pinOpen, loading: pinLoading, error: pinError, requestPin, closePin, confirmPin } = useTransactionPin();
+
+  const buildPayload = (transactionPin: string, chargeAcknowledged?: boolean) => ({
     accountId,
     method,
     amountUsd: Number(amountUsd),
     destination,
     destinationExtra: destinationExtra || undefined,
     note: note || undefined,
+    transactionPin,
     ...(chargeAcknowledged ? { chargeAcknowledged: true } : {}),
   });
 
-  const submitWithdrawal = async (chargeAcknowledged = false) => {
+  const submitWithdrawal = async (transactionPin: string, chargeAcknowledged = false) => {
     setSubmitting(true);
     try {
       const res = await fetch("/api/dashboard/withdrawals", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(buildPayload(chargeAcknowledged)),
+        body: JSON.stringify(buildPayload(transactionPin, chargeAcknowledged)),
       });
       const json = await res.json();
       if (res.status === 200 && json.requiresChargeAcknowledgment) {
@@ -180,11 +186,15 @@ export default function WithdrawalsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await submitWithdrawal(false);
+    requestPin(async (transactionPin) => {
+      await submitWithdrawal(transactionPin, false);
+    });
   };
 
-  const handleChargeContinue = async () => {
-    await submitWithdrawal(true);
+  const handleChargeContinue = () => {
+    requestPin(async (transactionPin) => {
+      await submitWithdrawal(transactionPin, true);
+    });
   };
 
   const extraRequired = ["ACH", "WIRE", "DEBIT_CARD", "PAPER_CHECK"].includes(method);
@@ -201,16 +211,13 @@ export default function WithdrawalsPage() {
       <div className="space-y-6 max-w-4xl">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-white">
-            Withdraw <span className="gold-gradient-text">Funds</span>
+            {t("withdrawals.title")} <span className="gold-gradient-text">{t("withdrawals.titleHighlight")}</span>
           </h1>
-          <p className="text-sm text-text-secondary mt-1">
-            Choose from 11 payout methods — bank transfers, digital wallets, debit card, stablecoins, or paper check.
-            Requests are reviewed before funds are sent.
-          </p>
+          <p className="text-sm text-text-secondary mt-1">{t("withdrawals.subtitle")}</p>
           {withdrawalData.userCharge && (
             <p className="text-xs text-amber-400/90 mt-2 flex items-center gap-1.5">
               <CreditCard size={14} />
-              Your account has an assigned withdrawal charge of {formatCurrency(withdrawalData.userCharge.amountUsd)} per request.
+              {t("withdrawals.chargeNotice", { amount: formatCurrency(withdrawalData.userCharge.amountUsd) })}
             </p>
           )}
         </div>
@@ -219,9 +226,9 @@ export default function WithdrawalsPage() {
           <div className="dash-card flex items-start gap-3 border border-accent-red/30 bg-accent-red/5 p-4 rounded-xl">
             <AlertCircle size={20} className="text-accent-red shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-sm text-white font-medium">Could not load withdrawal info</p>
+              <p className="text-sm text-white font-medium">{t("withdrawals.loadError")}</p>
               <Button size="sm" variant="outline" className="mt-3" onClick={() => load()}>
-                Retry
+                {t("withdrawals.retry")}
               </Button>
             </div>
           </div>
@@ -230,8 +237,8 @@ export default function WithdrawalsPage() {
         {withdrawalData.accounts.length === 0 ? (
           <Card>
             <EmptyState
-              title="No account found"
-              description="Your checking account should be created at registration. Contact support if this is missing."
+              title={t("withdrawals.noAccount")}
+              description={t("withdrawals.noAccountDesc")}
             />
           </Card>
         ) : (
@@ -388,6 +395,14 @@ export default function WithdrawalsPage() {
           setPendingChargeAmount(null);
         }}
         onContinue={handleChargeContinue}
+      />
+
+      <TransactionPinModal
+        open={pinOpen}
+        onClose={closePin}
+        onConfirm={confirmPin}
+        loading={pinLoading || submitting}
+        error={pinError}
       />
 
       {payChargeWithdrawalId && payChargeAmount != null && (

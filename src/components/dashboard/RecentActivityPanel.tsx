@@ -21,6 +21,8 @@ type ActivityItem = {
   category: ActivityCategory;
 };
 
+const PAGE_SIZE = 2;
+
 const ICONS: Record<string, typeof Wallet> = {
   DEPOSIT: ArrowDownLeft,
   WITHDRAWAL: TrendingUp,
@@ -65,7 +67,7 @@ export default function RecentActivityPanel() {
     async (pageNum: number, append: boolean) => {
       const params = new URLSearchParams({
         page: String(pageNum),
-        limit: "5",
+        limit: String(PAGE_SIZE),
         category,
         status,
       });
@@ -201,7 +203,7 @@ export default function RecentActivityPanel() {
 
       {loading ? (
         <div className="space-y-2">
-          {Array.from({ length: 3 }).map((_, i) => (
+          {Array.from({ length: PAGE_SIZE }).map((_, i) => (
             <ActivitySkeleton key={i} />
           ))}
         </div>
@@ -254,7 +256,7 @@ export default function RecentActivityPanel() {
             </AnimatePresence>
           </div>
 
-          {hasMore && (
+          {(hasMore || items.length < total) && (
             <motion.button
               type="button"
               onClick={loadMore}

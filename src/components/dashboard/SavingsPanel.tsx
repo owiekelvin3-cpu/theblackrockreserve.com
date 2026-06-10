@@ -5,6 +5,8 @@ import { PiggyBank, ArrowRightLeft } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/components/providers/I18nProvider";
+import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
+import { useTransactionPin } from "@/hooks/use-transaction-pin";
 
 export interface SavingsData {
   checking: {
@@ -37,6 +39,7 @@ export default function SavingsPanel({ data, onUpdated }: SavingsPanelProps) {
   const [amount, setAmount] = useState("");
   const [direction, setDirection] = useState<"to-savings" | "to-checking">("to-savings");
   const [loading, setLoading] = useState(false);
+  const { open: pinOpen, loading: pinLoading, error: pinError, requestPin, closePin, confirmPin } = useTransactionPin();
 
   const parsedAmount = Number.parseFloat(amount);
   const maxAmount = direction === "to-savings" ? data.availableToSave : data.savingsBalance;
@@ -56,28 +59,30 @@ export default function SavingsPanel({ data, onUpdated }: SavingsPanelProps) {
       return;
     }
 
-    setLoading(true);
-    try {
-      const res = await fetch("/api/dashboard/savings/transfer", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ direction, amount: transferAmount }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Transfer failed");
+    requestPin(async (transactionPin) => {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/dashboard/savings/transfer", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ direction, amount: transferAmount, transactionPin }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Transfer failed");
 
-      onUpdated();
-      setAmount("");
-      toast.success(
-        direction === "to-savings"
-          ? `${formatCurrency(transferAmount)} moved to savings`
-          : `${formatCurrency(transferAmount)} moved to checking`
-      );
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Transfer failed");
-    } finally {
-      setLoading(false);
-    }
+        onUpdated();
+        setAmount("");
+        toast.success(
+          direction === "to-savings"
+            ? `${formatCurrency(transferAmount)} moved to savings`
+            : `${formatCurrency(transferAmount)} moved to checking`
+        );
+      } catch (err) {
+        throw err instanceof Error ? err : new Error("Transfer failed");
+      } finally {
+        setLoading(false);
+      }
+    });
   };
 
   return (
@@ -178,7 +183,7 @@ export default function SavingsPanel({ data, onUpdated }: SavingsPanelProps) {
 
         <button
           type="button"
-          disabled={loading || maxAmount <= 0}
+          disabled={loading || pinLoading || maxAmount <= 0}
           onClick={() => submit()}
           className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white brand-gradient-bg shadow-brand disabled:opacity-50 disabled:cursor-not-allowed"
         >
@@ -190,6 +195,14 @@ export default function SavingsPanel({ data, onUpdated }: SavingsPanelProps) {
               : t("dashboard.moveToChecking")}
         </button>
       </div>
+
+      <TransactionPinModal
+        open={pinOpen}
+        onClose={closePin}
+        onConfirm={confirmPin}
+        loading={pinLoading || loading}
+        error={pinError}
+      />
     </div>
   );
 }

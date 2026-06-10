@@ -1,20 +1,21 @@
 "use client";
 
 import { TrendingUp, Users, ShieldCheck, type LucideIcon } from "lucide-react";
+import { useI18n } from "@/components/providers/I18nProvider";
 
 interface StatItem {
   value: string;
-  label: string;
+  labelKey: string;
   icon: LucideIcon;
 }
 
 const stats: StatItem[] = [
-  { value: "$2.4B+", label: "Assets Under Management", icon: TrendingUp },
-  { value: "50,000+", label: "Active Members", icon: Users },
-  { value: "99.9%", label: "Uptime Guarantee", icon: ShieldCheck },
+  { value: "$2.4B+", labelKey: "marketing.stats.aum", icon: TrendingUp },
+  { value: "50,000+", labelKey: "marketing.stats.members", icon: Users },
+  { value: "99.9%", labelKey: "marketing.stats.uptime", icon: ShieldCheck },
 ];
 
-function StatCard({ stat }: { stat: StatItem }) {
+function StatCard({ stat, label }: { stat: StatItem; label: string }) {
   const Icon = stat.icon;
 
   return (
@@ -27,7 +28,7 @@ function StatCard({ stat }: { stat: StatItem }) {
           {stat.value}
         </span>
         <span className="mt-1 text-[11px] sm:text-xs font-medium uppercase tracking-[0.18em] text-text-muted">
-          {stat.label}
+          {label}
         </span>
       </div>
     </div>
@@ -35,18 +36,20 @@ function StatCard({ stat }: { stat: StatItem }) {
 }
 
 export default function Stats() {
+  const { t } = useI18n();
+
   return (
-    <section className="relative py-10 sm:py-14 overflow-hidden" aria-label="Platform statistics">
+    <section className="relative py-10 sm:py-14 overflow-hidden" aria-label={t("marketing.stats.ariaLabel")}>
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent-brand/40 to-transparent" />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <p className="text-center text-[11px] font-semibold uppercase tracking-[0.25em] text-text-muted mb-8">
-          Trusted at scale
+          {t("marketing.stats.heading")}
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
           {stats.map((stat) => (
-            <StatCard key={stat.label} stat={stat} />
+            <StatCard key={stat.labelKey} stat={stat} label={t(stat.labelKey)} />
           ))}
         </div>
       </div>

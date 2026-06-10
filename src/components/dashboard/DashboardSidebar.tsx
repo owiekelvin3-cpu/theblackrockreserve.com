@@ -99,7 +99,7 @@ export default function DashboardSidebar() {
             type="button"
             className="lg:hidden p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-white/5"
             onClick={closeSidebar}
-            aria-label="Close menu"
+            aria-label={t("dashboard.sidebar.closeMenu")}
           >
             <X size={20} />
           </button>
@@ -108,16 +108,16 @@ export default function DashboardSidebar() {
         <div className="px-4 mb-4">
           <div className="dash-search flex items-center gap-2 px-3 py-2.5 min-h-[44px]">
             <Search size={15} className="text-text-muted shrink-0" />
-            <span className="text-sm text-text-muted flex-1">Search</span>
+            <span className="text-sm text-text-muted flex-1">{t("dashboard.sidebar.search")}</span>
             <kbd className="hidden sm:inline text-[10px] text-text-muted bg-black/30 px-1.5 py-0.5 rounded border border-white/10 font-mono">⌘K</kbd>
           </div>
         </div>
 
         <nav className="flex-1 px-3 overflow-y-auto scrollbar-hide overscroll-contain">
-          <p className="px-3 mb-2 text-[10px] font-semibold text-text-muted uppercase tracking-widest">Main</p>
+          <p className="px-3 mb-2 text-[10px] font-semibold text-text-muted uppercase tracking-widest">{t("dashboard.sidebar.main")}</p>
           <div className="space-y-0.5 mb-6">{mainNav.map(navLink)}</div>
 
-          <p className="px-3 mb-2 text-[10px] font-semibold text-text-muted uppercase tracking-widest">Features</p>
+          <p className="px-3 mb-2 text-[10px] font-semibold text-text-muted uppercase tracking-widest">{t("dashboard.sidebar.features")}</p>
           <div className="space-y-0.5">{featureNav.map(navLink)}</div>
         </nav>
 
@@ -128,7 +128,7 @@ export default function DashboardSidebar() {
           <div className="flex items-center gap-3 mb-3 px-1">
             <ProfileAvatar name={session?.user?.name} image={profileImage} size="md" />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-text-primary truncate">{session?.user?.name ?? "Account"}</p>
+              <p className="text-sm font-semibold text-text-primary truncate">{session?.user?.name ?? t("common.account")}</p>
               <p className="text-xs text-text-muted truncate">{session?.user?.email}</p>
             </div>
           </div>

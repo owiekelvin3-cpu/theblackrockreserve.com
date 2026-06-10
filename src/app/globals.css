@@ -27,8 +27,11 @@
 
   --border: rgba(255, 255, 255, 0.08);
   --border-strong: rgba(255, 255, 255, 0.14);
+  --border-subtle: rgba(255, 255, 255, 0.06);
   --surface-overlay: rgba(255, 255, 255, 0.04);
   --surface-hover: rgba(255, 255, 255, 0.06);
+  --surface-base: rgba(18, 18, 22, 0.65);
+  --surface-elevated: rgba(24, 24, 30, 0.88);
 
   --glass-bg: rgba(18, 18, 22, 0.55);
   --glass-bg-strong: rgba(18, 18, 22, 0.65);
@@ -79,8 +82,11 @@
 
   --border: rgba(15, 20, 25, 0.08);
   --border-strong: rgba(15, 20, 25, 0.14);
+  --border-subtle: rgba(15, 20, 25, 0.08);
   --surface-overlay: rgba(15, 20, 25, 0.03);
   --surface-hover: rgba(255, 95, 5, 0.06);
+  --surface-base: #f1f4f9;
+  --surface-elevated: #ffffff;
 
   --glass-bg: rgba(255, 255, 255, 0.78);
   --glass-bg-strong: rgba(255, 255, 255, 0.9);
@@ -509,7 +515,7 @@ body {
     border-top: 1px solid var(--footer-border);
     background: var(--footer-bg);
     /* Clearance for floating chat button on mobile */
-    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(3.75rem + env(safe-area-inset-bottom, 0px));
   }
 
   @media (min-width: 640px) {
@@ -519,7 +525,7 @@ body {
   }
 
   .theme-footer-inner {
-    padding: 3rem 1rem 1.5rem;
+    padding: 2rem 1rem 1rem;
   }
 
   @media (min-width: 640px) {
