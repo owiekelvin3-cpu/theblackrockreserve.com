@@ -48,7 +48,8 @@ function ActivitySkeleton() {
   );
 }
 
-export default function RecentActivityPanel() {
+export default function RecentActivityPanel({ variant = "default" }: { variant?: "default" | "mobile" }) {
+  const isMobile = variant === "mobile";
   const { t, formatCurrency, formatDate, formatTime } = useI18n();
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [page, setPage] = useState(1);
@@ -122,16 +123,18 @@ export default function RecentActivityPanel() {
   ];
 
   return (
-    <div className="dash-panel p-5">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+    <div className={cn("dash-panel", isMobile ? "dash-activity-panel-mobile p-4" : "p-5")}>
+      <div className={cn("flex justify-between gap-3 mb-4", isMobile ? "items-center" : "flex-col sm:flex-row sm:items-center mb-5")}>
         <div>
-          <h2 className="text-base font-semibold text-text-primary">{t("dashboard.recentActivity")}</h2>
-          {!loading && total > 0 && (
+          <h2 className={cn("font-semibold text-text-primary", isMobile ? "text-[0.9375rem]" : "text-base")}>
+            {t("dashboard.recentActivity")}
+          </h2>
+          {!loading && total > 0 && !isMobile && (
             <p className="text-xs text-text-muted mt-0.5">{total} total</p>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1 sm:w-48">
+        <div className={cn("flex items-center gap-2", isMobile ? "shrink-0" : "w-full sm:w-auto")}>
+          <div className={cn("relative", isMobile ? "w-36" : "flex-1 sm:w-48")}>
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
             <input
               type="search"
@@ -144,10 +147,15 @@ export default function RecentActivityPanel() {
           <button
             type="button"
             onClick={() => setShowFilters((v) => !v)}
-            className={cn("dash-control-btn shrink-0", showFilters && "border-accent-brand/40")}
+            className={cn(
+              "dash-control-btn shrink-0",
+              showFilters && "border-accent-brand/40",
+              isMobile && "px-2.5 min-w-[44px] min-h-[44px] justify-center"
+            )}
+            aria-label={t("common.filter")}
           >
             <SlidersHorizontal size={14} />
-            {t("common.filter")}
+            {!isMobile && t("common.filter")}
           </button>
         </div>
       </div>
@@ -227,29 +235,45 @@ export default function RecentActivityPanel() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i < 5 ? i * 0.04 : 0 }}
-                    className="dash-wallet-tile p-4"
+                    className={cn(
+                      "dash-wallet-tile",
+                      isMobile ? "dash-activity-row-mobile p-3" : "p-4"
+                    )}
                   >
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="h-8 w-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-                          <Icon size={14} className="text-accent-brand" />
+                        <div className={cn(
+                          "rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0",
+                          isMobile ? "h-10 w-10" : "h-8 w-8 rounded-lg"
+                        )}>
+                          <Icon size={isMobile ? 16 : 14} className="text-accent-brand" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm text-text-primary font-medium truncate">{a.name}</p>
-                          <p className="text-xs text-text-muted mt-0.5">{a.orderId}</p>
+                          <p className={cn("text-text-primary font-medium truncate", isMobile ? "text-[0.875rem]" : "text-sm")}>
+                            {a.name}
+                          </p>
+                          <p className="text-xs text-text-muted mt-0.5 truncate">
+                            {isMobile ? `${formatDate(a.date)} · ${formatTime(a.date)}` : a.orderId}
+                          </p>
                         </div>
                       </div>
-                      <p className={cn("text-sm font-mono font-medium shrink-0", a.amount >= 0 ? "text-accent-green" : "text-text-primary")}>
+                      <p className={cn(
+                        "font-mono font-semibold shrink-0 tabular-nums",
+                        isMobile ? "text-[0.875rem]" : "text-sm font-medium",
+                        a.amount >= 0 ? "text-accent-green" : "text-text-primary"
+                      )}>
                         {a.amount >= 0 ? "+" : ""}{formatCurrency(a.amount)}
                       </p>
                     </div>
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5 text-xs text-text-muted">
-                      <span>{formatDate(a.date)} · {formatTime(a.date)}</span>
-                      <span className="inline-flex items-center gap-1.5 text-text-primary">
-                        <span className={cn("h-1.5 w-1.5 rounded-full", statusKey === "completed" ? "bg-accent-green" : statusKey === "failed" ? "bg-accent-red" : "bg-accent-gold")} />
-                        {statusLabel(a.status)}
-                      </span>
-                    </div>
+                    {!isMobile && (
+                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5 text-xs text-text-muted">
+                        <span>{formatDate(a.date)} · {formatTime(a.date)}</span>
+                        <span className="inline-flex items-center gap-1.5 text-text-primary">
+                          <span className={cn("h-1.5 w-1.5 rounded-full", statusKey === "completed" ? "bg-accent-green" : statusKey === "failed" ? "bg-accent-red" : "bg-accent-gold")} />
+                          {statusLabel(a.status)}
+                        </span>
+                      </div>
+                    )}
                   </motion.div>
                 );
               })}

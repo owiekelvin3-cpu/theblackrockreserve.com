@@ -10,6 +10,7 @@ import LanguageSelector from "@/components/ui/LanguageSelector";
 import ProfileAvatar from "@/components/ui/ProfileAvatar";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { useProfileImage } from "@/components/providers/ProfileImageProvider";
+import { cn } from "@/lib/utils";
 
 const titleKeys: Record<string, string> = {
   "/dashboard": "nav.dashboard",
@@ -34,11 +35,17 @@ export default function DashboardTopBar() {
   const { t } = useI18n();
   const { image: profileImage } = useProfileImage();
   const title = t(resolveTitleKey(pathname));
+  const isOverview = pathname === "/dashboard";
 
   return (
-    <header className="dash-sticky-header -mx-4 sm:-mx-6 lg:mx-0 px-4 sm:px-6 lg:px-0 mb-4 sm:mb-6 sticky top-0 z-30 pt-[env(safe-area-inset-top)]">
+    <header
+      className={cn(
+        "dash-sticky-header -mx-4 sm:-mx-6 lg:mx-0 px-4 sm:px-6 lg:px-0 sticky top-0 z-30 pt-[env(safe-area-inset-top)]",
+        isOverview ? "mb-2 lg:mb-6" : "mb-4 sm:mb-6"
+      )}
+    >
       <div className="flex items-center justify-between gap-2 sm:gap-3 min-w-0 py-2 sm:py-0">
-        <div className="min-w-0 flex-1">
+        <div className={cn("min-w-0 flex-1", isOverview && "hidden lg:block")}>
           <p className="text-[10px] sm:text-xs font-medium text-text-muted uppercase tracking-wider truncate">
             {t("brand.name")}
           </p>
@@ -46,6 +53,11 @@ export default function DashboardTopBar() {
             {title}
           </h1>
         </div>
+        {isOverview && (
+          <p className="lg:hidden text-sm font-semibold text-text-primary truncate min-w-0 flex-1">
+            {t("brand.name")}
+          </p>
+        )}
 
         <div className="flex items-center gap-0.5 sm:gap-1.5 shrink-0">
           <LanguageSelector className="hidden sm:block" />

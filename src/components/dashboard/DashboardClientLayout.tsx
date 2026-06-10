@@ -14,7 +14,7 @@ export default function DashboardClientLayout({ children }: { children: React.Re
         <div className="dash-layout min-h-[100dvh] overflow-x-hidden">
           <DashboardSidebar />
           <div className="lg:ml-[260px] min-h-[100dvh] flex flex-col">
-            <main className="flex-1 p-4 sm:p-6 lg:p-8 pt-2 lg:pt-8 max-w-[1500px] w-full mx-auto dash-main-pad">
+            <main className="flex-1 px-4 pt-1 pb-4 sm:p-6 lg:p-8 lg:pt-8 max-w-[1500px] w-full mx-auto dash-main-pad">
               <DashboardTopBar />
               {children}
             </main>

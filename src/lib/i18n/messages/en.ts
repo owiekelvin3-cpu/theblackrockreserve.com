@@ -108,6 +108,10 @@ const enBase = {
   dashboard: {
     title: "Dashboard",
     myBalance: "My balance",
+    totalBalance: "Total Balance",
+    hideBalance: "Hide balance",
+    showBalance: "Show balance",
+    quickActions: "Quick actions",
     investedBalance: "Invested balance",
     profitBalance: "Profit balance",
     seeDetails: "See details",

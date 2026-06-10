@@ -86,10 +86,10 @@ export default function SavingsPanel({ data, onUpdated }: SavingsPanelProps) {
   };
 
   return (
-    <div className="dash-panel p-5">
-      <div className="flex items-center justify-between gap-3 mb-5">
-        <h2 className="text-base font-semibold text-text-primary">{t("dashboard.savings")}</h2>
-        <div className="dash-period-toggle">
+    <div className="dash-panel dash-savings-panel p-4 sm:p-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-5">
+        <h2 className="text-[0.9375rem] sm:text-base font-semibold text-text-primary">{t("dashboard.savings")}</h2>
+        <div className="dash-period-toggle self-start sm:self-auto shrink-0">
           <button
             type="button"
             onClick={() => setDirection("to-savings")}
