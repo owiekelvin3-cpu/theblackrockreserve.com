@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import MarketingImage from "@/components/ui/MarketingImage";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
@@ -62,7 +62,7 @@ export default function FeaturesPage() {
       <section className="section-padding pt-32">
         <div className="mx-auto max-w-7xl">
           <div className="relative mb-12 h-48 sm:h-64 overflow-hidden rounded-2xl glass-card">
-            <Image
+            <MarketingImage
               src={marketingImages.officeWide}
               alt="Modern fintech workspace"
               fill
@@ -106,7 +106,7 @@ export default function FeaturesPage() {
             >
               <div className={feature.reverse ? "lg:order-2" : ""}>
                 <Card className="relative h-64 sm:h-80 overflow-hidden p-0">
-                  <Image
+                  <MarketingImage
                     src={feature.image}
                     alt={feature.imageAlt}
                     fill

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import MarketingImage from "@/components/ui/MarketingImage";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
@@ -68,7 +68,7 @@ export default function ContactPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <Image
+            <MarketingImage
               src={marketingImages.contactHero}
               alt="Customer support team ready to assist"
               fill
@@ -129,7 +129,7 @@ export default function ContactPage() {
               </Card>
 
               <Card className="relative h-48 sm:h-56 overflow-hidden p-0">
-                <Image
+                <MarketingImage
                   src={marketingImages.contactLocation}
                   alt="New York financial district skyline near our headquarters"
                   fill

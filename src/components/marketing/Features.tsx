@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import MarketingImage from "@/components/ui/MarketingImage";
 import { motion } from "framer-motion";
 import {
   Brain, Bot, LineChart, Mic, BarChart3, Sparkles,
@@ -133,7 +133,7 @@ export default function Features() {
                     return (
                       <motion.div
                         key={photo}
-                        className="absolute relative h-8 w-8 rounded-full overflow-hidden shadow-brand border-2 border-bg-primary"
+                        className="absolute h-8 w-8"
                         style={{ left: `calc(50% + ${x}px - 16px)`, top: `calc(50% + ${y}px - 16px)` }}
                         initial={{ opacity: 0, scale: 0 }}
                         whileInView={{ opacity: 1, scale: 1 }}
@@ -145,7 +145,9 @@ export default function Features() {
                           y: { duration: 2.5, delay: 0.6 + i * 0.2, repeat: Infinity, ease: "easeInOut" },
                         }}
                       >
-                        <Image src={photo} alt="" fill className="object-cover" sizes="32px" />
+                        <div className="relative h-full w-full rounded-full overflow-hidden shadow-brand border-2 border-bg-primary">
+                          <MarketingImage src={photo} alt="" fill className="object-cover" sizes="32px" />
+                        </div>
                       </motion.div>
                     );
                   })}

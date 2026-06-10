@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import MarketingImage from "@/components/ui/MarketingImage";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
@@ -12,14 +12,14 @@ export default function CTABanner() {
   return (
     <section className="section-padding">
       <motion.div
-        className="mx-auto max-w-5xl relative overflow-hidden rounded-3xl"
+        className="mx-auto max-w-5xl relative min-h-[16rem] sm:min-h-[18rem] overflow-hidden rounded-3xl"
         initial={{ opacity: 0, y: 24, scale: 0.98 }}
         whileInView={{ opacity: 1, y: 0, scale: 1 }}
         viewport={{ once: true }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         whileHover={{ scale: 1.01 }}
       >
-        <Image
+        <MarketingImage
           src={marketingImages.officeWide}
           alt=""
           fill

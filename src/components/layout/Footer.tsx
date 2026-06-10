@@ -33,20 +33,30 @@ const legal = [
   { label: "Disclosures", href: "/disclosures" },
 ];
 
+const linkColumns = [
+  { title: "Product", items: products },
+  { title: "Company", items: company },
+  { title: "Resources", items: resources },
+  { title: "Legal", items: legal },
+] as const;
+
 export default function Footer() {
   return (
     <footer className="theme-footer relative overflow-hidden">
-      <div className="mx-auto max-w-7xl section-padding">
+      <div className="theme-footer-inner mx-auto max-w-7xl">
         <motion.div
-          className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-5"
+          className="footer-links-grid grid grid-cols-2 gap-x-5 gap-y-8 md:grid-cols-4 lg:grid-cols-5 lg:gap-x-8"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-40px" }}
           variants={stagger}
         >
-          <motion.div variants={fadeUp} className="col-span-2 sm:col-span-3 lg:col-span-1 space-y-4">
-            <Logo />
-            <p className="text-sm text-text-secondary leading-relaxed max-w-xs">
+          <motion.div
+            variants={fadeUp}
+            className="footer-brand col-span-2 flex flex-col items-center text-center md:col-span-4 md:items-start md:text-left lg:col-span-1 space-y-4"
+          >
+            <Logo className="justify-center md:justify-start" />
+            <p className="text-sm text-text-secondary leading-relaxed max-w-sm">
               Premium digital banking and wealth management for those who demand excellence.
             </p>
             <div className="flex gap-3">
@@ -65,20 +75,15 @@ export default function Footer() {
             </div>
           </motion.div>
 
-          {[
-            { title: "Product", items: products },
-            { title: "Company", items: company },
-            { title: "Resources", items: resources },
-            { title: "Legal", items: legal },
-          ].map((col) => (
-            <motion.div key={col.title} variants={fadeUp}>
-              <h4 className="font-semibold text-white mb-4 text-sm">{col.title}</h4>
-              <ul className="space-y-2.5">
+          {linkColumns.map((col) => (
+            <motion.div key={col.title} variants={fadeUp} className="footer-link-col min-w-0">
+              <h4 className="font-semibold text-text-primary mb-3 sm:mb-4 text-sm">{col.title}</h4>
+              <ul className="space-y-2 sm:space-y-2.5">
                 {col.items.map((item) => (
                   <li key={item.label}>
                     <Link
                       href={item.href}
-                      className="text-sm text-text-secondary hover:text-accent-brand transition-colors"
+                      className="text-sm text-text-secondary hover:text-accent-brand transition-colors break-words"
                     >
                       {item.label}
                     </Link>
@@ -90,25 +95,28 @@ export default function Footer() {
         </motion.div>
 
         <motion.div
-          className="mt-16 pt-8 border-t border-white/10"
+          className="footer-bottom mt-10 sm:mt-14 lg:mt-16 pt-8 border-t border-white/10"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          <div className="flex flex-col items-center text-center">
+          <div className="flex flex-col items-center text-center px-1">
             <motion.div
+              className="w-full max-w-full overflow-hidden"
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             >
-              <LogoWordmark className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl opacity-90" />
+              <LogoWordmark className="footer-wordmark opacity-90" />
             </motion.div>
-            <p className="mt-6 text-sm text-text-muted">
+            <p className="mt-5 sm:mt-6 text-sm text-text-muted text-balance">
               © {new Date().getFullYear()} Blackrock Reserve. All rights reserved.
             </p>
-            <p className="mt-1 text-xs text-text-muted">FDIC Insured | Member FDIC | Equal Housing Lender</p>
+            <p className="mt-2 text-[11px] sm:text-xs text-text-muted text-balance leading-relaxed max-w-md">
+              FDIC Insured · Member FDIC · Equal Housing Lender
+            </p>
           </div>
         </motion.div>
       </div>

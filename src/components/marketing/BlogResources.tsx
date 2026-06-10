@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import MarketingImage from "@/components/ui/MarketingImage";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
@@ -38,7 +38,7 @@ export default function BlogResources() {
             >
               <Link href="/blog" className="block">
                 <div className="relative h-44 sm:h-52 overflow-hidden">
-                  <Image
+                  <MarketingImage
                     src={article.image}
                     alt=""
                     fill

@@ -1,19 +1,19 @@
 /** Curated Unsplash URLs — professional fintech / business imagery */
 const u = (id: string, w = 800) =>
-  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=80`;
+  `https://images.unsplash.com/${id}?ixlib=rb-4.0.3&auto=format&fit=crop&w=${w}&q=80`;
 
 export const marketingImages = {
   teamHero: u("photo-1521791136064-7986c2920216", 1400),
   officeWide: u("photo-1497366216548-37526070297c", 1400),
-  contactHero: u("photo-1423666639761-f5410758f34d", 1400),
-  contactLocation: u("photo-1494522358652-f30e804ade64", 1000),
-  investmentsHero: u("photo-1642790103337-e686be66d197", 1400),
+  contactHero: u("photo-1556761175-5973dc0f32e7", 1400),
+  contactLocation: u("photo-1486406146926-c627a92ad1ab", 1000),
+  investmentsHero: u("photo-1579621970563-ebec7560ff3e", 1400),
   analytics: u("photo-1551288049-bebda4e38f71", 900),
   features: {
     banking: u("photo-1601597111158-2fceff292cdc", 900),
     investments: u("photo-1611974789855-9c2a0a7236a3", 900),
-    security: u("photo-1563013547-824ae1b704d3", 900),
-    integration: u("photo-1526304640581-d334cdbbf45f", 900),
+    security: u("photo-1563986768609-322da13575f3", 900),
+    integration: u("photo-1454165804606-c3d57bc86b40", 900),
     analytics: u("photo-1551288049-bebda4e38f71", 900),
   },
   blog: {
@@ -32,8 +32,8 @@ export const marketingImages = {
     david: u("photo-1500648767791-00dcc994a43e", 200),
     amara: u("photo-1531123897727-8f129e1688ce", 200),
     robert: u("photo-1560250097-0b93528c311a", 200),
-    isabella: u("photo-1589156191108-cdcff793d5fc", 200),
-    thomas: u("photo-1519345182560-61f75d8e7c4c", 200),
+    isabella: u("photo-1508214751196-bcfd4ca60f91", 200),
+    thomas: u("photo-1551836022-d5d88e9218df", 200),
     support1: u("photo-1438761681033-6461ffad8d80", 160),
     support2: u("photo-1506794778202-cad84cf45f1d", 160),
     support3: u("photo-1544005313-94ddf0286df2", 160),

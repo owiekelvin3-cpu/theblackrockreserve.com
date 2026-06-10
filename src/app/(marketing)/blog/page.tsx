@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import MarketingImage from "@/components/ui/MarketingImage";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -42,7 +42,7 @@ export default function BlogPage() {
               transition={{ delay: i * 0.05 }}
             >
               <div className="relative h-44 sm:h-52 overflow-hidden">
-                <Image
+                <MarketingImage
                   src={article.image}
                   alt=""
                   fill

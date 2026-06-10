@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import Image from "next/image";
+import MarketingImage from "@/components/ui/MarketingImage";
 import { motion } from "framer-motion";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -77,7 +77,7 @@ export default function InvestmentsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
           >
-            <Image
+            <MarketingImage
               src={marketingImages.investmentsHero}
               alt="Investment portfolio and market performance charts"
               fill

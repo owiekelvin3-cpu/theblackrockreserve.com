@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import MarketingImage from "@/components/ui/MarketingImage";
 import { motion } from "framer-motion";
 import { Star } from "lucide-react";
 import { cardHover } from "@/components/ui/AnimateIn";
@@ -61,7 +61,7 @@ export default function Testimonials() {
                 <p className="text-text-secondary text-sm leading-relaxed mb-6">&ldquo;{t.text}&rdquo;</p>
                 <div className="flex items-center gap-3">
                   <div className="relative h-9 w-9 rounded-full overflow-hidden ring-2 ring-accent-brand/40 shadow-brand shrink-0">
-                    <Image src={t.photo} alt={t.name} fill className="object-cover" sizes="36px" />
+                    <MarketingImage src={t.photo} alt={t.name} fill className="object-cover" sizes="36px" />
                   </div>
                   <div>
                     <p className="font-semibold text-white text-sm">{t.name}</p>

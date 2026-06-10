@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import MarketingImage from "@/components/ui/MarketingImage";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Linkedin } from "lucide-react";
@@ -55,7 +55,7 @@ export default function AboutPage() {
           </motion.div>
 
           <div className="mt-16 glass-card relative h-64 sm:h-80 overflow-hidden rounded-2xl">
-            <Image
+            <MarketingImage
               src={marketingImages.teamHero}
               alt="Blackrock Reserve leadership team collaborating"
               fill
@@ -121,7 +121,7 @@ export default function AboutPage() {
               <motion.div key={person.name} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}>
                 <Card className="text-center">
                   <div className="relative mx-auto h-20 w-20 rounded-full overflow-hidden ring-2 ring-accent-gold/50">
-                    <Image src={person.photo} alt={person.name} fill className="object-cover" sizes="80px" />
+                    <MarketingImage src={person.photo} alt={person.name} fill className="object-cover" sizes="80px" />
                   </div>
                   <h3 className="mt-4 font-semibold text-text-primary">{person.name}</h3>
                   <p className="text-sm text-text-secondary">{person.title}</p>
