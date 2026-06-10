@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   BarChart,
@@ -11,6 +11,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
+import type { BarRectangleItem, BarShapeProps } from "recharts";
 import ChartContainer from "@/components/ui/ChartContainer";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { cn } from "@/lib/utils";
@@ -24,44 +25,29 @@ export type CashFlowMonth = {
 };
 
 const DISPLAY_MONTHS = 7;
-const INACTIVE_TOP = "#2a2a2e";
-const INACTIVE_BOTTOM = "#1c1c1f";
-const MIN_BAR_PX = 8;
+const DEFAULT_Y_MAX = 50000;
+const MIN_BAR_PX = 10;
 
 type ChartMode = "monthly" | "yearly";
 
-type CashFlowBarProps = {
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
-  month?: string;
-  payload?: CashFlowMonth;
-  activeMonth: string;
-};
-
-function CashFlowBarShape({
-  x = 0,
-  y = 0,
-  width = 0,
-  height = 0,
-  month,
-  payload,
-  activeMonth,
-}: CashFlowBarProps) {
+function CashFlowBarShape(
+  props: BarShapeProps & { activeMonth: string; activeGradId: string; inactiveGradId: string }
+) {
+  const { x = 0, y = 0, width = 0, height = 0, payload, activeMonth, activeGradId, inactiveGradId } = props;
   if (width <= 0) return null;
 
-  const barMonth = month ?? payload?.month;
+  const row = payload as CashFlowMonth | undefined;
+  const barMonth = row?.month ?? "";
   const isActive = barMonth === activeMonth;
   const barHeight = Math.max(height, MIN_BAR_PX);
   const barY = height < MIN_BAR_PX ? y + height - MIN_BAR_PX : y;
-  const r = Math.min(14, barHeight / 2, width / 2);
+  const r = Math.min(16, barHeight / 2.2, width / 2.2);
 
   return (
     <g className={cn("cash-flow-bar", isActive && "cash-flow-bar-active")}>
       <path
         d={`M ${x} ${barY + r} Q ${x} ${barY} ${x + r} ${barY} L ${x + width - r} ${barY} Q ${x + width} ${barY} ${x + width} ${barY + r} L ${x + width} ${barY + barHeight} L ${x} ${barY + barHeight} Z`}
-        fill={isActive ? "url(#cf-bar-active)" : "url(#cf-bar-inactive)"}
+        fill={isActive ? `url(#${activeGradId})` : `url(#${inactiveGradId})`}
         style={{ cursor: "pointer" }}
       />
       {isActive && (
@@ -69,14 +55,14 @@ function CashFlowBarShape({
           <circle
             cx={x + width / 2}
             cy={barY}
-            r={7}
-            fill="rgba(255, 95, 5, 0.45)"
+            r={8}
+            fill="rgba(255, 95, 5, 0.4)"
             className="cash-flow-bar-glow"
           />
           <circle
             cx={x + width / 2}
             cy={barY}
-            r={4}
+            r={4.5}
             fill="#ffffff"
             stroke="#FF5F05"
             strokeWidth={1.5}
@@ -87,31 +73,28 @@ function CashFlowBarShape({
   );
 }
 
+type TooltipLabels = {
+  cashFlow: string;
+  inflow: string;
+  outflow: string;
+  format: (value: number) => string;
+};
+
 function CashFlowTooltip({
   active,
   payload,
   labels,
 }: {
   active?: boolean;
-  payload?: { payload: CashFlowMonth }[];
-  labels: {
-    cashFlow: string;
-    inflow: string;
-    outflow: string;
-    format: (value: number) => string;
-  };
+  payload?: ReadonlyArray<{ payload: CashFlowMonth }>;
+  labels: TooltipLabels;
 }) {
   if (!active || !payload?.length) return null;
-  const row = payload[0].payload as CashFlowMonth;
+  const row = payload[0].payload;
   const net = row.inflow - row.outflow;
 
   return (
-    <motion.div
-      className="cash-flow-tooltip"
-      initial={{ opacity: 0, y: 8, scale: 0.96 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-    >
+    <div className="cash-flow-tooltip">
       <p className="cash-flow-tooltip-date">{row.tooltipDate}</p>
       <div className="cash-flow-tooltip-row">
         <span>{labels.cashFlow}</span>
@@ -127,8 +110,7 @@ function CashFlowTooltip({
           {row.outflow > 0 ? `-${labels.format(row.outflow)}` : labels.format(0)}
         </span>
       </div>
-      <div className="cash-flow-tooltip-tail" />
-    </motion.div>
+    </div>
   );
 }
 
@@ -145,12 +127,12 @@ export default function CashFlowPanel({
 }) {
   const { t, formatCurrency } = useI18n();
   const [chartMode, setChartMode] = useState<ChartMode>("yearly");
+  const chartId = useId().replace(/:/g, "");
+  const activeGradId = `cf-bar-active-${chartId}`;
+  const inactiveGradId = `cf-bar-inactive-${chartId}`;
+  const shadowFilterId = `cf-bar-shadow-${chartId}`;
 
-  const chartData = useMemo(() => {
-    const currentMonth = new Date().getMonth();
-    const start = Math.max(0, currentMonth - (DISPLAY_MONTHS - 1));
-    return data.slice(start, currentMonth + 1);
-  }, [data]);
+  const chartData = useMemo(() => data.slice(0, DISPLAY_MONTHS), [data]);
 
   const peakMonth = useMemo(() => {
     const peak = [...chartData].sort((a, b) => b.value - a.value)[0];
@@ -173,7 +155,7 @@ export default function CashFlowPanel({
 
   const { yMax, ticks: yTicks } = useMemo(() => {
     const peak = Math.max(...chartData.map((m) => m.value), 0);
-    if (peak === 0) return buildYAxis(50000);
+    if (peak === 0) return buildYAxis(DEFAULT_Y_MAX);
     const step = peak <= 10000 ? 2000 : 10000;
     const scaled = Math.ceil(peak / step) * step;
     return buildYAxis(Math.max(scaled, step));
@@ -190,13 +172,19 @@ export default function CashFlowPanel({
   );
 
   const renderBar = useCallback(
-    (props: CashFlowBarProps) => <CashFlowBarShape {...props} activeMonth={activeMonth} />,
-    [activeMonth]
+    (props: BarShapeProps) => (
+      <CashFlowBarShape
+        {...props}
+        activeMonth={activeMonth}
+        activeGradId={activeGradId}
+        inactiveGradId={inactiveGradId}
+      />
+    ),
+    [activeMonth, activeGradId, inactiveGradId]
   );
 
-  const handleBarInteraction = useCallback((entry: unknown) => {
-    const raw = entry as CashFlowMonth & { payload?: CashFlowMonth };
-    const row = raw?.month ? raw : raw?.payload;
+  const handleBarInteraction = useCallback((entry: BarRectangleItem) => {
+    const row = entry?.payload as CashFlowMonth | undefined;
     if (row?.month) setSelectedMonth(row.month);
   }, []);
 
@@ -236,26 +224,26 @@ export default function CashFlowPanel({
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={chartData}
-            margin={{ top: 24, right: 8, left: 0, bottom: 4 }}
-            barCategoryGap="28%"
+            margin={{ top: 20, right: 12, left: 4, bottom: 0 }}
+            barCategoryGap="26%"
           >
             <defs>
-              <linearGradient id="cf-bar-active" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#FF8A4C" />
-                <stop offset="40%" stopColor="#FF5F05" />
+              <linearGradient id={activeGradId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#FF9A5C" />
+                <stop offset="35%" stopColor="#FF5F05" />
                 <stop offset="100%" stopColor="#C94A00" />
               </linearGradient>
-              <linearGradient id="cf-bar-inactive" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={INACTIVE_TOP} />
-                <stop offset="100%" stopColor={INACTIVE_BOTTOM} />
+              <linearGradient id={inactiveGradId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#2e2e32" />
+                <stop offset="100%" stopColor="#1a1a1e" />
               </linearGradient>
-              <filter id="cf-bar-shadow" x="-20%" y="-30%" width="140%" height="160%">
-                <feDropShadow dx="0" dy="6" stdDeviation="6" floodColor="#FF5F05" floodOpacity="0.35" />
+              <filter id={shadowFilterId} x="-20%" y="-30%" width="140%" height="160%">
+                <feDropShadow dx="0" dy="8" stdDeviation="8" floodColor="#FF5F05" floodOpacity="0.4" />
               </filter>
             </defs>
             <CartesianGrid
               strokeDasharray="0"
-              stroke="rgba(255,255,255,0.04)"
+              stroke="rgba(255,255,255,0.05)"
               vertical={false}
             />
             <XAxis
@@ -263,7 +251,8 @@ export default function CashFlowPanel({
               axisLine={false}
               tickLine={false}
               tick={{ fill: "#6b7280", fontSize: 12, fontWeight: 500 }}
-              dy={8}
+              dy={10}
+              interval={0}
             />
             <YAxis
               axisLine={false}
@@ -272,21 +261,23 @@ export default function CashFlowPanel({
               tickFormatter={(v) => `${Number(v) / 1000}k`}
               domain={[0, yMax]}
               ticks={yTicks}
-              width={44}
+              width={42}
             />
             <Tooltip
               content={<CashFlowTooltip labels={tooltipLabels} />}
-              cursor={{ fill: "rgba(255, 95, 5, 0.05)", radius: 10 }}
-              animationDuration={220}
+              cursor={{ fill: "rgba(255, 95, 5, 0.06)", radius: 12 }}
+              animationDuration={200}
+              offset={16}
+              wrapperStyle={{ zIndex: 20, outline: "none" }}
             />
             <Bar
               dataKey="value"
-              maxBarSize={52}
+              maxBarSize={56}
               minPointSize={MIN_BAR_PX}
-              shape={renderBar as never}
+              shape={renderBar}
               isAnimationActive
-              animationBegin={100}
-              animationDuration={1000}
+              animationBegin={80}
+              animationDuration={900}
               animationEasing="ease-out"
               onClick={handleBarInteraction}
               onMouseEnter={handleBarInteraction}
