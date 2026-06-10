@@ -13,7 +13,6 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { href: "/dashboard/accounts", label: "Accounts", icon: Wallet },
   { href: "/dashboard/investments", label: "Investments", icon: TrendingUp },
   { href: "/dashboard/analytics", label: "Loans", icon: Landmark },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },

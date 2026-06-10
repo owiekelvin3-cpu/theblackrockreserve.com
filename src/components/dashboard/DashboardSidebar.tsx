@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import {
-  LayoutDashboard, ArrowUpFromLine, FileText, Wallet,
+  LayoutDashboard, ArrowUpFromLine, Wallet,
   RefreshCw, MessageSquare, Search, Zap, X, LineChart, Users, Landmark, LogOut,
 } from "lucide-react";
 import { useEffect } from "react";
@@ -15,7 +15,6 @@ const mainNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, badge: null },
   { href: "/dashboard/deposit", label: "Deposit", icon: Wallet, badge: null },
   { href: "/dashboard/withdrawals", label: "Withdraw", icon: ArrowUpFromLine, badge: null },
-  { href: "/dashboard/accounts", label: "Accounts", icon: FileText, badge: null },
   { href: "/dashboard/analytics", label: "Loans", icon: Landmark, badge: null },
   { href: "/dashboard/capital-markets", label: "Capital Markets", icon: LineChart, badge: null },
   { href: "/dashboard/joint-accounts", label: "Joint Accounts", icon: Users, badge: null },

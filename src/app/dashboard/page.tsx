@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Wallet, TrendingUp, ArrowDownLeft, Receipt, RefreshCw,
-  ArrowUpRight, Search, SlidersHorizontal, Plus, ChevronDown, RotateCcw,
+  ArrowUpRight, Search, SlidersHorizontal, ChevronDown, RotateCcw,
 } from "lucide-react";
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { CHART_BRAND } from "@/lib/chart-theme";
@@ -206,15 +206,8 @@ export default function DashboardPage() {
           {/* Wallet + Cash Flow */}
           <div className="grid lg:grid-cols-2 gap-4">
             <div className="dash-panel p-5">
-              <div className="flex items-center justify-between mb-5">
+              <div className="mb-5">
                 <h2 className="text-base font-semibold text-text-primary">My Wallet</h2>
-                <Link
-                  href="/dashboard/accounts"
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent-brand hover:text-accent-gold-light transition-colors"
-                >
-                  <Plus size={14} />
-                  Add New
-                </Link>
               </div>
               {data.wallets.length === 0 ? (
                 <p className="text-sm text-text-muted py-6 text-center">No accounts linked yet.</p>
