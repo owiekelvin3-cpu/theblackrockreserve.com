@@ -150,57 +150,39 @@ export default function DashboardPage() {
           )}
 
           {/* Summary cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="dash-stat-primary p-5 min-h-[168px] flex flex-col justify-between">
-              <div className="flex items-start justify-between">
-                <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center">
-                  <Wallet size={20} className="text-white" />
-                </div>
+          <div className="dash-balance-grid">
+            <Link href="/dashboard/deposit" className="dash-balance-card dash-stat-primary group">
+              <div className="hidden md:flex h-10 w-10 rounded-xl bg-white/20 items-center justify-center mb-3">
+                <Wallet size={20} className="text-white" />
               </div>
-              <div>
-                <p className="text-sm text-white/75">My balance</p>
-                <p className="text-2xl sm:text-3xl font-bold text-white mt-1 tracking-tight">
-                  {formatCurrency(data.totalBalance)}
-                </p>
-              </div>
-              <Link href="/dashboard/deposit" className="text-xs text-white/65 hover:text-white flex items-center gap-1 mt-3 transition-colors">
+              <p className="dash-balance-label text-white/75">My balance</p>
+              <p className="dash-balance-value text-white">{formatCurrency(data.totalBalance)}</p>
+              <span className="hidden md:inline-flex text-xs text-white/65 group-hover:text-white items-center gap-1 mt-3 transition-colors">
                 See details <ArrowUpRight size={12} />
-              </Link>
-            </div>
+              </span>
+            </Link>
 
-            <div className="dash-stat-secondary p-5 min-h-[168px] flex flex-col justify-between">
-              <div className="flex items-start justify-between">
-                <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                  <Wallet size={18} className="text-text-muted" />
-                </div>
+            <Link href="/dashboard/capital-markets" className="dash-balance-card dash-stat-secondary group">
+              <div className="hidden md:flex h-10 w-10 rounded-xl bg-white/5 border border-white/10 items-center justify-center mb-3">
+                <Wallet size={18} className="text-text-muted" />
               </div>
-              <div>
-                <p className="text-sm text-text-muted">Invested balance</p>
-                <p className="text-2xl font-bold text-text-primary mt-1 tracking-tight">
-                  {formatCurrency(data.investedBalance)}
-                </p>
-              </div>
-              <Link href="/dashboard/capital-markets" className="text-xs text-text-muted hover:text-text-primary flex items-center gap-1 mt-3 transition-colors">
+              <p className="dash-balance-label text-text-muted">Invested</p>
+              <p className="dash-balance-value text-text-primary">{formatCurrency(data.investedBalance)}</p>
+              <span className="hidden md:inline-flex text-xs text-text-muted group-hover:text-text-primary items-center gap-1 mt-3 transition-colors">
                 View portfolio <ArrowUpRight size={12} />
-              </Link>
-            </div>
+              </span>
+            </Link>
 
-            <div className="dash-stat-secondary p-5 min-h-[168px] flex flex-col justify-between">
-              <div className="flex items-start justify-between">
-                <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                  <TrendingUp size={18} className="text-text-muted" />
-                </div>
+            <Link href="/dashboard/investments" className="dash-balance-card dash-stat-secondary group">
+              <div className="hidden md:flex h-10 w-10 rounded-xl bg-white/5 border border-white/10 items-center justify-center mb-3">
+                <TrendingUp size={18} className="text-text-muted" />
               </div>
-              <div>
-                <p className="text-sm text-text-muted">Profit balance</p>
-                <p className="text-2xl font-bold text-text-primary mt-1 tracking-tight">
-                  {formatCurrency(data.profitBalance)}
-                </p>
-              </div>
-              <Link href="/dashboard/investments" className="text-xs text-text-muted hover:text-text-primary flex items-center gap-1 mt-3 transition-colors">
+              <p className="dash-balance-label text-text-muted">Profit</p>
+              <p className="dash-balance-value text-text-primary">{formatCurrency(data.profitBalance)}</p>
+              <span className="hidden md:inline-flex text-xs text-text-muted group-hover:text-text-primary items-center gap-1 mt-3 transition-colors">
                 See details <ArrowUpRight size={12} />
-              </Link>
-            </div>
+              </span>
+            </Link>
           </div>
 
           {/* Wallet + Cash Flow */}

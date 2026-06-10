@@ -103,6 +103,112 @@
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
+.dash-balance-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .dash-balance-grid {
+    gap: 0.75rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .dash-balance-grid {
+    gap: 1rem;
+  }
+}
+
+.dash-balance-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 0.75rem 0.625rem;
+  border-radius: 0.875rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (min-width: 640px) {
+  .dash-balance-card {
+    padding: 1rem 0.875rem;
+    border-radius: 1rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .dash-balance-card {
+    padding: 1.25rem;
+    min-height: 168px;
+  }
+}
+
+.dash-balance-card:active {
+  transform: scale(0.98);
+}
+
+.dash-balance-label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+@media (min-width: 640px) {
+  .dash-balance-label {
+    font-size: 0.6875rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .dash-balance-label {
+    font-size: 0.875rem;
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: 400;
+  }
+}
+
+.dash-balance-value {
+  margin-top: 0.35rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  word-break: break-word;
+}
+
+@media (min-width: 380px) {
+  .dash-balance-value {
+    font-size: 0.875rem;
+  }
+}
+
+@media (min-width: 640px) {
+  .dash-balance-value {
+    font-size: 1.125rem;
+    margin-top: 0.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .dash-balance-value {
+    font-size: 1.5rem;
+    margin-top: 0.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .dash-balance-value {
+    font-size: 1.875rem;
+  }
+}
+
 [data-theme="light"] .dash-stat-secondary {
   border-color: rgba(15, 20, 25, 0.08);
   box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
