@@ -13,6 +13,7 @@ import { formatCurrency } from "@/lib/utils";
 import { fetchJson } from "@/lib/fetch-json";
 import DashboardGate from "@/components/dashboard/DashboardGate";
 import DashboardGreeting from "@/components/dashboard/DashboardGreeting";
+import SavingsPanel, { type SavingsData } from "@/components/dashboard/SavingsPanel";
 import EmptyState from "@/components/dashboard/EmptyState";
 import ChartContainer from "@/components/ui/ChartContainer";
 import { cn } from "@/lib/utils";
@@ -25,7 +26,7 @@ interface OverviewData {
   investmentValue?: number;
   bitcoinWalletAddress: string;
   depositsEnabled: boolean;
-  wallets: { id: string; flag: string; currency: string; balance: number; active: boolean; name: string }[];
+  savings: SavingsData;
   cashFlowData: { month: string; value: number }[];
   activities: {
     id: string;
@@ -99,7 +100,8 @@ export default function DashboardPage() {
     (data.totalBalance > 0 ||
       data.investedBalance > 0 ||
       data.profitBalance > 0 ||
-      data.wallets.length > 0 ||
+      data.savings.savingsBalance > 0 ||
+      data.savings.availableToSave > 0 ||
       data.activities.length > 0);
 
   return (
@@ -203,41 +205,9 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Wallet + Cash Flow */}
+          {/* Savings + Cash Flow */}
           <div className="grid lg:grid-cols-2 gap-4">
-            <div className="dash-panel p-5">
-              <div className="mb-5">
-                <h2 className="text-base font-semibold text-text-primary">My Wallet</h2>
-              </div>
-              {data.wallets.length === 0 ? (
-                <p className="text-sm text-text-muted py-6 text-center">No accounts linked yet.</p>
-              ) : (
-                <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3">
-                  {data.wallets.map((w) => (
-                    <div key={w.id} className="dash-wallet-tile p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-2xl leading-none">{w.flag}</span>
-                        <span
-                          className={cn(
-                            "text-[10px] font-semibold px-2 py-0.5 rounded-full",
-                            w.active
-                              ? "bg-accent-green/15 text-accent-green"
-                              : "bg-accent-brand/15 text-accent-brand"
-                          )}
-                        >
-                          {w.active ? "Active" : "Inactive"}
-                        </span>
-                      </div>
-                      <p className="text-xs text-text-muted font-medium">{w.currency}</p>
-                      <p className="text-lg font-bold text-text-primary mt-0.5 tracking-tight">
-                        {formatCurrency(w.balance, w.currency)}
-                      </p>
-                      <p className="text-[10px] text-text-muted mt-2 truncate">{w.name}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <SavingsPanel data={data.savings} onUpdated={loadData} />
 
             <div className="dash-panel p-5">
               <div className="flex flex-wrap items-start justify-between gap-3 mb-5">

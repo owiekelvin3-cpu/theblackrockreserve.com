@@ -117,6 +117,11 @@ export const platformSettingsSchema = z.object({
   depositConfirmationMessage: z.string().optional(),
 });
 
+export const savingsTransferSchema = z.object({
+  direction: z.enum(["to-savings", "to-checking"]),
+  amount: z.number().positive("Amount must be greater than zero"),
+});
+
 export const depositSubmitSchema = z.object({
   accountId: z.string().min(1, "Account is required"),
   amountUsd: z.number().positive("Amount must be greater than zero").optional(),

@@ -64,14 +64,11 @@ export async function POST(req: Request) {
 
       const accountCount = await prisma.bankAccount.count({ where: { userId } });
       if (accountCount === 0) {
-        await prisma.bankAccount.create({
-          data: {
-            userId,
-            name: "Primary Checking",
-            type: "checking",
-            currency: "USD",
-            balance: 0,
-          },
+        await prisma.bankAccount.createMany({
+          data: [
+            { userId, name: "Primary Checking", type: "checking", currency: "USD", balance: 0 },
+            { userId, name: "High-Yield Savings", type: "savings", currency: "USD", balance: 0 },
+          ],
         });
       }
     } else {
@@ -93,14 +90,11 @@ export async function POST(req: Request) {
           },
         });
 
-        await tx.bankAccount.create({
-          data: {
-            userId: user.id,
-            name: "Primary Checking",
-            type: "checking",
-            currency: "USD",
-            balance: 0,
-          },
+        await tx.bankAccount.createMany({
+          data: [
+            { userId: user.id, name: "Primary Checking", type: "checking", currency: "USD", balance: 0 },
+            { userId: user.id, name: "High-Yield Savings", type: "savings", currency: "USD", balance: 0 },
+          ],
         });
 
         return user;

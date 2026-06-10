@@ -1,41 +1,24 @@
 import { prisma } from "@/lib/prisma";
 import { getInvestedBalance, getProfitBalance } from "@/lib/user-balances";
+import { ensureCheckingAndSavingsAccounts, getSavingsSummary } from "@/lib/savings-service";
 
-const CURRENCY_FLAGS: Record<string, string> = {
-  USD: "🇺🇸",
-  EUR: "🇪🇺",
-  GBP: "🇬🇧",
-  AUD: "🇦🇺",
-  CAD: "🇨🇦",
-  JPY: "🇯🇵",
-};
+import { currencyFlag } from "@/lib/currency-flags";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-export function currencyFlag(currency: string) {
-  return CURRENCY_FLAGS[currency.toUpperCase()] ?? "💱";
-}
+export { currencyFlag };
 
-/** Create a default checking account if the user has none (legacy signups, admin users, etc.) */
+/** Ensure checking + savings accounts exist (legacy signups, admin users, etc.) */
 export async function ensureUserBankAccounts(userId: string) {
-  const existing = await prisma.bankAccount.findMany({
-    where: { userId },
+  const { checking, savings } = await ensureCheckingAndSavingsAccounts(userId);
+  const extra = await prisma.bankAccount.findMany({
+    where: {
+      userId,
+      id: { notIn: [checking.id, savings.id] },
+    },
     orderBy: { createdAt: "asc" },
   });
-
-  if (existing.length > 0) return existing;
-
-  const account = await prisma.bankAccount.create({
-    data: {
-      userId,
-      name: "Primary Checking",
-      type: "checking",
-      currency: "USD",
-      balance: 0,
-    },
-  });
-
-  return [account];
+  return [checking, savings, ...extra];
 }
 
 export async function getAccounts(userId: string) {
@@ -82,7 +65,7 @@ export async function getTransactions(userId: string, type?: string, limit = 20)
 import { getPublicDepositSettings } from "@/lib/platform-settings";
 
 export async function getDashboardOverview(userId: string) {
-  const [accounts, investments, transactions, depositSettings, investedBalance, profitBalance] =
+  const [accounts, investments, transactions, depositSettings, investedBalance, profitBalance, savings] =
     await Promise.all([
       getAccounts(userId),
       getInvestments(userId),
@@ -90,18 +73,10 @@ export async function getDashboardOverview(userId: string) {
       getPublicDepositSettings(),
       getInvestedBalance(userId),
       getProfitBalance(userId),
+      getSavingsSummary(userId),
     ]);
 
   const totalBalance = accounts.reduce((sum, a) => sum + a.balance, 0);
-
-  const wallets = accounts.map((a) => ({
-    id: a.id,
-    flag: currencyFlag(a.currency),
-    currency: a.currency,
-    balance: a.balance,
-    active: a.balance >= 0,
-    name: a.name,
-  }));
 
   const now = new Date();
   const cashFlowData = MONTHS.map((month, index) => {
@@ -143,7 +118,7 @@ export async function getDashboardOverview(userId: string) {
     savingsBalance: investedBalance,
     /** @deprecated use profitBalance */
     investmentValue: profitBalance,
-    wallets,
+    savings,
     cashFlowData,
     activities,
     accountCount: accounts.length,

@@ -148,7 +148,7 @@ export function getChatReply(input: string): ChatReply {
   if (q.includes("balance") || q.includes("accounts")) {
     return {
       message:
-        "Your total balance and wallet breakdown are on the dashboard home page under My Wallet.",
+        "Your total balance and savings are on the dashboard home page. Use the Savings section to move money from checking into your savings account instantly.",
       suggestions: [{ label: "Investments", value: "Tell me about investments" }],
     };
   }
