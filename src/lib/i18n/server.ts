@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { getServerSession } from "next-auth";
 import {
   DEFAULT_LOCALE,
   LOCALE_COOKIE,
@@ -6,14 +7,44 @@ import {
   parseLocaleCode,
   type LocaleCode,
 } from "@/lib/i18n/locales";
-import { buildMessages } from "@/lib/i18n/messages/overrides";
-import { formatMessage, resolveMessage } from "@/lib/i18n/utils";
+import { buildMessages, allMessages } from "@/lib/i18n/messages/overrides";
+import { createTranslator } from "@/lib/i18n/translate";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
-/** Read persisted locale from cookie (set on every language change). */
+/** Read persisted locale: cookie → authenticated user DB preference → default. */
 export async function getServerLocale(): Promise<LocaleCode> {
   const cookieStore = await cookies();
   const fromCookie = parseLocaleCode(cookieStore.get(LOCALE_COOKIE)?.value);
-  return fromCookie ?? DEFAULT_LOCALE;
+  if (fromCookie) return fromCookie;
+
+  try {
+    const session = await getServerSession(authOptions);
+    if (session?.user?.id) {
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { preferredLocale: true },
+      });
+      const fromDb = parseLocaleCode(user?.preferredLocale ?? null);
+      if (fromDb) return fromDb;
+    }
+  } catch {
+    /* session/db unavailable */
+  }
+
+  return DEFAULT_LOCALE;
+}
+
+export async function getUserLocale(userId: string): Promise<LocaleCode> {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { preferredLocale: true },
+    });
+    return parseLocaleCode(user?.preferredLocale ?? null) ?? DEFAULT_LOCALE;
+  } catch {
+    return DEFAULT_LOCALE;
+  }
 }
 
 export function getLocaleDir(code: LocaleCode): "ltr" | "rtl" {
@@ -22,16 +53,12 @@ export function getLocaleDir(code: LocaleCode): "ltr" | "rtl" {
 
 export function createServerTranslator(locale: LocaleCode) {
   const messages = buildMessages(locale);
-  const english = buildMessages("en");
+  const english = allMessages.en;
 
   return {
     locale,
     messages,
     dir: getLocaleDir(locale),
-    t: (key: string, vars?: Record<string, string | number>) => {
-      const raw =
-        resolveMessage(messages, key) ?? resolveMessage(english, key) ?? key;
-      return formatMessage(raw, vars);
-    },
+    t: createTranslator(locale, messages, english),
   };
 }

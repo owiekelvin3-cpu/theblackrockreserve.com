@@ -1,15 +1,20 @@
+import { DEFAULT_LOCALE, getLocaleDefinition, type LocaleCode } from "@/lib/i18n/locales";
+import { createServerTranslator } from "@/lib/i18n/server";
+
 const BRAND = "BlackrockReserve";
 const ACCENT = "#FF5F05";
 const BG = "#0a0a0f";
 const CARD = "#12121a";
 
-function layout(content: string, preheader: string) {
+function layout(content: string, preheader: string, locale: LocaleCode = DEFAULT_LOCALE) {
+  const { dir } = getLocaleDefinition(locale);
+  const brand = "BlackrockReserve";
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${locale}" dir="${dir}">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${BRAND}</title>
+  <title>${brand}</title>
 </head>
 <body style="margin:0;padding:0;background:${BG};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <span style="display:none;max-height:0;overflow:hidden;">${preheader}</span>
@@ -22,7 +27,7 @@ function layout(content: string, preheader: string) {
               <div style="width:48px;height:48px;margin:0 auto 16px;border-radius:14px;background:linear-gradient(135deg,${ACCENT},#ff0000);display:flex;align-items:center;justify-content:center;">
                 <span style="color:#fff;font-weight:800;font-size:20px;">B</span>
               </div>
-              <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;">${BRAND}</h1>
+              <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;">${brand}</h1>
             </td>
           </tr>
           <tr>
@@ -32,7 +37,7 @@ function layout(content: string, preheader: string) {
           </tr>
           <tr>
             <td style="padding:0 32px 32px;text-align:center;color:#6b6b7b;font-size:12px;line-height:1.5;">
-              © ${new Date().getFullYear()} ${BRAND}. All rights reserved.<br />
+              © ${new Date().getFullYear()} ${brand}. All rights reserved.<br />
               This is an automated message — please do not reply directly.
             </td>
           </tr>
@@ -44,65 +49,74 @@ function layout(content: string, preheader: string) {
 </html>`;
 }
 
-function otpBlock(code: string, minutes: number) {
+function otpBlock(code: string, minutes: number, t: (key: string, vars?: Record<string, string | number>) => string) {
   return `
-    <p style="margin:0 0 20px;color:#ffffff;font-size:16px;">Your verification code:</p>
+    <p style="margin:0 0 20px;color:#ffffff;font-size:16px;">${t("emails.otpLabel")}</p>
     <div style="text-align:center;margin:24px 0;">
       <span style="display:inline-block;padding:16px 32px;background:rgba(255,95,5,0.12);border:1px solid rgba(255,95,5,0.35);border-radius:14px;color:${ACCENT};font-size:32px;font-weight:800;letter-spacing:8px;font-family:monospace;">${code}</span>
     </div>
-    <p style="margin:0;color:#9a9aa8;font-size:13px;">This code expires in <strong style="color:#fff;">${minutes} minutes</strong>. Never share it with anyone.</p>
+    <p style="margin:0;color:#9a9aa8;font-size:13px;">${t("emails.otpExpires", { minutes })}</p>
   `;
 }
 
-export function verificationEmail(name: string, code: string) {
+export function verificationEmail(name: string, code: string, locale: LocaleCode = DEFAULT_LOCALE) {
+  const { t } = createServerTranslator(locale);
+  const brand = t("emails.brand");
   const html = layout(
     `
-      <p style="margin:0 0 8px;color:#ffffff;font-size:18px;font-weight:600;">Welcome, ${name}!</p>
-      <p style="margin:0 0 24px;">Thank you for opening your account. Enter this code to verify your email and activate your dashboard.</p>
-      ${otpBlock(code, 15)}
+      <p style="margin:0 0 8px;color:#ffffff;font-size:18px;font-weight:600;">${t("emails.verifyWelcome", { name })}</p>
+      <p style="margin:0 0 24px;">${t("emails.verifyBody")}</p>
+      ${otpBlock(code, 15, t)}
     `,
-    `Your verification code is ${code}`
+    t("emails.verifySubject", { code, brand }),
+    locale
   );
   return {
-    subject: `${code} is your ${BRAND} verification code`,
+    subject: t("emails.verifySubject", { code, brand }),
     html,
-    text: `Welcome to ${BRAND}, ${name}!\n\nYour verification code: ${code}\n\nExpires in 15 minutes.`,
+    text: t("emails.verifyText", { brand, name, code }),
   };
 }
 
-export function passwordResetEmail(name: string, code: string) {
+export function passwordResetEmail(name: string, code: string, locale: LocaleCode = DEFAULT_LOCALE) {
+  const { t } = createServerTranslator(locale);
+  const brand = t("emails.brand");
   const html = layout(
     `
-      <p style="margin:0 0 8px;color:#ffffff;font-size:18px;font-weight:600;">Password reset</p>
-      <p style="margin:0 0 24px;">Hi ${name}, we received a request to reset your password. Use the code below on the reset page.</p>
-      ${otpBlock(code, 30)}
-      <p style="margin:24px 0 0;color:#9a9aa8;font-size:13px;">If you didn't request this, you can safely ignore this email.</p>
+      <p style="margin:0 0 8px;color:#ffffff;font-size:18px;font-weight:600;">${t("emails.resetTitle")}</p>
+      <p style="margin:0 0 24px;">${t("emails.resetBody", { name })}</p>
+      ${otpBlock(code, 30, t)}
+      <p style="margin:24px 0 0;color:#9a9aa8;font-size:13px;">${t("emails.resetIgnore")}</p>
     `,
-    `Your password reset code is ${code}`
+    t("emails.resetSubject", { code, brand }),
+    locale
   );
   return {
-    subject: `${code} — Reset your ${BRAND} password`,
+    subject: t("emails.resetSubject", { code, brand }),
     html,
-    text: `Hi ${name},\n\nYour password reset code: ${code}\n\nExpires in 30 minutes.`,
+    text: t("emails.resetText", { name, code }),
   };
 }
 
-export function welcomeEmail(name: string) {
+export function welcomeEmail(name: string, locale: LocaleCode = DEFAULT_LOCALE) {
+  const { t } = createServerTranslator(locale);
+  const brand = t("emails.brand");
   const siteUrl = process.env.NEXTAUTH_URL ?? "https://www.blackrockreserve.site";
   const html = layout(
     `
-      <p style="margin:0 0 8px;color:#ffffff;font-size:18px;font-weight:600;">You're all set, ${name}!</p>
-      <p style="margin:0 0 24px;">Your email is verified and your Blackrock Reserve account is active. Access your dashboard to manage accounts, investments, and deposits.</p>
+      <p style="margin:0 0 8px;color:#ffffff;font-size:18px;font-weight:600;">${t("emails.welcomeTitle", { name })}</p>
+      <p style="margin:0 0 24px;">${t("emails.welcomeBody")}</p>
       <div style="text-align:center;margin:28px 0;">
-        <a href="${siteUrl}/dashboard" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,${ACCENT},#ff0000);color:#ffffff;text-decoration:none;font-weight:600;border-radius:999px;font-size:15px;">Go to Dashboard</a>
+        <a href="${siteUrl}/dashboard" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,${ACCENT},#ff0000);color:#ffffff;text-decoration:none;font-weight:600;border-radius:999px;font-size:15px;">${t("emails.welcomeCta")}</a>
       </div>
     `,
-    `Welcome to ${BRAND} — your account is ready`
+    t("emails.welcomeSubject", { brand }),
+    locale
   );
   return {
-    subject: `Welcome to ${BRAND}, ${name}!`,
+    subject: t("emails.welcomeSubject", { brand }),
     html,
-    text: `Welcome ${name}! Your account is ready. Visit ${siteUrl}/dashboard`,
+    text: `${t("emails.welcomeTitle", { name })} ${siteUrl}/dashboard`,
   };
 }
 

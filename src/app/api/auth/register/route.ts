@@ -4,11 +4,13 @@ import { prisma } from "@/lib/prisma";
 import { registerApiSchema } from "@/lib/validations";
 import { generateOtp, sendEmail, isEmailConfigured } from "@/lib/email";
 import { verificationEmail } from "@/lib/email-templates";
+import { getServerLocale } from "@/lib/i18n/server";
 import { getClientIp } from "@/lib/admin-audit";
 import { captureUserLocationAsync } from "@/lib/user-location";
 
 async function deliverVerificationEmail(name: string, email: string, otp: string) {
-  const mail = verificationEmail(name, otp);
+  const locale = await getServerLocale();
+  const mail = verificationEmail(name, otp, locale);
   const result = await sendEmail({ to: email, ...mail });
   return result;
 }
@@ -31,6 +33,7 @@ export async function POST(req: Request) {
     const hashedPassword = await bcrypt.hash(password, 12);
     const otp = generateOtp();
     const otpExpires = new Date(Date.now() + 15 * 60 * 1000);
+    const preferredLocale = await getServerLocale();
 
     const existing = await prisma.user.findUnique({
       where: { email },
@@ -58,6 +61,7 @@ export async function POST(req: Request) {
           kycStatus: kycIdFront ? "SUBMITTED" : "PENDING",
           otpCode: otp,
           otpExpires,
+          preferredLocale,
         },
       });
       userId = updated.id;
@@ -87,6 +91,7 @@ export async function POST(req: Request) {
             kycStatus: kycIdFront ? "SUBMITTED" : "PENDING",
             otpCode: otp,
             otpExpires,
+            preferredLocale,
           },
         });
 

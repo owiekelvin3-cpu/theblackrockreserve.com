@@ -39,13 +39,16 @@ export default function AdminTopBar() {
       if (fresh.length > 0) {
         void playNotificationSound("alert");
         const latest = fresh[0];
-        toast("New deposit request", {
-          description: `${latest.userName} · ${latest.amountUsd != null ? formatCurrency(latest.amountUsd) : "Amount not specified"}`,
+        toast(t("admin.depositToastTitle"), {
+          description: t("admin.depositToastDesc", {
+            name: latest.userName,
+            amount: latest.amountUsd != null ? formatCurrency(latest.amountUsd) : t("admin.amountNotSpecified"),
+          }),
           duration: 8000,
         });
         showBrowserNotification(
-          "New Bitcoin deposit request",
-          `${latest.userName} submitted a deposit for review.`,
+          t("admin.depositBrowserTitle"),
+          t("admin.depositSubmittedForReview", { name: latest.userName }),
           latest.id
         );
       }
@@ -74,8 +77,8 @@ export default function AdminTopBar() {
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
           <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
         </span>
-        <span className="text-xs text-[var(--admin-muted)] truncate hidden sm:inline">Live sync · alerts every 45s</span>
-        <span className="text-xs text-[var(--admin-muted)] sm:hidden">Live</span>
+        <span className="text-xs text-[var(--admin-muted)] truncate hidden sm:inline">{t("adminFetch.liveSyncShort")}</span>
+        <span className="text-xs text-[var(--admin-muted)] sm:hidden">{t("adminFetch.live")}</span>
       </div>
 
       <div className="flex items-center gap-3 sm:gap-4">

@@ -11,7 +11,9 @@ import DashboardGate from "@/components/dashboard/DashboardGate";
 import LoanProgressTracker from "@/components/loans/LoanProgressTracker";
 import TaxRefundForm from "@/components/loans/TaxRefundForm";
 import { fetchDashboardJson } from "@/lib/fetch-json";
-import { formatCurrency, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { useI18n } from "@/components/providers/I18nProvider";
+import { translateApiErrorMessage } from "@/lib/i18n/api-i18n";
 import { estimateMonthlyPayment, getLoanProgressStep } from "@/lib/loan-products";
 import { toast } from "sonner";
 import { dispatchNotificationsRefresh } from "@/hooks/use-push-notifications";
@@ -19,6 +21,7 @@ import { dispatchNotificationsRefresh } from "@/hooks/use-push-notifications";
 type LoanData = Awaited<ReturnType<typeof import("@/lib/loan-service").getLoanDashboardData>>;
 
 export default function LoansDashboard() {
+  const { t, formatCurrency } = useI18n();
   const { data: session } = useSession();
   const [data, setData] = useState<LoanData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,12 +61,12 @@ export default function LoansDashboard() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Submission failed");
-      toast.success("Tax refund verification submitted");
+      toast.success(t("loans.taxSubmitted"));
       setResubmitForm(false);
       dispatchNotificationsRefresh();
       load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed");
+      toast.error(e instanceof Error ? translateApiErrorMessage(e.message, t) : t("loans.genericFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -89,12 +92,12 @@ export default function LoansDashboard() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Application failed");
-      toast.success(`Application ${json.application.applicationNumber} submitted`);
+      toast.success(t("loans.applicationSubmittedNumber", { number: json.application.applicationNumber }));
       setApplyProduct(null);
       dispatchNotificationsRefresh();
       load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed");
+      toast.error(e instanceof Error ? translateApiErrorMessage(e.message, t) : t("loans.genericFailed"));
     } finally {
       setSubmitting(false);
     }

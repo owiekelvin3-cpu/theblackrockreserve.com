@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { verifyOtpSchema } from "@/lib/validations";
 import { sendEmail } from "@/lib/email";
 import { welcomeEmail } from "@/lib/email-templates";
+import { getUserLocale } from "@/lib/i18n/server";
+import { parseLocaleCode } from "@/lib/i18n/locales";
 import { ensureUserBankAccounts } from "@/lib/dashboard-data";
 
 export async function POST(req: Request) {
@@ -48,7 +50,8 @@ export async function POST(req: Request) {
     await ensureUserBankAccounts(user.id);
 
     try {
-      const mail = welcomeEmail(user.name);
+      const locale = parseLocaleCode(user.preferredLocale) ?? (await getUserLocale(user.id));
+      const mail = welcomeEmail(user.name, locale);
       await sendEmail({ to: email, ...mail });
     } catch (err) {
       console.error("Welcome email failed:", err);

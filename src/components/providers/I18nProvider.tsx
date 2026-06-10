@@ -21,7 +21,7 @@ import {
 } from "@/lib/i18n/locales";
 import { allMessages, buildMessages } from "@/lib/i18n/messages/overrides";
 import type { Messages } from "@/lib/i18n/messages/en";
-import { formatMessage, resolveMessage } from "@/lib/i18n/utils";
+import { createTranslator } from "@/lib/i18n/translate";
 import { formatCurrencyLocale, formatDateLocale, formatTimeLocale } from "@/lib/i18n/format";
 
 type I18nContextValue = {
@@ -72,20 +72,17 @@ function applyDocumentLocale(code: LocaleCode) {
   document.documentElement.dir = def.dir;
 }
 
-function createTranslator(locale: LocaleCode): I18nContextValue {
+function createFallbackContext(locale: LocaleCode): I18nContextValue {
   const messages = buildMessages(locale);
   const def = getLocaleDefinition(locale);
-  const english = allMessages.en;
+  const t = createTranslator(locale, messages, allMessages.en);
 
   return {
     locale,
     messages,
     dir: def.dir,
     setLocale: () => {},
-    t: (key, vars) => {
-      const raw = resolveMessage(messages, key) ?? resolveMessage(english, key) ?? key;
-      return formatMessage(raw, vars);
-    },
+    t,
     formatCurrency: (amount, currency) => formatCurrencyLocale(amount, locale, currency),
     formatDate: (date, options) => formatDateLocale(date, locale, options),
     formatTime: (date) => formatTimeLocale(date, locale),
@@ -145,23 +142,19 @@ export function I18nProvider({
   const messages = useMemo(() => buildMessages(locale), [locale]);
   const def = getLocaleDefinition(locale);
 
-  const value = useMemo<I18nContextValue>(
-    () => ({
+  const value = useMemo<I18nContextValue>(() => {
+    const t = createTranslator(locale, messages, allMessages.en);
+    return {
       locale,
       messages,
       dir: def.dir,
       setLocale,
-      t: (key, vars) => {
-        const raw =
-          resolveMessage(messages, key) ?? resolveMessage(allMessages.en, key) ?? key;
-        return formatMessage(raw, vars);
-      },
+      t,
       formatCurrency: (amount, currency) => formatCurrencyLocale(amount, locale, currency),
       formatDate: (date, options) => formatDateLocale(date, locale, options),
       formatTime: (date) => formatTimeLocale(date, locale),
-    }),
-    [locale, messages, def.dir, setLocale]
-  );
+    };
+  }, [locale, messages, def.dir, setLocale]);
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
@@ -169,7 +162,7 @@ export function I18nProvider({
 export function useI18n() {
   const ctx = useContext(I18nContext);
   if (!ctx) {
-    return createTranslator(DEFAULT_LOCALE);
+    return createFallbackContext(DEFAULT_LOCALE);
   }
   return ctx;
 }

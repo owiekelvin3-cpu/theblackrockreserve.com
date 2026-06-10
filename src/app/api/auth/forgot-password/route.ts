@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { forgotPasswordSchema } from "@/lib/validations";
 import { generateOtp, sendEmail } from "@/lib/email";
 import { passwordResetEmail } from "@/lib/email-templates";
+import { getServerLocale, getUserLocale } from "@/lib/i18n/server";
+import { parseLocaleCode } from "@/lib/i18n/locales";
 
 export async function POST(req: Request) {
   try {
@@ -29,7 +31,8 @@ export async function POST(req: Request) {
         },
       });
 
-      const mail = passwordResetEmail(user.name, otp);
+      const locale = parseLocaleCode(user.preferredLocale) ?? (await getUserLocale(user.id)) ?? (await getServerLocale());
+      const mail = passwordResetEmail(user.name, otp, locale);
       await sendEmail({ to: email, ...mail });
     }
 

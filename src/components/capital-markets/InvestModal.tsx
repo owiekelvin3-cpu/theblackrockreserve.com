@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Wallet, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
-import { formatCurrency, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { useI18n } from "@/components/providers/I18nProvider";
+import { translateApiErrorMessage } from "@/lib/i18n/api-i18n";
 import { calculateInvestmentFee } from "@/lib/market-assets";
 import Button from "@/components/ui/Button";
 import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
@@ -24,6 +26,7 @@ interface InvestModalProps {
 const QUICK_AMOUNTS = [100, 500, 1000, 5000];
 
 export default function InvestModal({ asset, walletBalance, open, onClose, onSuccess }: InvestModalProps) {
+  const { t, formatCurrency, formatDate } = useI18n();
   const [step, setStep] = useState<Step>("amount");
   const [amount, setAmount] = useState("");
   const [error, setError] = useState("");
@@ -54,12 +57,12 @@ export default function InvestModal({ asset, walletBalance, open, onClose, onSuc
   }, [asset, amountNum]);
 
   const validateAmount = (): string | null => {
-    if (!amount.trim() || amountNum <= 0) return "Please enter an investment amount";
-    if (!asset) return "Asset not selected";
+    if (!amount.trim() || amountNum <= 0) return t("invest.amountRequired");
+    if (!asset) return t("invest.assetRequired");
     if (amountNum < asset.minInvestment) {
-      return `Minimum investment is ${formatCurrency(asset.minInvestment)}`;
+      return t("invest.minInvestment", { amount: formatCurrency(asset.minInvestment) });
     }
-    if (totalCost > walletBalance) return "Insufficient wallet balance";
+    if (totalCost > walletBalance) return t("invest.insufficientBalance");
     return null;
   };
 
@@ -98,7 +101,7 @@ export default function InvestModal({ asset, walletBalance, open, onClose, onSuc
           }),
         });
         const json = await res.json();
-        if (!res.ok) throw new Error(json.error || "Investment failed");
+        if (!res.ok) throw new Error(translateApiErrorMessage(json.error || "Investment failed", t));
 
         setResult({
           orderId: json.investment.orderId,
@@ -108,7 +111,7 @@ export default function InvestModal({ asset, walletBalance, open, onClose, onSuc
         setStep("success");
         onSuccess();
       } catch (e) {
-        throw e instanceof Error ? e : new Error("Investment failed");
+        throw e instanceof Error ? e : new Error(t("invest.failed"));
       } finally {
         setSubmitting(false);
       }
@@ -142,7 +145,7 @@ export default function InvestModal({ asset, walletBalance, open, onClose, onSuc
               <div className="flex items-center gap-3 min-w-0">
                 <StockIcon symbol={asset.symbol} name={asset.name} logoDomain={asset.logoDomain} size="md" />
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-accent-brand">Invest</p>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-accent-brand">{t("invest.title")}</p>
                   <h2 id="invest-modal-title" className="text-lg font-bold text-[var(--text-primary)] truncate">
                     {asset.name}
                   </h2>
@@ -152,7 +155,7 @@ export default function InvestModal({ asset, walletBalance, open, onClose, onSuc
                 type="button"
                 onClick={onClose}
                 className="p-2 rounded-full hover:bg-white/10 text-[var(--text-muted)] transition-colors"
-                aria-label="Close"
+                aria-label={t("invest.close")}
               >
                 <X size={20} />
               </button>
@@ -161,16 +164,16 @@ export default function InvestModal({ asset, walletBalance, open, onClose, onSuc
             <div className="p-5 space-y-5">
               <div className="grid grid-cols-2 gap-3 p-4 rounded-xl bg-[var(--surface-base)] border border-[var(--border-subtle)]">
                 <div>
-                  <p className="text-xs text-[var(--text-muted)]">Ticker</p>
+                  <p className="text-xs text-[var(--text-muted)]">{t("invest.ticker")}</p>
                   <p className="font-mono font-bold text-[var(--text-primary)]">{asset.symbol}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-[var(--text-muted)]">Current Price</p>
+                  <p className="text-xs text-[var(--text-muted)]">{t("invest.currentPrice")}</p>
                   <p className="font-mono font-bold text-[var(--text-primary)]">{formatCurrency(asset.price)}</p>
                 </div>
                 <div className="col-span-2 flex items-center gap-2 pt-1 border-t border-[var(--border-subtle)]">
                   <Wallet size={16} className="text-accent-brand" />
-                  <span className="text-sm text-[var(--text-secondary)]">Wallet Balance</span>
+                  <span className="text-sm text-[var(--text-secondary)]">{t("invest.walletBalance")}</span>
                   <span className="ml-auto font-mono font-semibold text-[var(--text-primary)]">
                     {formatCurrency(walletBalance)}
                   </span>
@@ -181,7 +184,7 @@ export default function InvestModal({ asset, walletBalance, open, onClose, onSuc
                 <>
                   <div>
                     <label htmlFor="invest-amount" className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-                      Investment Amount (USD)
+                      {t("invest.amountLabel")}
                     </label>
                     <div className="relative">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] font-mono">$</span>
@@ -221,7 +224,7 @@ export default function InvestModal({ asset, walletBalance, open, onClose, onSuc
                   </div>
 
                   <Button className="w-full" onClick={goToSummary}>
-                    Continue <ArrowRight size={16} className="ml-1" />
+                    {t("invest.continue")} <ArrowRight size={16} className="ml-1" />
                   </Button>
                 </>
               )}
@@ -229,15 +232,15 @@ export default function InvestModal({ asset, walletBalance, open, onClose, onSuc
               {step === "summary" && (
                 <>
                   <div className="space-y-3 p-4 rounded-xl border border-accent-brand/20 bg-accent-brand/5">
-                    <h3 className="font-semibold text-[var(--text-primary)]">Investment Summary</h3>
+                    <h3 className="font-semibold text-[var(--text-primary)]">{t("invest.summaryTitle")}</h3>
                     {[
-                      ["Investment Asset", `${asset.name} (${asset.symbol})`],
-                      ["Investment Amount", formatCurrency(amountNum)],
-                      ["Expected Return", `~${asset.expectedReturnPercent}% annually`],
-                      ["Est. Shares", shares.toFixed(6)],
-                      ["Date", new Date().toLocaleDateString("en-US", { dateStyle: "medium" })],
-                      ["Transaction Fee", formatCurrency(fee)],
-                      ["Total Cost", formatCurrency(totalCost)],
+                      [t("invest.assetLabel"), `${asset.name} (${asset.symbol})`],
+                      [t("invest.amountSummary"), formatCurrency(amountNum)],
+                      [t("invest.expectedReturn"), t("invest.annually", { percent: asset.expectedReturnPercent })],
+                      [t("invest.estShares"), shares.toFixed(6)],
+                      [t("invest.date"), formatDate(new Date(), { dateStyle: "medium" })],
+                      [t("invest.transactionFee"), formatCurrency(fee)],
+                      [t("invest.totalCost"), formatCurrency(totalCost)],
                     ].map(([label, value]) => (
                       <div key={label} className="flex justify-between text-sm gap-4">
                         <span className="text-[var(--text-muted)]">{label}</span>
@@ -248,10 +251,10 @@ export default function InvestModal({ asset, walletBalance, open, onClose, onSuc
                   {error && <p className="text-sm text-accent-red">{error}</p>}
                   <div className="flex gap-3">
                     <Button variant="outline" className="flex-1" onClick={() => setStep("amount")} disabled={submitting}>
-                      Back
+                      {t("invest.back")}
                     </Button>
                     <Button className="flex-1" onClick={confirmInvest} isLoading={submitting}>
-                      Confirm Investment
+                      {t("invest.confirm")}
                     </Button>
                   </div>
                 </>
@@ -261,13 +264,17 @@ export default function InvestModal({ asset, walletBalance, open, onClose, onSuc
                 <div className="text-center py-4 space-y-4">
                   <CheckCircle2 size={48} className="mx-auto text-accent-green" />
                   <div>
-                    <h3 className="text-xl font-bold text-[var(--text-primary)]">Investment Confirmed</h3>
+                    <h3 className="text-xl font-bold text-[var(--text-primary)]">{t("invest.successTitle")}</h3>
                     <p className="text-sm text-[var(--text-secondary)] mt-2">
-                      You acquired {result.shares.toFixed(4)} shares of {asset.symbol} for {formatCurrency(result.totalCost)}.
+                      {t("invest.successDesc", {
+                        shares: result.shares.toFixed(4),
+                        symbol: asset.symbol,
+                        total: formatCurrency(result.totalCost),
+                      })}
                     </p>
                   </div>
                   <Button className="w-full" onClick={onClose}>
-                    Done
+                    {t("invest.done")}
                   </Button>
                 </div>
               )}
@@ -275,7 +282,7 @@ export default function InvestModal({ asset, walletBalance, open, onClose, onSuc
               {submitting && step === "summary" && (
                 <div className="flex items-center justify-center gap-2 text-sm text-[var(--text-muted)]">
                   <Loader2 size={16} className="animate-spin" />
-                  Processing investment…
+                  {t("invest.processing")}
                 </div>
               )}
             </div>

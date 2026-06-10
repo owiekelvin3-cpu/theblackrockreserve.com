@@ -11,7 +11,9 @@ import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import DashboardGate from "@/components/dashboard/DashboardGate";
-import { formatCurrency, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { useI18n } from "@/components/providers/I18nProvider";
+import { translateApiErrorMessage } from "@/lib/i18n/api-i18n";
 import { fetchDashboardJson } from "@/lib/fetch-json";
 import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
 import { useTransactionPin } from "@/hooks/use-transaction-pin";
@@ -54,6 +56,7 @@ interface Eligibility {
 }
 
 export default function JointAccountsPage() {
+  const { t, formatCurrency, formatDate } = useI18n();
   const [accounts, setAccounts] = useState<JointAccountSummary[]>([]);
   const [received, setReceived] = useState<Invitation[]>([]);
   const [sent, setSent] = useState<Invitation[]>([]);
@@ -85,9 +88,9 @@ export default function JointAccountsPage() {
         }
         if (appr.data) setApprovals(appr.data.approvals);
       })
-      .catch(() => toast.error("Failed to load joint accounts"))
+      .catch(() => toast.error(t("jointAccounts.loadFailed")))
       .finally(() => setLoading(false));
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     load();
@@ -111,12 +114,12 @@ export default function JointAccountsPage() {
         setNotFound({ email: json.email });
         return;
       }
-      toast.success(`Invitation sent to ${json.invitation.inviteeName}`);
+      toast.success(t("jointAccounts.inviteSent", { name: json.invitation.inviteeName }));
       setShowForm(false);
       setForm({ email: "", name: "", phone: "" });
       load();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed");
+      toast.error(err instanceof Error ? translateApiErrorMessage(err.message, t) : t("jointAccounts.genericFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -134,7 +137,7 @@ export default function JointAccountsPage() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed");
-      toast.success("Platform invitation email sent");
+      toast.success(t("jointAccounts.platformInviteSent"));
       setNotFound(null);
       setShowForm(false);
     } catch (err) {
@@ -155,7 +158,7 @@ export default function JointAccountsPage() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed");
-      toast.success(action === "ACCEPT" ? "Joint account created!" : "Invitation declined");
+      toast.success(action === "ACCEPT" ? t("jointAccounts.accountCreated") : t("jointAccounts.invitationDeclined"));
       load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed");
@@ -175,7 +178,7 @@ export default function JointAccountsPage() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed");
-      toast.success(action === "APPROVE" ? "Approved" : "Rejected");
+      toast.success(action === "APPROVE" ? t("jointAccounts.approved") : t("jointAccounts.rejected"));
       load();
     } catch (err) {
       throw err instanceof Error ? err : new Error("Failed");
@@ -201,16 +204,14 @@ export default function JointAccountsPage() {
       <div className="space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-accent-brand mb-1">Joint Accounts</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-accent-brand mb-1">{t("jointAccounts.badge")}</p>
             <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)]">
-              Shared <span className="gold-gradient-text">Ownership</span>
+              {t("jointAccounts.title")} <span className="gold-gradient-text">{t("jointAccounts.titleHighlight")}</span>
             </h1>
-            <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
-              Create joint investment accounts with another verified member. Manage shared funds, investments, and dual approvals for large transactions.
-            </p>
+            <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">{t("jointAccounts.subtitle")}</p>
           </div>
           <Button size="sm" onClick={() => { setShowForm(true); setNotFound(null); }} className="shrink-0">
-            <UserPlus size={16} className="mr-1" /> Create Joint Account
+            <UserPlus size={16} className="mr-1" /> {t("jointAccounts.createAccount")}
           </Button>
         </div>
 
@@ -219,7 +220,7 @@ export default function JointAccountsPage() {
             <div className="flex items-start gap-3">
               <Shield size={20} className="text-amber-400 shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-semibold text-[var(--text-primary)]">Complete verification first</h3>
+                <h3 className="font-semibold text-[var(--text-primary)]">{t("jointAccounts.verifyFirst")}</h3>
                 <ul className="mt-2 space-y-1">
                   {eligibility.requirements.map((r) => (
                     <li key={r.id} className={cn("text-sm flex items-center gap-2", r.met ? "text-accent-green" : "text-[var(--text-secondary)]")}>
@@ -237,23 +238,21 @@ export default function JointAccountsPage() {
           <Card>
             {notFound ? (
               <div className="space-y-4">
-                <p className="text-[var(--text-secondary)]">
-                  This person does not have an account. Send them an invitation to join the platform first.
-                </p>
+                <p className="text-[var(--text-secondary)]">{t("jointAccounts.userNotFound")}</p>
                 <div className="flex flex-wrap gap-3">
                   <Button onClick={sendPlatformInvite} isLoading={submitting}>
-                    <Mail size={16} className="mr-1" /> Invite User
+                    <Mail size={16} className="mr-1" /> {t("jointAccounts.inviteUser")}
                   </Button>
-                  <Button variant="outline" onClick={() => setNotFound(null)}>Try Another Email</Button>
+                  <Button variant="outline" onClick={() => setNotFound(null)}>{t("jointAccounts.tryAnotherEmail")}</Button>
                 </div>
               </div>
             ) : (
               <form onSubmit={sendInvite} className="space-y-4">
-                <h3 className="font-semibold text-[var(--text-primary)]">Invite Co-Owner</h3>
+                <h3 className="font-semibold text-[var(--text-primary)]">{t("jointAccounts.inviteCoOwner")}</h3>
                 <div className="grid sm:grid-cols-3 gap-3">
                   <input
                     className="w-full px-4 py-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-base)] text-[var(--text-primary)] text-sm"
-                    placeholder="Email address *"
+                    placeholder={t("jointAccounts.inviteEmail")}
                     type="email"
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -261,20 +260,20 @@ export default function JointAccountsPage() {
                   />
                   <input
                     className="w-full px-4 py-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-base)] text-[var(--text-primary)] text-sm"
-                    placeholder="Full name"
+                    placeholder={t("jointAccounts.inviteName")}
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                   />
                   <input
                     className="w-full px-4 py-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-base)] text-[var(--text-primary)] text-sm"
-                    placeholder="Phone number"
+                    placeholder={t("jointAccounts.invitePhone")}
                     value={form.phone}
                     onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   />
                 </div>
                 <div className="flex gap-3">
-                  <Button type="submit" isLoading={submitting}>Send Invitation</Button>
-                  <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
+                  <Button type="submit" isLoading={submitting}>{t("jointAccounts.sendInvite")}</Button>
+                  <Button type="button" variant="outline" onClick={() => setShowForm(false)}>{t("jointAccounts.cancel")}</Button>
                 </div>
               </form>
             )}
@@ -284,9 +283,9 @@ export default function JointAccountsPage() {
         <div className="flex flex-wrap gap-2 border-b border-[var(--border-subtle)] pb-1">
           {(
             [
-              { id: "accounts" as const, label: "My Joint Accounts", icon: Users },
-              { id: "invitations" as const, label: "Invitations", icon: Mail, badge: pendingCount },
-              { id: "approvals" as const, label: "Approvals", icon: Bell, badge: approvals.length },
+              { id: "accounts" as const, label: t("jointAccounts.tabAccounts"), icon: Users },
+              { id: "invitations" as const, label: t("jointAccounts.tabInvitations"), icon: Mail, badge: pendingCount },
+              { id: "approvals" as const, label: t("jointAccounts.tabApprovals"), icon: Bell, badge: approvals.length },
             ] as const
           ).map((tab) => (
             <button
@@ -315,10 +314,8 @@ export default function JointAccountsPage() {
           accounts.length === 0 ? (
             <Card className="text-center py-16">
               <Users size={48} className="mx-auto text-[var(--text-muted)] mb-4" />
-              <h3 className="font-semibold text-[var(--text-primary)]">No joint accounts yet</h3>
-              <p className="text-sm text-[var(--text-secondary)] mt-2 max-w-md mx-auto">
-                Invite another verified member to create a shared investment account.
-              </p>
+              <h3 className="font-semibold text-[var(--text-primary)]">{t("jointAccounts.noAccounts")}</h3>
+              <p className="text-sm text-[var(--text-secondary)] mt-2 max-w-md mx-auto">{t("jointAccounts.noAccountsDesc")}</p>
             </Card>
           ) : (
             <div className="grid sm:grid-cols-2 gap-4">
@@ -327,18 +324,18 @@ export default function JointAccountsPage() {
                   <Card className="hover:border-accent-brand/30 transition-all group h-full">
                     <div className="flex items-start justify-between mb-4">
                       <div>
-                        <p className="text-xs text-[var(--text-muted)] uppercase tracking-wide">Joint Account</p>
+                        <p className="text-xs text-[var(--text-muted)] uppercase tracking-wide">{t("jointAccounts.accountLabel")}</p>
                         <p className="font-mono font-bold text-[var(--text-primary)]">{acc.accountNumber}</p>
                       </div>
                       <Badge variant="gold">{acc.ownershipType.replace("_", " ")}</Badge>
                     </div>
                     <div className="grid grid-cols-2 gap-3 mb-4">
                       <div>
-                        <p className="text-xs text-[var(--text-muted)]">Balance</p>
+                        <p className="text-xs text-[var(--text-muted)]">{t("jointAccounts.balance")}</p>
                         <p className="font-mono font-semibold text-[var(--text-primary)]">{formatCurrency(acc.balance)}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-[var(--text-muted)]">Portfolio</p>
+                        <p className="text-xs text-[var(--text-muted)]">{t("jointAccounts.portfolio")}</p>
                         <p className="font-mono font-semibold text-accent-brand">{formatCurrency(acc.portfolioValue)}</p>
                       </div>
                     </div>
@@ -350,7 +347,7 @@ export default function JointAccountsPage() {
                       ))}
                     </div>
                     <span className="inline-flex items-center gap-1 text-sm text-accent-brand group-hover:gap-2 transition-all">
-                      Open account <ArrowRight size={14} />
+                      {t("jointAccounts.openAccount")} <ArrowRight size={14} />
                     </span>
                   </Card>
                 </Link>
@@ -362,9 +359,9 @@ export default function JointAccountsPage() {
         {activeTab === "invitations" && (
           <div className="space-y-6">
             <Card>
-              <h3 className="font-semibold text-[var(--text-primary)] mb-4">Received Invitations</h3>
+              <h3 className="font-semibold text-[var(--text-primary)] mb-4">{t("jointAccounts.receivedInvites")}</h3>
               {received.length === 0 ? (
-                <p className="text-sm text-[var(--text-secondary)] py-4 text-center">No invitations received.</p>
+                <p className="text-sm text-[var(--text-secondary)] py-4 text-center">{t("jointAccounts.noReceived")}</p>
               ) : (
                 <div className="space-y-3">
                   {received.map((inv) => (
@@ -373,13 +370,13 @@ export default function JointAccountsPage() {
                         <p className="font-medium text-[var(--text-primary)]">{inv.inviter?.name}</p>
                         <p className="text-xs text-[var(--text-muted)]">{inv.inviter?.email}</p>
                         <p className="text-xs text-[var(--text-muted)] mt-1 flex items-center gap-1">
-                          <Clock size={12} /> Expires {new Date(inv.expiresAt).toLocaleDateString()}
+                          <Clock size={12} /> {t("jointAccounts.expires", { date: formatDate(inv.expiresAt) })}
                         </p>
                       </div>
                       {inv.status === "PENDING" ? (
                         <div className="flex gap-2">
-                          <Button size="sm" onClick={() => respondInvite(inv.id, "ACCEPT")} disabled={submitting}>Accept</Button>
-                          <Button size="sm" variant="outline" onClick={() => respondInvite(inv.id, "REJECT")} disabled={submitting}>Reject</Button>
+                          <Button size="sm" onClick={() => respondInvite(inv.id, "ACCEPT")} disabled={submitting}>{t("jointAccounts.accept")}</Button>
+                          <Button size="sm" variant="outline" onClick={() => respondInvite(inv.id, "REJECT")} disabled={submitting}>{t("jointAccounts.reject")}</Button>
                         </div>
                       ) : (
                         <Badge variant="gold">{inv.status}</Badge>
@@ -390,9 +387,9 @@ export default function JointAccountsPage() {
               )}
             </Card>
             <Card>
-              <h3 className="font-semibold text-[var(--text-primary)] mb-4">Sent Invitations</h3>
+              <h3 className="font-semibold text-[var(--text-primary)] mb-4">{t("jointAccounts.sentInvites")}</h3>
               {sent.length === 0 ? (
-                <p className="text-sm text-[var(--text-secondary)] py-4 text-center">No invitations sent.</p>
+                <p className="text-sm text-[var(--text-secondary)] py-4 text-center">{t("jointAccounts.noSent")}</p>
               ) : (
                 <div className="space-y-2">
                   {sent.map((inv) => (
@@ -410,7 +407,7 @@ export default function JointAccountsPage() {
         {activeTab === "approvals" && (
           <Card>
             {approvals.length === 0 ? (
-              <p className="text-sm text-[var(--text-secondary)] py-8 text-center">No pending approval requests.</p>
+              <p className="text-sm text-[var(--text-secondary)] py-8 text-center">{t("jointAccounts.noApprovals")}</p>
             ) : (
               <div className="space-y-3">
                 {approvals.map((a) => (
@@ -423,8 +420,8 @@ export default function JointAccountsPage() {
                         </p>
                       </div>
                       <div className="flex gap-2">
-                        <Button size="sm" onClick={() => respondApproval(a.id, "APPROVE")} disabled={submitting}>Approve</Button>
-                        <Button size="sm" variant="outline" onClick={() => respondApproval(a.id, "REJECT")} disabled={submitting}>Reject</Button>
+                        <Button size="sm" onClick={() => respondApproval(a.id, "APPROVE")} disabled={submitting}>{t("jointAccounts.approve")}</Button>
+                        <Button size="sm" variant="outline" onClick={() => respondApproval(a.id, "REJECT")} disabled={submitting}>{t("jointAccounts.reject")}</Button>
                       </div>
                     </div>
                   </div>
