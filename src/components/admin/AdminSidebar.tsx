@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, ArrowLeftRight, ShieldCheck,
   Mail, Building2, LogOut, ChevronRight, Bitcoin, Wallet,
-  ScrollText, Settings, ArrowUpFromLine, Menu, X,
+  ScrollText, Settings, ArrowUpFromLine, Menu, X, LineChart, TrendingUp,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
@@ -19,6 +19,8 @@ const nav = [
   { href: "/admin/withdrawals", label: "Withdrawals", icon: ArrowUpFromLine, countKey: "pendingWithdrawals" as const },
   { href: "/admin/accounts", label: "Accounts", icon: Building2, countKey: null },
   { href: "/admin/transactions", label: "Transactions", icon: ArrowLeftRight, countKey: "pendingTransactions" as const },
+  { href: "/admin/market-assets", label: "Market Assets", icon: LineChart, countKey: null },
+  { href: "/admin/investments", label: "Investments", icon: TrendingUp, countKey: null },
   { href: "/admin/balance-adjustments", label: "Adjustments", icon: Wallet, countKey: null },
   { href: "/admin/kyc", label: "KYC Review", icon: ShieldCheck, countKey: "pendingKyc" as const },
   { href: "/admin/messages", label: "Messages", icon: Mail, countKey: "contactMessages" as const },

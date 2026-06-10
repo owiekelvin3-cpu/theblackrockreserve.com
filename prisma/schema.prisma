@@ -31,6 +31,7 @@ model User {
   accounts            BankAccount[]
   transactions        Transaction[]
   investments         Investment[]
+  investmentOrders    InvestmentOrder[]
   sessions            Session[]
   balanceAdjustments  BalanceAdjustment[] @relation("UserAdjustments")
   adminAdjustments    BalanceAdjustment[] @relation("AdminAdjustments")
@@ -89,6 +90,44 @@ model Investment {
   avgPrice  Decimal  @db.Decimal(15, 2)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, symbol])
+}
+
+model MarketAsset {
+  id                    String   @id @default(cuid())
+  symbol                String   @unique
+  name                  String
+  sector                String
+  description           String   @db.Text
+  logoDomain            String?
+  price                 Decimal  @db.Decimal(15, 2)
+  changePercent         Decimal  @default(0) @db.Decimal(8, 4)
+  minInvestment         Decimal  @default(100) @db.Decimal(15, 2)
+  riskRating            String   @default("Medium")
+  expectedReturnPercent Decimal  @default(8) @db.Decimal(6, 2)
+  marketCapRank         Int      @default(999)
+  popularity            Int      @default(0)
+  enabled               Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model InvestmentOrder {
+  id              String   @id @default(cuid())
+  userId          String
+  accountId       String
+  symbol          String
+  assetName       String
+  amountUsd       Decimal  @db.Decimal(15, 2)
+  shares          Decimal  @db.Decimal(15, 6)
+  priceAtPurchase Decimal  @db.Decimal(15, 2)
+  fee             Decimal  @default(0) @db.Decimal(15, 2)
+  totalCost       Decimal  @db.Decimal(15, 2)
+  status          String   @default("COMPLETED")
+  createdAt       DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -217,6 +256,7 @@ enum TransactionType {
   WITHDRAWAL
   TRANSFER
   PAYMENT
+  INVESTMENT
 }
 
 enum TransactionStatus {

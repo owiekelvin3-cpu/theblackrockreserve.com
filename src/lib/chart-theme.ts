@@ -3,9 +3,21 @@ import type { Theme } from "@/lib/theme";
 export const CHART_BRAND = "#FF5F05";
 export const CHART_BRAND_LIGHT = "#FF8C42";
 
+export const CHART_COLORS = [
+  CHART_BRAND,
+  "#3B82F6",
+  "#10B981",
+  "#8B5CF6",
+  "#F59E0B",
+  "#EC4899",
+  "#06B6D4",
+  "#84CC16",
+];
+
 export function getChartTheme(theme: Theme = "dark") {
   const isLight = theme === "light";
   return {
+    axis: isLight ? "#94a3b8" : "#475569",
     muted: isLight ? "#d1d5db" : "#3A3A3A",
     tooltip: {
       background: isLight ? "#ffffff" : "#1A1A1A",

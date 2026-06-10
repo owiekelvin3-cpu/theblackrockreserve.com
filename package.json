@@ -11,6 +11,7 @@
     "db:push": "npx prisma@5.22.0 db push",
     "db:studio": "npx prisma@5.22.0 studio",
     "admin:create": "node scripts/create-admin.mjs",
+    "seed:market-assets": "node scripts/seed-market-assets.mjs",
     "postinstall": "npx prisma@5.22.0 generate"
   },
   "dependencies": {
