@@ -168,6 +168,53 @@ export function depositRejectedEmail(data: { name: string; reason: string; siteU
 }
 
 /** Generic alert sent to the user's registered Gmail for in-app notifications */
+export function jointAccountInviteEmail(data: {
+  inviteeName: string;
+  inviterName: string;
+  siteUrl: string;
+}) {
+  const html = layout(
+    `
+      <p style="margin:0 0 8px;color:#ffffff;font-size:18px;font-weight:600;">Joint account invitation</p>
+      <p style="margin:0 0 16px;">Hi ${data.inviteeName},</p>
+      <p style="margin:0 0 24px;"><strong style="color:#fff;">${data.inviterName}</strong> has invited you to open a joint investment account on Blackrock Reserve. You'll share ownership, portfolio visibility, and coordinated approvals for large transactions.</p>
+      <div style="text-align:center;margin:28px 0;">
+        <a href="${data.siteUrl}/dashboard/joint-accounts" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,${ACCENT},#ff0000);color:#ffffff;text-decoration:none;font-weight:600;border-radius:999px;font-size:15px;">Review Invitation</a>
+      </div>
+    `,
+    `${data.inviterName} invited you to a joint account`
+  );
+  return {
+    subject: `${BRAND} — Joint account invitation from ${data.inviterName}`,
+    html,
+    text: `Hi ${data.inviteeName}, ${data.inviterName} invited you to a joint account. Visit ${data.siteUrl}/dashboard/joint-accounts`,
+  };
+}
+
+export function platformInviteEmail(data: {
+  inviteeName: string;
+  inviterName: string;
+  siteUrl: string;
+}) {
+  const html = layout(
+    `
+      <p style="margin:0 0 8px;color:#ffffff;font-size:18px;font-weight:600;">You're invited to Blackrock Reserve</p>
+      <p style="margin:0 0 16px;">Hi ${data.inviteeName},</p>
+      <p style="margin:0 0 24px;"><strong style="color:#fff;">${data.inviterName}</strong> would like to open a joint investment account with you, but we couldn't find a registered account matching your details.</p>
+      <p style="margin:0 0 24px;">Create your free account to join the platform and accept the joint account invitation.</p>
+      <div style="text-align:center;margin:28px 0;">
+        <a href="${data.siteUrl}/register" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,${ACCENT},#ff0000);color:#ffffff;text-decoration:none;font-weight:600;border-radius:999px;font-size:15px;">Create Account</a>
+      </div>
+    `,
+    "Join Blackrock Reserve to open a joint account"
+  );
+  return {
+    subject: `${BRAND} — ${data.inviterName} invited you to join`,
+    html,
+    text: `Hi ${data.inviteeName}, ${data.inviterName} invited you to join ${BRAND} for a joint account. Register at ${data.siteUrl}/register`,
+  };
+}
+
 export function userNotificationEmail(data: {
   name: string;
   title: string;

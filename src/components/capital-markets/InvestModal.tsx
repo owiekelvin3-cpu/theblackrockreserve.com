@@ -6,6 +6,7 @@ import { X, Wallet, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { formatCurrency, cn } from "@/lib/utils";
 import { calculateInvestmentFee } from "@/lib/market-assets";
 import Button from "@/components/ui/Button";
+import StockIcon from "@/components/capital-markets/StockIcon";
 import type { MarketAssetCardData } from "@/components/capital-markets/MarketAssetCard";
 
 type Step = "amount" | "summary" | "success";
@@ -133,11 +134,14 @@ export default function InvestModal({ asset, walletBalance, open, onClose, onSuc
             aria-labelledby="invest-modal-title"
           >
             <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b border-[var(--border-subtle)] bg-[var(--surface-elevated)]">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-accent-brand">Invest</p>
-                <h2 id="invest-modal-title" className="text-lg font-bold text-[var(--text-primary)]">
-                  {asset.name}
-                </h2>
+              <div className="flex items-center gap-3 min-w-0">
+                <StockIcon symbol={asset.symbol} name={asset.name} logoDomain={asset.logoDomain} size="md" />
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-accent-brand">Invest</p>
+                  <h2 id="invest-modal-title" className="text-lg font-bold text-[var(--text-primary)] truncate">
+                    {asset.name}
+                  </h2>
+                </div>
               </div>
               <button
                 type="button"

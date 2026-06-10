@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "framer-motion";
 import { TrendingUp, TrendingDown, Shield, Clock } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
+import StockIcon from "@/components/capital-markets/StockIcon";
 
 export interface MarketAssetCardData {
   id: string;
@@ -14,6 +14,7 @@ export interface MarketAssetCardData {
   sector: string;
   description: string;
   logoUrl: string | null;
+  logoDomain?: string | null;
   price: number;
   change: number;
   changePercent: number;
@@ -29,29 +30,6 @@ interface MarketAssetCardProps {
   marketStatus: string;
   onInvest: (asset: MarketAssetCardData) => void;
   index?: number;
-}
-
-function AssetLogo({ asset }: { asset: MarketAssetCardData }) {
-  const [failed, setFailed] = useState(false);
-  const initials = asset.symbol.slice(0, 2);
-
-  if (!asset.logoUrl || failed) {
-    return (
-      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-accent-brand/20 to-accent-brand/5 border border-accent-brand/20 flex items-center justify-center text-sm font-bold text-accent-brand shrink-0">
-        {initials}
-      </div>
-    );
-  }
-
-  return (
-    <img
-      src={asset.logoUrl}
-      alt={`${asset.name} logo`}
-      className="h-12 w-12 rounded-xl object-contain bg-white/5 border border-white/10 p-1.5 shrink-0"
-      onError={() => setFailed(true)}
-      loading="lazy"
-    />
-  );
 }
 
 function riskColor(risk: string) {
@@ -75,7 +53,7 @@ export default function MarketAssetCard({ asset, marketStatus, onInvest, index =
 
       <div className="relative flex items-start justify-between gap-3 mb-4">
         <div className="flex items-center gap-3 min-w-0">
-          <AssetLogo asset={asset} />
+          <StockIcon symbol={asset.symbol} name={asset.name} logoDomain={asset.logoDomain} size="md" />
           <div className="min-w-0">
             <h3 className="font-semibold text-[var(--text-primary)] truncate">{asset.name}</h3>
             <div className="flex items-center gap-2 mt-0.5 flex-wrap">

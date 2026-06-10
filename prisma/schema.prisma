@@ -42,6 +42,13 @@ model User {
   notifications       UserNotification[]
   adminActivityLogs   AdminActivityLog[]  @relation("AdminActions")
   targetedLogs        AdminActivityLog[]  @relation("TargetUser")
+  jointAccountMembers JointAccountUser[]
+  sentJointInvitations     JointAccountInvitation[] @relation("SentJointInvitations")
+  receivedJointInvitations JointAccountInvitation[] @relation("ReceivedJointInvitations")
+  jointTransactions   JointAccountTransaction[]
+  initiatedApprovals  JointAccountApproval[] @relation("InitiatedApprovals")
+  approvalRequests    JointAccountApproval[] @relation("ApprovalRequests")
+  jointActivityLogs   JointAccountActivityLog[]
 }
 
 model Session {
@@ -177,16 +184,146 @@ model DepositRequest {
 }
 
 model UserNotification {
-  id        String   @id @default(cuid())
-  userId    String
-  type      String
-  title     String
-  message   String   @db.Text
-  read      Boolean  @default(false)
-  depositId String?
-  createdAt DateTime @default(now())
+  id             String   @id @default(cuid())
+  userId         String
+  type           String
+  title          String
+  message        String   @db.Text
+  read           Boolean  @default(false)
+  depositId      String?
+  invitationId   String?
+  jointAccountId String?
+  approvalId     String?
+  createdAt      DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model JointAccount {
+  id            String             @id @default(cuid())
+  accountNumber String             @unique
+  balance       Decimal            @default(0) @db.Decimal(15, 2)
+  currency      String             @default("USD")
+  status        JointAccountStatus @default(ACTIVE)
+  ownershipType String             @default("JOINT_EQUAL")
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  members          JointAccountUser[]
+  transactions     JointAccountTransaction[]
+  investments      JointAccountInvestment[]
+  investmentOrders JointAccountInvestmentOrder[]
+  approvals        JointAccountApproval[]
+  activityLogs     JointAccountActivityLog[]
+  invitations      JointAccountInvitation[]
+}
+
+model JointAccountUser {
+  id             String           @id @default(cuid())
+  jointAccountId String
+  userId         String
+  role           JointAccountRole @default(CO_OWNER)
+  createdAt      DateTime         @default(now())
+
+  jointAccount JointAccount @relation(fields: [jointAccountId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([jointAccountId, userId])
+}
+
+model JointAccountInvitation {
+  id             String                @id @default(cuid())
+  inviterId      String
+  inviteeId      String?
+  inviteeEmail   String
+  inviteeName    String?
+  inviteePhone   String?
+  status         JointInvitationStatus @default(PENDING)
+  expiresAt      DateTime
+  jointAccountId String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  inviter      User          @relation("SentJointInvitations", fields: [inviterId], references: [id], onDelete: Cascade)
+  invitee      User?         @relation("ReceivedJointInvitations", fields: [inviteeId], references: [id], onDelete: SetNull)
+  jointAccount JointAccount? @relation(fields: [jointAccountId], references: [id], onDelete: SetNull)
+}
+
+model JointAccountApproval {
+  id             String              @id @default(cuid())
+  jointAccountId String
+  initiatedById  String
+  approverId     String
+  type           String
+  amount         Decimal             @db.Decimal(15, 2)
+  description    String
+  payload        String              @db.Text
+  status         JointApprovalStatus @default(PENDING)
+  createdAt      DateTime            @default(now())
+  approvedAt     DateTime?
+
+  jointAccount JointAccount @relation(fields: [jointAccountId], references: [id], onDelete: Cascade)
+  initiator    User         @relation("InitiatedApprovals", fields: [initiatedById], references: [id])
+  approver     User         @relation("ApprovalRequests", fields: [approverId], references: [id])
+}
+
+model JointAccountTransaction {
+  id             String            @id @default(cuid())
+  jointAccountId String
+  userId         String
+  type           TransactionType
+  amount         Decimal           @db.Decimal(15, 2)
+  description    String
+  status         TransactionStatus @default(COMPLETED)
+  createdAt      DateTime          @default(now())
+
+  jointAccount JointAccount @relation(fields: [jointAccountId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model JointAccountInvestment {
+  id             String   @id @default(cuid())
+  jointAccountId String
+  symbol         String
+  name           String
+  shares         Decimal  @db.Decimal(15, 6)
+  avgPrice       Decimal  @db.Decimal(15, 2)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  jointAccount JointAccount @relation(fields: [jointAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([jointAccountId, symbol])
+}
+
+model JointAccountInvestmentOrder {
+  id              String   @id @default(cuid())
+  jointAccountId  String
+  userId          String
+  symbol          String
+  assetName       String
+  amountUsd       Decimal  @db.Decimal(15, 2)
+  shares          Decimal  @db.Decimal(15, 6)
+  priceAtPurchase Decimal  @db.Decimal(15, 2)
+  fee             Decimal  @default(0) @db.Decimal(15, 2)
+  totalCost       Decimal  @db.Decimal(15, 2)
+  status          String   @default("COMPLETED")
+  createdAt       DateTime @default(now())
+
+  jointAccount JointAccount @relation(fields: [jointAccountId], references: [id], onDelete: Cascade)
+}
+
+model JointAccountActivityLog {
+  id             String   @id @default(cuid())
+  jointAccountId String
+  userId         String
+  action         String
+  details        String   @db.Text
+  ipAddress      String?
+  createdAt      DateTime @default(now())
+
+  jointAccount JointAccount @relation(fields: [jointAccountId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model WithdrawalRequest {
@@ -288,4 +425,30 @@ enum WithdrawalMethod {
   DEBIT_CARD
   CRYPTO_STABLECOIN
   PAPER_CHECK
+}
+
+enum JointAccountStatus {
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+enum JointAccountRole {
+  PRIMARY
+  CO_OWNER
+}
+
+enum JointInvitationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CANCELLED
+}
+
+enum JointApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
 }

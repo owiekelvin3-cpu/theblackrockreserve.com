@@ -15,6 +15,7 @@ import DashboardGate from "@/components/dashboard/DashboardGate";
 import ChartContainer from "@/components/ui/ChartContainer";
 import MarketAssetCard, { type MarketAssetCardData } from "@/components/capital-markets/MarketAssetCard";
 import InvestModal from "@/components/capital-markets/InvestModal";
+import StockIcon from "@/components/capital-markets/StockIcon";
 import { formatCurrency, cn } from "@/lib/utils";
 import { fetchDashboardJson } from "@/lib/fetch-json";
 import { CHART_BRAND, CHART_COLORS } from "@/lib/chart-theme";
@@ -27,6 +28,7 @@ interface Holding {
   symbol: string;
   name: string;
   sector: string;
+  logoDomain?: string | null;
   shares: number;
   avgPrice: number;
   costBasis: number;
@@ -407,9 +409,10 @@ export default function CapitalMarketsPage() {
                             >
                               <td className="py-4">
                                 <div className="flex items-center gap-2">
-                                  <Badge variant="gold">{h.symbol}</Badge>
+                                  <StockIcon symbol={h.symbol} name={h.name} logoDomain={data.assets.find((a) => a.symbol === h.symbol)?.logoDomain} size="sm" />
                                   <div>
                                     <p className="text-[var(--text-primary)] font-medium">{h.name}</p>
+                                    <p className="text-xs font-mono text-accent-brand">{h.symbol}</p>
                                     <p className="text-xs text-[var(--text-muted)]">
                                       {new Date(h.investedAt).toLocaleDateString()}
                                     </p>

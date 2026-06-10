@@ -13,6 +13,9 @@ export async function createUserNotification(
     title: string;
     message: string;
     depositId?: string;
+    invitationId?: string;
+    jointAccountId?: string;
+    approvalId?: string;
   },
   txClient?: Tx
 ) {
@@ -24,6 +27,9 @@ export async function createUserNotification(
       title: params.title,
       message: params.message,
       depositId: params.depositId,
+      invitationId: params.invitationId,
+      jointAccountId: params.jointAccountId,
+      approvalId: params.approvalId,
     },
   });
 }
@@ -72,6 +78,9 @@ export async function getUserNotifications(userId: string, limit = 20, since?: D
     message: n.message,
     read: n.read,
     depositId: n.depositId,
+    invitationId: n.invitationId,
+    jointAccountId: n.jointAccountId,
+    approvalId: n.approvalId,
     createdAt: n.createdAt.toISOString(),
   }));
 }

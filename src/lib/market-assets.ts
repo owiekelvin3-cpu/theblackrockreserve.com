@@ -7,6 +7,7 @@ export interface MarketAssetDto {
   sector: string;
   description: string;
   logoUrl: string | null;
+  logoDomain: string | null;
   price: number;
   change: number;
   changePercent: number;
@@ -127,6 +128,7 @@ function toDto(asset: {
     sector: asset.sector,
     description: asset.description,
     logoUrl: logoUrl(asset.logoDomain),
+    logoDomain: asset.logoDomain,
     price,
     change,
     changePercent,

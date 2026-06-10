@@ -6,6 +6,7 @@ export const SETTING_KEYS = {
   BITCOIN_PURCHASE_LINK: "bitcoin_purchase_link",
   DEPOSIT_INSTRUCTIONS: "deposit_instructions",
   DEPOSIT_CONFIRMATION_MESSAGE: "deposit_confirmation_message",
+  JOINT_APPROVAL_THRESHOLD: "joint_approval_threshold",
 } as const;
 
 export type SettingKey = (typeof SETTING_KEYS)[keyof typeof SETTING_KEYS];
@@ -17,6 +18,7 @@ const DEFAULTS: Record<SettingKey, string> = {
     "Send Bitcoin to the wallet address below. After sending, submit your transaction hash as proof of payment. Deposits are credited after admin verification.",
   [SETTING_KEYS.DEPOSIT_CONFIRMATION_MESSAGE]:
     "Your deposit proof has been submitted. We will verify your payment and credit your account shortly.",
+  [SETTING_KEYS.JOINT_APPROVAL_THRESHOLD]: "5000",
 };
 
 const CACHE_TAG = "platform-settings";
