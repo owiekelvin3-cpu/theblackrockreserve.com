@@ -1,6 +1,7 @@
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 import { isVerifiedCustomerToken } from "@/lib/customer-auth";
+import { auditCookieHeader, COOKIE_CRITICAL_BYTES } from "@/lib/cookie-audit";
 
 function dashboardDeniedResponse(
   request: NextRequest,
@@ -24,6 +25,16 @@ function dashboardDeniedResponse(
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  const cookieHeader = request.headers.get("cookie");
+  auditCookieHeader(cookieHeader, pathname);
+
+  if (cookieHeader && cookieHeader.length >= COOKIE_CRITICAL_BYTES) {
+    const signOutUrl = new URL("/api/auth/clear-session", request.url);
+    signOutUrl.searchParams.set("reason", "cookie_too_large");
+    signOutUrl.searchParams.set("returnTo", pathname.startsWith("/admin") ? "/admin/login" : "/login");
+    return NextResponse.redirect(signOutUrl);
+  }
 
   if (!process.env.NEXTAUTH_SECRET?.trim()) {
     return NextResponse.next();

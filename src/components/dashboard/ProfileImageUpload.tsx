@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
+import { useProfileImage } from "@/components/providers/ProfileImageProvider";
 import { Camera, Upload, Trash2, ZoomIn } from "lucide-react";
 import { toast } from "sonner";
 import ProfileAvatar from "@/components/ui/ProfileAvatar";
@@ -15,7 +16,8 @@ interface ProfileImageUploadProps {
 }
 
 export default function ProfileImageUpload({ initialImage, onUpdated }: ProfileImageUploadProps) {
-  const { data: session, update } = useSession();
+  const { data: session } = useSession();
+  const { refresh, setImage: setProfileImage } = useProfileImage();
   const { t } = useI18n();
   const [image, setImage] = useState<string | null>(initialImage ?? null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -48,10 +50,11 @@ export default function ProfileImageUpload({ initialImage, onUpdated }: ProfileI
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Upload failed");
       setImage(dataUrl);
+      setProfileImage(dataUrl);
       setPreview(null);
       setPendingFile(null);
       onUpdated?.(dataUrl);
-      await update({ image: dataUrl });
+      await refresh();
       toast.success(t("settings.photoUpdated"));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : t("common.error"));
@@ -66,10 +69,11 @@ export default function ProfileImageUpload({ initialImage, onUpdated }: ProfileI
       const res = await fetch("/api/dashboard/profile/image", { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to remove");
       setImage(null);
+      setProfileImage(null);
       setPreview(null);
       setPendingFile(null);
       onUpdated?.(null);
-      await update({ image: null });
+      await refresh();
       toast.success(t("settings.photoRemoved"));
     } catch {
       toast.error(t("common.error"));

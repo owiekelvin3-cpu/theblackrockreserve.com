@@ -6,6 +6,7 @@ import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import DashboardTopBar from "@/components/dashboard/DashboardTopBar";
 import DashboardMobileNav from "@/components/dashboard/DashboardMobileNav";
 import { DashboardLayoutProvider } from "@/components/dashboard/DashboardLayoutContext";
+import { ProfileImageProvider } from "@/components/providers/ProfileImageProvider";
 
 export default function DashboardShell({
   session,
@@ -17,6 +18,7 @@ export default function DashboardShell({
   return (
     <SessionProvider session={session} refetchOnWindowFocus={false} refetchInterval={0}>
       <DashboardLayoutProvider>
+        <ProfileImageProvider>
         <div className="dash-layout min-h-[100dvh] overflow-x-hidden">
           <DashboardSidebar />
           <div className="lg:ml-[260px] min-h-[100dvh] flex flex-col">
@@ -27,6 +29,7 @@ export default function DashboardShell({
             <DashboardMobileNav />
           </div>
         </div>
+        </ProfileImageProvider>
       </DashboardLayoutProvider>
     </SessionProvider>
   );

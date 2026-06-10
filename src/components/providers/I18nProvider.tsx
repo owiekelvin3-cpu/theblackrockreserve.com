@@ -50,6 +50,7 @@ function readStoredLocale(): LocaleCode | null {
 function persistLocale(code: LocaleCode) {
   try {
     localStorage.setItem(LOCALE_STORAGE_KEY, code);
+    // Locale cookie is 2 chars only — never store large payloads in cookies
     document.cookie = `${LOCALE_COOKIE}=${code};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Lax`;
   } catch {
     /* ignore */

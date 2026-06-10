@@ -13,6 +13,7 @@ import { useDashboardLayout } from "@/components/dashboard/DashboardLayoutContex
 import ProfileAvatar from "@/components/ui/ProfileAvatar";
 import LanguageSelector from "@/components/ui/LanguageSelector";
 import { useI18n } from "@/components/providers/I18nProvider";
+import { useProfileImage } from "@/components/providers/ProfileImageProvider";
 
 const mainNav = [
   { href: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard, badge: null },
@@ -33,6 +34,7 @@ export default function DashboardSidebar() {
   const { data: session } = useSession();
   const { sidebarOpen, closeSidebar } = useDashboardLayout();
   const { t } = useI18n();
+  const { image: profileImage } = useProfileImage();
 
   useEffect(() => {
     closeSidebar();
@@ -124,7 +126,7 @@ export default function DashboardSidebar() {
             <LanguageSelector variant="full" />
           </div>
           <div className="flex items-center gap-3 mb-3 px-1">
-            <ProfileAvatar name={session?.user?.name} image={session?.user?.image} size="md" />
+            <ProfileAvatar name={session?.user?.name} image={profileImage} size="md" />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-text-primary truncate">{session?.user?.name ?? "Account"}</p>
               <p className="text-xs text-text-muted truncate">{session?.user?.email}</p>

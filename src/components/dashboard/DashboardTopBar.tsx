@@ -9,6 +9,7 @@ import ThemeToggle from "@/components/ui/ThemeToggle";
 import LanguageSelector from "@/components/ui/LanguageSelector";
 import ProfileAvatar from "@/components/ui/ProfileAvatar";
 import { useI18n } from "@/components/providers/I18nProvider";
+import { useProfileImage } from "@/components/providers/ProfileImageProvider";
 
 const titleKeys: Record<string, string> = {
   "/dashboard": "nav.dashboard",
@@ -31,6 +32,7 @@ export default function DashboardTopBar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const { t } = useI18n();
+  const { image: profileImage } = useProfileImage();
   const title = t(resolveTitleKey(pathname));
 
   return (
@@ -57,7 +59,7 @@ export default function DashboardTopBar() {
           </Link>
           <DashboardNotifications />
           <Link href="/dashboard/settings" aria-label={t("common.settings")}>
-            <ProfileAvatar name={session?.user?.name} image={session?.user?.image} size="sm" />
+            <ProfileAvatar name={session?.user?.name} image={profileImage} size="sm" />
           </Link>
         </div>
       </div>

@@ -3,7 +3,12 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
+import { stripJwtBloat } from "@/lib/cookie-audit";
 
+/**
+ * JWT session cookie must stay small (<4 KB). Only store auth primitives.
+ * Profile images, settings, and user data belong in the database.
+ */
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -19,6 +24,15 @@ export const authOptions: NextAuthOptions = {
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email.trim().toLowerCase() },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            password: true,
+            role: true,
+            emailVerified: true,
+            status: true,
+          },
         });
 
         if (!user || !user.password) {
@@ -53,7 +67,6 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           email: user.email,
           name: user.name,
-          image: user.profileImage,
           role: user.role,
           emailVerified: !!user.emailVerified,
         };
@@ -71,7 +84,8 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60,
-    updateAge: 0,
+    /** Avoid re-encoding JWT on every request (was 0 — caused excess cookie churn) */
+    updateAge: 24 * 60 * 60,
   },
   cookies: {
     sessionToken: {
@@ -84,6 +98,7 @@ export const authOptions: NextAuthOptions = {
         sameSite: "lax",
         path: "/",
         secure: process.env.NODE_ENV === "production",
+        maxAge: 30 * 24 * 60 * 60,
       },
     },
   },
@@ -97,27 +112,27 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.role = user.role ?? "USER";
         token.emailVerified = Boolean(user.emailVerified);
-        token.image = user.image ?? null;
       } else if (trigger === "update" && token.sub) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.sub },
-          select: { id: true, role: true, emailVerified: true, profileImage: true },
+          select: { id: true, role: true, emailVerified: true },
         });
         if (dbUser) {
           token.id = dbUser.id;
           token.role = dbUser.role;
           token.emailVerified = !!dbUser.emailVerified;
-          token.image = dbUser.profileImage;
         }
       }
-      return token;
+
+      return stripJwtBloat(token as Record<string, unknown>) as typeof token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = (token.role as "USER" | "ADMIN") ?? "USER";
         session.user.emailVerified = Boolean(token.emailVerified);
-        session.user.image = (token.image as string | null) ?? null;
+        // Profile image is loaded from /api/dashboard/profile/image — never from cookie
+        session.user.image = null;
       }
       return session;
     },

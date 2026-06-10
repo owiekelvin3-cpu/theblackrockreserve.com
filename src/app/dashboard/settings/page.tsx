@@ -20,10 +20,9 @@ export default function SettingsPage() {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data?.profileImage) setProfileImage(data.profileImage);
-        else if (session?.user?.image) setProfileImage(session.user.image);
       })
       .catch(() => {});
-  }, [session?.user?.image]);
+  }, [session?.user?.id]);
 
   const notifyItems = [
     t("settings.notifyTransaction"),
@@ -37,7 +36,7 @@ export default function SettingsPage() {
       <Card>
         <h2 className="font-semibold text-text-primary mb-6">{t("settings.profile")}</h2>
         <ProfileImageUpload
-          initialImage={profileImage ?? session?.user?.image}
+          initialImage={profileImage}
           onUpdated={setProfileImage}
         />
         <div className="space-y-4 mt-6 pt-6 border-t border-border">
