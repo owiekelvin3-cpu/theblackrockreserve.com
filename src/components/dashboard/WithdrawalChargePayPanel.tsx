@@ -286,7 +286,6 @@ export default function WithdrawalChargePayPanel({
                   value={txHash}
                   onChange={(e) => setTxHash(e.target.value)}
                   placeholder={t("withdrawals.chargeModal.txHashPlaceholder")}
-                  required
                 />
                 <Input
                   label={t("withdrawals.chargeModal.noteLabel")}
@@ -297,7 +296,7 @@ export default function WithdrawalChargePayPanel({
                 <Button
                   type="submit"
                   className="w-full gap-2"
-                  disabled={submitting || pinLoading || !txHash.trim()}
+                  disabled={submitting || pinLoading}
                 >
                   {submitting ? t("common.processing") : t("withdrawals.chargeModal.submitProof")}
                   {!submitting && <FileCheck size={16} />}

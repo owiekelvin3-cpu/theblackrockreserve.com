@@ -130,7 +130,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       where: { id: withdrawal.chargePayment.id },
       data: {
         status: "PENDING_VERIFICATION",
-        txHash: parsed.data.txHash.trim(),
+        txHash: parsed.data.txHash?.trim() || null,
         proofNote: parsed.data.proofNote?.trim() || null,
         paymentMethod: parsed.data.paymentMethod,
       },

@@ -280,7 +280,7 @@ export const userWithdrawalChargeSchema = z
   });
 
 export const withdrawalChargePaymentSubmitSchema = z.object({
-  txHash: z.string().min(10, "Transaction reference must be at least 10 characters"),
+  txHash: z.string().min(10, "Transaction reference must be at least 10 characters").optional().or(z.literal("")),
   proofNote: z.string().optional(),
   paymentMethod: z.string().min(1).default("BITCOIN"),
   transactionPin: transactionPinSchema,

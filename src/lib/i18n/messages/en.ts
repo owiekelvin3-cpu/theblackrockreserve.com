@@ -379,7 +379,7 @@ const enBase = {
       payStep3: "Verification",
       walletLabel: "Payment wallet address",
       buyBitcoin: "Buy Bitcoin",
-      txHashLabel: "Transaction reference",
+      txHashLabel: "Transaction reference (optional)",
       txHashPlaceholder: "Paste your transaction ID or hash",
       noteLabel: "Payment note (optional)",
       notePlaceholder: "Additional payment details for our team",
