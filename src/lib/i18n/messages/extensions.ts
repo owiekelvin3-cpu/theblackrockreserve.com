@@ -157,7 +157,7 @@ const extensions = {
     close: "Close",
     ticker: "Ticker",
     currentPrice: "Current Price",
-    walletBalance: "Wallet Balance",
+    walletBalance: "Total Available Balance",
     amountLabel: "Purchase Amount (USD)",
     amountRequired: "Please enter a purchase amount",
     assetRequired: "Asset not selected",

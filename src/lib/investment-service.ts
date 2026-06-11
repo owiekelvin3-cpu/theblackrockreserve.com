@@ -4,6 +4,11 @@ import {
   calculateInvestmentFee,
   getMarketAssetBySymbol,
 } from "@/lib/market-assets";
+import {
+  deductFromUserAccounts,
+  getSpendableBalance,
+  getSpendableBalanceInTx,
+} from "@/lib/spendable-balance";
 
 export interface ExecuteInvestmentInput {
   userId: string;
@@ -77,16 +82,15 @@ export async function executeInvestment(
     }
   }
 
-  const accounts = await ensureUserBankAccounts(userId);
-  const account =
-    (accountId ? accounts.find((a) => a.id === accountId) : null) ??
-    accounts.find((a) => a.type === "checking") ??
-    accounts[0];
-
-  if (!account) throw new Error("No account available for investment");
+  await ensureUserBankAccounts(userId);
 
   const fee = calculateInvestmentFee(amountUsd);
   const totalCost = Math.round((amountUsd + fee) * 100) / 100;
+
+  const spendable = await getSpendableBalance(userId);
+  if (spendable < totalCost) {
+    throw new Error("Insufficient wallet balance");
+  }
   const priceAtPurchase = asset.price;
   const shares = Math.round((amountUsd / priceAtPurchase) * 1_000_000) / 1_000_000;
 
@@ -105,27 +109,22 @@ export async function executeInvestment(
   }
 
   const result = await prisma.$transaction(async (tx) => {
-    const bankAccount = await tx.bankAccount.findFirst({
-      where: { id: account.id, userId },
-    });
-    if (!bankAccount) throw new Error("Account not found");
-
-    const balanceBefore = Number(bankAccount.balance);
-    if (balanceBefore < totalCost) {
+    const spendableInTx = await getSpendableBalanceInTx(tx, userId);
+    if (spendableInTx < totalCost) {
       throw new Error("Insufficient wallet balance");
     }
 
-    const balanceAfter = Math.round((balanceBefore - totalCost) * 100) / 100;
-
-    await tx.bankAccount.update({
-      where: { id: account.id },
-      data: { balance: balanceAfter },
-    });
+    const { primaryAccountId } = await deductFromUserAccounts(
+      tx,
+      userId,
+      totalCost,
+      accountId
+    );
 
     const order = await tx.investmentOrder.create({
       data: {
         userId,
-        accountId: account.id,
+        accountId: primaryAccountId,
         symbol: normalizedSymbol,
         assetName: asset.name,
         side: "BUY",
@@ -167,10 +166,10 @@ export async function executeInvestment(
     await tx.transaction.create({
       data: {
         userId,
-        accountId: account.id,
+        accountId: primaryAccountId,
         type: "INVESTMENT",
         amount: totalCost,
-        description: `Investment in ${normalizedSymbol} — ${asset.name}`,
+        description: `Buy ${normalizedSymbol} — ${asset.name}`,
         status: "COMPLETED",
       },
     });
@@ -180,6 +179,7 @@ export async function executeInvestment(
       data: { popularity: { increment: 1 } },
     });
 
+    const balanceAfter = await getSpendableBalanceInTx(tx, userId);
     return { order, balanceAfter };
   });
 
