@@ -60,32 +60,61 @@ const TOOLTIP_GAP = 10;
 
 type TooltipPosition = { left: number; top: number };
 
+function measureTooltipSize(tooltip: HTMLElement) {
+  return {
+    width: Math.max(tooltip.offsetWidth, tooltip.scrollWidth, 176),
+    height: Math.max(tooltip.offsetHeight, tooltip.scrollHeight, 100),
+  };
+}
+
 function clampTooltipPosition(
   anchorX: number,
   anchorY: number,
   tooltipWidth: number,
   tooltipHeight: number,
-  containerWidth: number,
-  containerHeight: number
+  containerRect: DOMRect,
+  barIndex: number,
+  barCount: number
 ): TooltipPosition {
-  const halfW = tooltipWidth / 2;
-  let centerX = anchorX;
+  const containerW = containerRect.width;
+  const containerH = containerRect.height;
+  const viewportMargin = TOOLTIP_MARGIN;
+
   let top = anchorY - tooltipHeight - TOOLTIP_GAP;
-
-  if (top < TOOLTIP_MARGIN) {
-    top = anchorY + TOOLTIP_GAP;
+  if (top < viewportMargin) {
+    top = anchorY + TOOLTIP_GAP + 8;
   }
-  if (top + tooltipHeight > containerHeight - TOOLTIP_MARGIN) {
-    top = Math.max(TOOLTIP_MARGIN, containerHeight - TOOLTIP_MARGIN - tooltipHeight);
-  }
-
-  if (centerX - halfW < TOOLTIP_MARGIN) {
-    centerX = TOOLTIP_MARGIN + halfW;
-  } else if (centerX + halfW > containerWidth - TOOLTIP_MARGIN) {
-    centerX = containerWidth - TOOLTIP_MARGIN - halfW;
+  if (top + tooltipHeight > containerH - viewportMargin) {
+    top = Math.max(viewportMargin, containerH - viewportMargin - tooltipHeight);
   }
 
-  return { left: centerX, top };
+  const topViewport = containerRect.top + top;
+  if (topViewport < viewportMargin) {
+    top = viewportMargin - containerRect.top;
+  }
+  if (topViewport + tooltipHeight > window.innerHeight - viewportMargin) {
+    top = window.innerHeight - viewportMargin - tooltipHeight - containerRect.top;
+  }
+
+  const isRightEdge = barIndex >= barCount - 2;
+  const isLeftEdge = barIndex <= 1;
+
+  let left = anchorX - tooltipWidth / 2;
+  if (isRightEdge) {
+    left = anchorX - tooltipWidth + 6;
+  } else if (isLeftEdge) {
+    left = anchorX - 6;
+  }
+
+  const minAbsLeft = Math.max(viewportMargin, containerRect.left + viewportMargin);
+  const maxAbsLeft = Math.min(
+    window.innerWidth - viewportMargin - tooltipWidth,
+    containerRect.left + containerW - viewportMargin - tooltipWidth
+  );
+  const absLeft = containerRect.left + left;
+  const clampedAbsLeft = Math.min(Math.max(absLeft, minAbsLeft), Math.max(minAbsLeft, maxAbsLeft));
+
+  return { left: clampedAbsLeft - containerRect.left, top };
 }
 
 function roundedBarPath(x: number, y: number, w: number, h: number, r: number): string {
@@ -182,30 +211,28 @@ export default function CashFlowPanel({ data }: { data: CashFlowMonth[] }) {
       const tooltip = tooltipRef.current;
       if (!container || !tooltip) return;
 
-      const { width: containerW, height: containerH } = container.getBoundingClientRect();
-      if (containerW <= 0 || containerH <= 0) return;
+      const containerRect = container.getBoundingClientRect();
+      if (containerRect.width <= 0 || containerRect.height <= 0) return;
 
       const anchor = getBarAnchor(index);
-      const anchorX = (anchor.x / chartW) * containerW;
-      const anchorY = (anchor.y / chartH) * containerH;
-
-      const { width: tipW, height: tipH } = tooltip.getBoundingClientRect();
-      const measuredW = tipW > 0 ? tipW : tooltip.offsetWidth;
-      const measuredH = tipH > 0 ? tipH : tooltip.offsetHeight;
+      const anchorX = (anchor.x / chartW) * containerRect.width;
+      const anchorY = (anchor.y / chartH) * containerRect.height;
+      const { width: tipW, height: tipH } = measureTooltipSize(tooltip);
 
       setTooltipPos(
         clampTooltipPosition(
           anchorX,
           anchorY,
-          measuredW || 176,
-          measuredH || 100,
-          containerW,
-          containerH
+          tipW,
+          tipH,
+          containerRect,
+          index,
+          chartData.length
         )
       );
       setTooltipReady(true);
     },
-    [getBarAnchor]
+    [getBarAnchor, chartData.length]
   );
 
   useLayoutEffect(() => {
@@ -215,18 +242,30 @@ export default function CashFlowPanel({ data }: { data: CashFlowMonth[] }) {
     }
 
     updateTooltipPosition(hoveredIndex);
-    const raf = requestAnimationFrame(() => updateTooltipPosition(hoveredIndex));
+    const raf1 = requestAnimationFrame(() => updateTooltipPosition(hoveredIndex));
+    const raf2 = requestAnimationFrame(() => {
+      requestAnimationFrame(() => updateTooltipPosition(hoveredIndex));
+    });
 
     const container = chartRef.current;
+    const onResize = () => updateTooltipPosition(hoveredIndex);
+    window.addEventListener("resize", onResize);
+
     if (!container) {
-      return () => cancelAnimationFrame(raf);
+      return () => {
+        cancelAnimationFrame(raf1);
+        cancelAnimationFrame(raf2);
+        window.removeEventListener("resize", onResize);
+      };
     }
 
     const observer = new ResizeObserver(() => updateTooltipPosition(hoveredIndex));
     observer.observe(container);
 
     return () => {
-      cancelAnimationFrame(raf);
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      window.removeEventListener("resize", onResize);
       observer.disconnect();
     };
   }, [hoveredIndex, updateTooltipPosition, chartData, chartMode]);

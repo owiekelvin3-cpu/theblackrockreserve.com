@@ -971,14 +971,14 @@
 .cash-flow-floating-tooltip {
   position: absolute;
   z-index: 5;
-  transform: translateX(-50%);
+  transform: none;
   pointer-events: none;
   transition:
     left 0.16s ease,
     top 0.16s ease,
-    opacity 0.18s ease,
-    transform 0.18s ease;
+    opacity 0.18s ease;
   will-change: left, top;
+  max-width: calc(100% - 1rem);
 }
 
 .cash-flow-chart::after {
