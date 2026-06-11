@@ -77,7 +77,7 @@ export default function Navbar() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 px-4 pt-[max(1rem,env(safe-area-inset-top,0px))] sm:pt-[max(1.25rem,env(safe-area-inset-top,0px))] sm:px-6">
+    <header className="fixed top-0 left-0 right-0 z-50 px-4 pt-4 sm:pt-5 sm:px-6">
       <nav className="relative mx-auto flex max-w-7xl items-center justify-between gap-3 lg:grid lg:grid-cols-[auto_1fr_auto] lg:gap-6">
         <div className="relative z-[60] shrink-0">
           <Logo />
@@ -116,7 +116,7 @@ export default function Navbar() {
           </Link>
           <button
             type="button"
-            className="lg:hidden min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-text-primary hover:bg-white/5 transition-colors"
+            className="lg:hidden p-2.5 rounded-xl text-text-primary hover:bg-white/5 transition-colors"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Toggle menu"
             aria-expanded={mobileOpen}
@@ -142,7 +142,7 @@ export default function Navbar() {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="lg:hidden relative z-50 mt-3 mx-auto max-w-7xl glass-card p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] max-h-[calc(100dvh-env(safe-area-inset-top,0px)-6rem)] overflow-y-auto"
+              className="lg:hidden relative z-50 mt-3 mx-auto max-w-7xl glass-card p-4 max-h-[calc(100vh-6rem)] overflow-y-auto"
             >
               <div className="flex flex-col gap-1">
                 {navLinks.map((link) => (

@@ -22,7 +22,7 @@ export default function SupportChatPanel() {
       <button
         type="button"
         onClick={openChat}
-        className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white brand-gradient-bg shadow-brand min-h-[44px] shrink-0"
+        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white brand-gradient-bg shadow-brand min-h-[44px] shrink-0"
       >
         <MessageCircle size={16} />
         {t("chat.openChat")}

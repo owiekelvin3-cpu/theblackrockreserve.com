@@ -69,7 +69,7 @@ export default function TransactionPinModal({
             initial={{ opacity: 0, y: 24, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 24, scale: 0.98 }}
-            className="relative w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl border border-white/10 bg-bg-secondary p-6 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] shadow-2xl"
+            className="relative w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl border border-white/10 bg-bg-secondary p-6 shadow-2xl"
           >
             <button
               type="button"

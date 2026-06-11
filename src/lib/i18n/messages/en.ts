@@ -171,7 +171,6 @@ const enBase = {
       search: "Search",
       searchPlaceholder: "Search pages…",
       closeMenu: "Close menu",
-      openMenu: "Open menu",
     },
     authGuardLoading: "Loading your dashboard…",
     savingsInvalidAmount: "Enter a valid amount",

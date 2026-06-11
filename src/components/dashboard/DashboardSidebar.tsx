@@ -131,7 +131,7 @@ export default function DashboardSidebar() {
       {sidebarOpen && (
         <button
           type="button"
-          className="lg:hidden fixed inset-0 z-[55] bg-black/65 backdrop-blur-sm"
+          className="lg:hidden fixed inset-0 z-40 bg-black/65 backdrop-blur-sm"
           aria-label="Close menu"
           onClick={closeSidebar}
         />
@@ -139,7 +139,7 @@ export default function DashboardSidebar() {
 
       <aside
         className={cn(
-          "dash-sidebar fixed left-0 top-0 z-[60] flex h-[100dvh] w-[min(300px,88vw)] flex-col transition-transform duration-300 ease-out lg:z-40 lg:w-[260px]",
+          "dash-sidebar fixed left-0 top-0 z-50 flex h-[100dvh] w-[min(300px,88vw)] flex-col transition-transform duration-300 ease-out lg:z-40 lg:w-[260px]",
           "lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
@@ -155,7 +155,7 @@ export default function DashboardSidebar() {
           </div>
           <button
             type="button"
-            className="lg:hidden min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-white/5"
+            className="lg:hidden p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-white/5"
             onClick={closeSidebar}
             aria-label={t("dashboard.sidebar.closeMenu")}
           >

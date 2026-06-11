@@ -205,7 +205,7 @@ export default function JointAccountsPage() {
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-accent-brand mb-1">{t("jointAccounts.badge")}</p>
-            <h1 className="hidden lg:block text-2xl sm:text-3xl font-bold text-[var(--text-primary)]">
+            <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)]">
               {t("jointAccounts.title")} <span className="gold-gradient-text">{t("jointAccounts.titleHighlight")}</span>
             </h1>
             <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">{t("jointAccounts.subtitle")}</p>
@@ -280,7 +280,7 @@ export default function JointAccountsPage() {
           </Card>
         )}
 
-        <div className="dash-scroll-tabs border-b border-[var(--border-subtle)] pb-1">
+        <div className="flex flex-wrap gap-2 border-b border-[var(--border-subtle)] pb-1">
           {(
             [
               { id: "accounts" as const, label: t("jointAccounts.tabAccounts"), icon: Users },
@@ -339,7 +339,7 @@ export default function JointAccountsPage() {
                         <p className="font-mono font-semibold text-accent-brand">{formatCurrency(acc.portfolioValue)}</p>
                       </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 mb-3">
+                    <div className="flex items-center gap-2 mb-3">
                       {acc.members.map((m) => (
                         <span key={m.id} className="text-xs px-2 py-1 rounded-full bg-[var(--surface-base)] border border-[var(--border-subtle)] text-[var(--text-secondary)]">
                           {m.name.split(" ")[0]}
@@ -393,8 +393,8 @@ export default function JointAccountsPage() {
               ) : (
                 <div className="space-y-2">
                   {sent.map((inv) => (
-                    <div key={inv.id} className="flex justify-between items-center gap-3 py-3 border-b border-[var(--border-subtle)]/50 last:border-0 min-w-0">
-                      <span className="text-[var(--text-secondary)] min-w-0 truncate">{inv.invitee?.name ?? inv.inviteeEmail}</span>
+                    <div key={inv.id} className="flex justify-between items-center py-3 border-b border-[var(--border-subtle)]/50 last:border-0">
+                      <span className="text-[var(--text-secondary)]">{inv.invitee?.name ?? inv.inviteeEmail}</span>
                       <Badge variant="gold">{inv.status}</Badge>
                     </div>
                   ))}

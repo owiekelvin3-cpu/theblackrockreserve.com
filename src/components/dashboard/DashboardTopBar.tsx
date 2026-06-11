@@ -71,11 +71,7 @@ export default function DashboardTopBar() {
             <HelpCircle size={18} />
           </Link>
           <DashboardNotifications />
-          <Link
-            href="/dashboard/settings"
-            aria-label={t("common.settings")}
-            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl"
-          >
+          <Link href="/dashboard/settings" aria-label={t("common.settings")}>
             <ProfileAvatar name={session?.user?.name} image={profileImage} size="sm" />
           </Link>
         </div>
