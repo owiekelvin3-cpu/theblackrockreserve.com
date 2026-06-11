@@ -57,7 +57,7 @@ export default function AdminTopBar() {
     alerts.forEach((a) => seenDepositIdsRef.current.add(a.id));
     prevPendingRef.current = pending;
     pushReadyRef.current = true;
-  }, [data]);
+  }, [data, t]);
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {

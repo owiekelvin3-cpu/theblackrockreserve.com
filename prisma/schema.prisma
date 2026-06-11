@@ -33,7 +33,8 @@ model User {
   city          String?
   lastSeenAt       DateTime?
   profileImage     String?
-  preferredLocale  String    @default("en")
+  preferredLocale     String    @default("en")
+  notificationPrefs   Json?
   transactionPinHash        String?
   transactionPinSetAt       DateTime?
   transactionPinAttempts    Int       @default(0)

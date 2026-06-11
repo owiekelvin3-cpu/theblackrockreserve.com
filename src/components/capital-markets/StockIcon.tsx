@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { getStockLogoSources } from "@/lib/stock-icons";
 
@@ -10,6 +11,12 @@ const SIZE_CLASS: Record<Size, string> = {
   sm: "h-8 w-8",
   md: "h-12 w-12",
   lg: "h-16 w-16",
+};
+
+const SIZE_PX: Record<Size, number> = {
+  sm: 32,
+  md: 48,
+  lg: 64,
 };
 
 interface StockIconProps {
@@ -44,16 +51,20 @@ export default function StockIcon({ symbol, name, logoDomain, logoUrl, size = "m
     );
   }
 
+  const px = SIZE_PX[size];
+
   return (
-    <img
+    <Image
       src={imgSrc}
       alt={`${name ?? symbol} logo`}
+      width={px}
+      height={px}
+      unoptimized
       className={cn(
         box,
         "stock-icon-img rounded-xl object-contain p-1.5 shrink-0",
         className
       )}
-      loading="lazy"
       onError={() => setSourceIndex((i) => i + 1)}
       title={name ?? symbol}
     />

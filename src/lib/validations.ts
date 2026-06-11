@@ -47,6 +47,27 @@ export const resendOtpSchema = z.object({
   purpose: z.enum(["verify", "reset"]),
 });
 
+const passwordFieldSchema = z
+  .string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[A-Z]/, "Must contain an uppercase letter")
+  .regex(/[0-9]/, "Must contain a number");
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Current password is required"),
+    newPassword: passwordFieldSchema,
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  })
+  .refine((data) => data.currentPassword !== data.newPassword, {
+    message: "New password must be different from current password",
+    path: ["newPassword"],
+  });
+
 export const resetPasswordSchema = z
   .object({
     email: z.string().email("Please enter a valid email address"),
