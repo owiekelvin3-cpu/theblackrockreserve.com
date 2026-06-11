@@ -132,7 +132,8 @@ export default function ChatWidget() {
     offsetY: 0,
   });
 
-  const hidden = pathname.startsWith("/admin");
+  const isAdmin = pathname.startsWith("/admin");
+  const hideLauncher = isAdmin || isDashboard;
   const openChatRef = useRef(() => {
     setDismissed(false);
     setOpen(true);
@@ -148,6 +149,14 @@ export default function ChatWidget() {
       open: () => openChatRef.current(),
     });
   }, [registerChat]);
+
+  const prevPathRef = useRef(pathname);
+  useEffect(() => {
+    const wasDashboard = prevPathRef.current.startsWith("/dashboard");
+    const nowDashboard = pathname.startsWith("/dashboard");
+    prevPathRef.current = pathname;
+    if (!wasDashboard && nowDashboard) setOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     try {
@@ -204,6 +213,15 @@ export default function ChatWidget() {
       setTimeout(() => inputRef.current?.focus(), 200);
     }
   }, [open, messages, typing]);
+
+  useEffect(() => {
+    if (!isDashboard || !open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [isDashboard, open]);
 
   const addBotReply = useCallback(
     async (userText: string) => {
@@ -329,60 +347,118 @@ export default function ChatWidget() {
     []
   );
 
-  if (hidden || dismissed || !position) return null;
+  if (isAdmin) return null;
+  if (isDashboard && !open) return null;
+  if (!isDashboard && (dismissed || !position)) return null;
 
   const panelWidth = Math.min(window.innerWidth - 32, PANEL_WIDTH);
   const panelHeight = Math.min(window.innerHeight * 0.7, PANEL_HEIGHT);
-  const panelPosition = computePanelPosition(position, panelWidth, panelHeight);
+  const panelPosition = position
+    ? computePanelPosition(position, panelWidth, panelHeight)
+    : { left: VIEWPORT_MARGIN, top: VIEWPORT_MARGIN };
 
   return (
     <>
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: 16, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.96 }}
-            transition={{ duration: 0.2 }}
-            className="fixed z-[9999] flex flex-col rounded-2xl border border-border bg-bg-elevated/95 backdrop-blur-xl shadow-2xl shadow-black/20 overflow-hidden"
-            style={{
-              left: panelPosition.left,
-              top: panelPosition.top,
-              width: panelWidth,
-              height: panelHeight,
-            }}
+            initial={
+              isDashboard
+                ? { opacity: 0, y: "100%" }
+                : { opacity: 0, y: 16, scale: 0.96 }
+            }
+            animate={
+              isDashboard
+                ? { opacity: 1, y: 0 }
+                : { opacity: 1, y: 0, scale: 1 }
+            }
+            exit={
+              isDashboard
+                ? { opacity: 0, y: "100%" }
+                : { opacity: 0, y: 16, scale: 0.96 }
+            }
+            transition={{ duration: isDashboard ? 0.28 : 0.2, ease: isDashboard ? [0.32, 0.72, 0, 1] : undefined }}
+            className={cn(
+              "fixed z-[9999] flex flex-col bg-bg-elevated/95 backdrop-blur-xl overflow-hidden",
+              isDashboard
+                ? "inset-0 h-[100dvh] w-full safe-area-pb"
+                : "rounded-2xl border border-border shadow-2xl shadow-black/20"
+            )}
+            style={
+              isDashboard
+                ? undefined
+                : {
+                    left: panelPosition.left,
+                    top: panelPosition.top,
+                    width: panelWidth,
+                    height: panelHeight,
+                  }
+            }
             role="dialog"
             aria-label={t("chat.ariaLabel")}
           >
             {/* Header */}
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10 brand-gradient-bg shrink-0">
-              <div className="h-9 w-9 rounded-xl bg-white/15 flex items-center justify-center">
-                <Bot size={18} className="text-white" />
+            <div
+              className={cn(
+                "flex items-center gap-3 border-b border-white/10 brand-gradient-bg shrink-0",
+                isDashboard
+                  ? "px-4 py-4 sm:px-6 pt-[max(1rem,env(safe-area-inset-top,0px))]"
+                  : "px-4 py-3"
+              )}
+            >
+              <div
+                className={cn(
+                  "rounded-xl bg-white/15 flex items-center justify-center",
+                  isDashboard ? "h-11 w-11" : "h-9 w-9"
+                )}
+              >
+                <Bot size={isDashboard ? 20 : 18} className="text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white">{t("chat.assistantName")}</p>
-                <p className="text-[10px] text-white/70">{t("chat.onlineStatus")}</p>
+                <p className={cn("font-semibold text-white", isDashboard ? "text-base" : "text-sm")}>
+                  {isDashboard ? t("nav.supportChat") : t("chat.assistantName")}
+                </p>
+                <p className="text-[10px] text-white/70 sm:text-xs">{t("chat.onlineStatus")}</p>
               </div>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="p-1.5 rounded-lg text-white/80 hover:bg-white/10 transition-colors"
-                aria-label={t("chat.minimizeChat")}
-              >
-                <Minimize2 size={16} />
-              </button>
-              <button
-                type="button"
-                onClick={dismissChat}
-                className="p-1.5 rounded-lg text-white/80 hover:bg-white/10 transition-colors"
-                aria-label={t("chat.dismissChat")}
-              >
-                <X size={16} />
-              </button>
+              {isDashboard ? (
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="p-2 rounded-xl text-white/80 hover:bg-white/10 transition-colors"
+                  aria-label={t("common.close")}
+                >
+                  <X size={20} />
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setOpen(false)}
+                    className="p-1.5 rounded-lg text-white/80 hover:bg-white/10 transition-colors"
+                    aria-label={t("chat.minimizeChat")}
+                  >
+                    <Minimize2 size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={dismissChat}
+                    className="p-1.5 rounded-lg text-white/80 hover:bg-white/10 transition-colors"
+                    aria-label={t("chat.dismissChat")}
+                  >
+                    <X size={16} />
+                  </button>
+                </>
+              )}
             </div>
 
             {/* Messages */}
-            <div ref={listRef} className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-hide">
+            <div
+              ref={listRef}
+              className={cn(
+                "flex-1 overflow-y-auto space-y-3 scrollbar-hide",
+                isDashboard ? "p-4 sm:p-6 max-w-3xl mx-auto w-full" : "p-4"
+              )}
+            >
               {messages.map((msg) => (
                 <div
                   key={msg.id}
@@ -433,7 +509,12 @@ export default function ChatWidget() {
 
             {/* Quick replies */}
             {suggestions.length > 0 && !typing && (
-              <div className="px-3 pb-2 flex flex-wrap gap-1.5 shrink-0">
+              <div
+                className={cn(
+                  "flex flex-wrap gap-1.5 shrink-0",
+                  isDashboard ? "px-4 sm:px-6 pb-2 max-w-3xl mx-auto w-full" : "px-3 pb-2"
+                )}
+              >
                 {suggestions.map((s) => (
                   <button
                     key={s.label}
@@ -449,7 +530,10 @@ export default function ChatWidget() {
 
             {/* Input */}
             <form
-              className="p-3 border-t border-border flex gap-2 shrink-0"
+              className={cn(
+                "border-t border-border flex gap-2 shrink-0 safe-area-pb",
+                isDashboard ? "p-4 sm:p-6 max-w-3xl mx-auto w-full" : "p-3"
+              )}
               onSubmit={(e) => {
                 e.preventDefault();
                 sendMessage(input);
@@ -478,45 +562,47 @@ export default function ChatWidget() {
         )}
       </AnimatePresence>
 
-      {/* Launcher */}
-      <div
-        ref={launcherRef}
-        className={cn(
-          "fixed z-[9999] touch-none select-none",
-          dragging ? "cursor-grabbing" : "cursor-grab",
-          open && "pointer-events-none opacity-0"
-        )}
-        style={{ left: position.x, top: position.y, width: LAUNCHER_SIZE, height: LAUNCHER_SIZE }}
-        onPointerDown={handleLauncherPointerDown}
-        onPointerMove={handleLauncherPointerMove}
-        onPointerUp={finishLauncherPointer}
-        onPointerCancel={finishLauncherPointer}
-        aria-label={t("chat.dragChat")}
-        role="group"
-      >
-        <button
-          type="button"
-          onPointerDown={(event) => event.stopPropagation()}
-          onClick={(event) => {
-            event.stopPropagation();
-            dismissChat();
-          }}
-          className="absolute -top-1 -right-1 z-10 flex h-5 w-5 items-center justify-center rounded-full border border-border bg-bg-elevated text-text-secondary shadow-md transition-colors hover:bg-surface-overlay hover:text-text-primary"
-          aria-label={t("chat.removeChatIcon")}
-        >
-          <X size={11} />
-        </button>
-
+      {/* Launcher — hidden on dashboard and admin */}
+      {!hideLauncher && (
         <div
+          ref={launcherRef}
           className={cn(
-            "relative h-14 w-14 rounded-full brand-gradient-bg shadow-brand flex items-center justify-center text-white transition-transform",
-            !dragging && "hover:scale-105"
+            "fixed z-[9999] touch-none select-none",
+            dragging ? "cursor-grabbing" : "cursor-grab",
+            open && "pointer-events-none opacity-0"
           )}
+          style={{ left: position.x, top: position.y, width: LAUNCHER_SIZE, height: LAUNCHER_SIZE }}
+          onPointerDown={handleLauncherPointerDown}
+          onPointerMove={handleLauncherPointerMove}
+          onPointerUp={finishLauncherPointer}
+          onPointerCancel={finishLauncherPointer}
+          aria-label={t("chat.dragChat")}
+          role="group"
         >
-          <MessageCircle size={22} />
-          <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-bg-primary" />
+          <button
+            type="button"
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              dismissChat();
+            }}
+            className="absolute -top-1 -right-1 z-10 flex h-5 w-5 items-center justify-center rounded-full border border-border bg-bg-elevated text-text-secondary shadow-md transition-colors hover:bg-surface-overlay hover:text-text-primary"
+            aria-label={t("chat.removeChatIcon")}
+          >
+            <X size={11} />
+          </button>
+
+          <div
+            className={cn(
+              "relative h-14 w-14 rounded-full brand-gradient-bg shadow-brand flex items-center justify-center text-white transition-transform",
+              !dragging && "hover:scale-105"
+            )}
+          >
+            <MessageCircle size={22} />
+            <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-bg-primary" />
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 }
