@@ -3,12 +3,18 @@
 import { motion } from "framer-motion";
 import {
   LayoutDashboard, Wallet, TrendingUp, ArrowLeftRight,
-  BarChart3, Settings, Search, Bell,
+  BarChart3, Settings, Search, Bell, Wifi, ChevronRight,
 } from "lucide-react";
 import { RevenueBarChart } from "@/components/marketing/MiniCharts";
 import { fadeUp, stagger } from "@/components/ui/AnimateIn";
 
 const sidebarIcons = [LayoutDashboard, Wallet, TrendingUp, ArrowLeftRight, BarChart3, Settings];
+
+const transactions = [
+  { name: "Wire Transfer", amount: "+$12,400", time: "2m ago" },
+  { name: "Investment Buy", amount: "-$3,200", time: "1h ago" },
+  { name: "Deposit", amount: "+$8,500", time: "3h ago" },
+];
 
 export default function DashboardPreview() {
   return (
@@ -73,13 +79,13 @@ export default function DashboardPreview() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.65, duration: 0.5 }}
               >
-                <p className="text-xs font-medium text-text-secondary">Cash Flow</p>
+                <p className="text-xs font-medium text-text-secondary">Revenue Flow</p>
                 <motion.div
                   className="h-36 w-full rounded-xl transition-colors hover:bg-white/[0.02]"
                   whileHover={{ scale: 1.01 }}
                   transition={{ duration: 0.25 }}
                 >
-                  <RevenueBarChart animate emptyLabel="Your cash flow appears here" />
+                  <RevenueBarChart animate />
                 </motion.div>
               </motion.div>
 
@@ -92,8 +98,18 @@ export default function DashboardPreview() {
                 <div className="absolute inset-0 brand-gradient-bg opacity-95" />
                 <div className="relative z-10">
                   <p className="text-xs text-white/80">Total Balance</p>
-                  <p className="font-mono text-2xl sm:text-3xl font-bold text-white mt-1">—</p>
-                  <p className="text-xs text-white/70 mt-4">Sign in to view your live balance</p>
+                  <motion.p
+                    className="font-mono text-2xl sm:text-3xl font-bold text-white mt-1"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1, duration: 0.6 }}
+                  >
+                    $456,000
+                  </motion.p>
+                  <div className="flex items-center justify-between mt-4">
+                    <p className="text-xs text-white/70">+18.2% this month</p>
+                    <Wifi size={18} className="text-white/60" strokeWidth={1.5} />
+                  </div>
                 </div>
               </motion.div>
             </div>
@@ -104,13 +120,32 @@ export default function DashboardPreview() {
               animate="visible"
               variants={stagger}
             >
-              <p className="text-xs font-medium text-text-secondary mb-3">Recent Activity</p>
-              <motion.p
-                variants={fadeUp}
-                className="text-xs text-text-muted rounded-xl border border-dashed border-white/10 bg-white/[0.02] px-4 py-6 text-center"
-              >
-                Your transactions will appear here after you sign in
-              </motion.p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-medium text-text-secondary">Transactions</p>
+                <ChevronRight size={14} className="text-text-muted" />
+              </div>
+              <div className="space-y-2">
+                {transactions.map((tx) => (
+                  <motion.div
+                    key={tx.name}
+                    variants={fadeUp}
+                    className="flex items-center justify-between gap-2 text-xs min-w-0"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="h-6 w-6 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                        <ArrowLeftRight size={10} className="text-accent-brand" />
+                      </div>
+                      <span className="text-text-secondary truncate">{tx.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                      <span className={tx.amount.startsWith("+") ? "text-accent-green" : "text-text-primary"}>
+                        {tx.amount}
+                      </span>
+                      <span className="text-text-muted hidden sm:inline">{tx.time}</span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
             </motion.div>
           </div>
         </div>

@@ -20,12 +20,21 @@ export type RevenueFlowDatum = {
   tooltipLines?: RevenueFlowTooltipLine[];
 };
 
+const DEMO_DATA: RevenueFlowDatum[] = [
+  { label: "Mon", value: 42 },
+  { label: "Tue", value: 58 },
+  { label: "Wed", value: 72 },
+  { label: "Thu", value: 51 },
+  { label: "Fri", value: 64 },
+  { label: "Sat", value: 59 },
+  { label: "Sun", value: 68 },
+];
+
 interface RevenueFlowChartProps {
   data?: RevenueFlowDatum[];
   animate?: boolean;
   formatValue?: (value: number) => string;
   className?: string;
-  emptyLabel?: string;
 }
 
 export default function RevenueFlowChart({
@@ -33,30 +42,17 @@ export default function RevenueFlowChart({
   animate = false,
   formatValue = (v) => `$${Math.round(v)}k`,
   className = "",
-  emptyLabel = "No activity yet",
 }: RevenueFlowChartProps) {
   const [hovered, setHovered] = useState<number | null>(null);
 
-  const hasData = Array.isArray(data) && data.length > 0 && data.some((d) => d.value > 0);
-
   const points = useMemo(() => {
-    if (!hasData || !data) return [];
-    const maxVal = Math.max(...data.map((d) => d.value), 1);
-    return data.map((d) => ({
+    const source = data?.length ? data : DEMO_DATA;
+    const maxVal = Math.max(...source.map((d) => d.value), 1);
+    return source.map((d) => ({
       ...d,
       displayValue: d.value > 0 ? d.value : maxVal * 0.12,
     }));
-  }, [data, hasData]);
-
-  if (!hasData) {
-    return (
-      <div
-        className={`relative w-full h-full min-h-[9rem] flex items-center justify-center rounded-xl border border-dashed border-border bg-surface-overlay ${className}`}
-      >
-        <p className="text-xs text-text-muted">{emptyLabel}</p>
-      </div>
-    );
-  }
+  }, [data]);
 
   const max = Math.max(...points.map((p) => p.displayValue), 1);
   const peakIdx = points.reduce((best, p, i) => (p.value >= points[best].value ? i : best), 0);
@@ -140,7 +136,12 @@ export default function RevenueFlowChart({
             style={{
               left: `${((hovered * (barW + 6) + 3 + barW / 2) / w) * 100}%`,
               top: `${((h - 18 - (points[hovered].displayValue / max) * (h - 24) - 36) / h) * 100}%`,
-              transform: "translateX(-50%)",
+              transform:
+                hovered <= 1
+                  ? "translateX(-12%)"
+                  : hovered >= points.length - 2
+                    ? "translateX(-88%)"
+                    : "translateX(-50%)",
             }}
             initial={{ opacity: 0, y: 6, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
