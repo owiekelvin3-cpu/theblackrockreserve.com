@@ -515,7 +515,7 @@ body {
     border-top: 1px solid var(--footer-border);
     background: var(--footer-bg);
     /* Clearance for floating chat button on mobile */
-    padding-bottom: calc(3.75rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
   }
 
   @media (min-width: 640px) {

@@ -385,6 +385,8 @@ export default function CashFlowPanel({ data }: { data: CashFlowMonth[] }) {
                 className="cash-flow-bar-group"
                 onMouseEnter={() => handleBarEnter(i, row.month)}
                 onFocus={() => handleBarEnter(i, row.month)}
+                onClick={() => handleBarEnter(i, row.month)}
+                onTouchStart={() => handleBarEnter(i, row.month)}
                 style={{ cursor: "pointer" }}
               >
                 <rect

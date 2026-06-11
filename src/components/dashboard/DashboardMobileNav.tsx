@@ -29,8 +29,9 @@ export default function DashboardMobileNav() {
 
   return (
     <nav
-      className="dash-mobile-nav lg:hidden"
+      className={cn("dash-mobile-nav lg:hidden", sidebarOpen && "dash-mobile-nav-hidden")}
       aria-label={t("nav.menu")}
+      aria-hidden={sidebarOpen}
     >
       <div className="dash-mobile-nav-inner">
         {tabs.map((tab) => {
@@ -53,7 +54,7 @@ export default function DashboardMobileNav() {
           type="button"
           onClick={openSidebar}
           className={cn("dash-mobile-nav-item", moreActive && "dash-mobile-nav-item-active")}
-          aria-label={t("dashboard.sidebar.closeMenu")}
+          aria-label={sidebarOpen ? t("dashboard.sidebar.closeMenu") : t("dashboard.sidebar.openMenu")}
           aria-expanded={sidebarOpen}
         >
           <span className="dash-mobile-nav-icon-wrap">

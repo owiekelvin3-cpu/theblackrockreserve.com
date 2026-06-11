@@ -1,10 +1,12 @@
+import dynamic from "next/dynamic";
 import Hero from "@/components/marketing/Hero";
-import TrustBar from "@/components/marketing/TrustBar";
-import Features from "@/components/marketing/Features";
-import SolutionsGrid from "@/components/marketing/SolutionsGrid";
-import FAQ from "@/components/marketing/FAQ";
-import BlogResources from "@/components/marketing/BlogResources";
-import CTABanner from "@/components/marketing/CTABanner";
+
+const TrustBar = dynamic(() => import("@/components/marketing/TrustBar"));
+const Features = dynamic(() => import("@/components/marketing/Features"));
+const SolutionsGrid = dynamic(() => import("@/components/marketing/SolutionsGrid"));
+const FAQ = dynamic(() => import("@/components/marketing/FAQ"));
+const BlogResources = dynamic(() => import("@/components/marketing/BlogResources"));
+const CTABanner = dynamic(() => import("@/components/marketing/CTABanner"));
 
 export default function HomePage() {
   return (

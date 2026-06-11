@@ -71,7 +71,7 @@ export default function Footer() {
               <a
                 key={i}
                 href="#"
-                className="p-2 rounded-lg bg-white/5 text-text-muted hover:text-accent-brand hover:bg-accent-brand/10 transition-colors"
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg bg-white/5 text-text-muted hover:text-accent-brand hover:bg-accent-brand/10 transition-colors"
                 aria-label={t("footer.social")}
               >
                 <Icon size={16} />
@@ -101,7 +101,7 @@ export default function Footer() {
                 <motion.a
                   key={i}
                   href="#"
-                  className="p-2 rounded-lg bg-white/5 text-text-muted hover:text-accent-brand hover:bg-accent-brand/10 transition-colors"
+                  className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg bg-white/5 text-text-muted hover:text-accent-brand hover:bg-accent-brand/10 transition-colors"
                   aria-label={t("footer.social")}
                   whileHover={{ y: -3, scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}

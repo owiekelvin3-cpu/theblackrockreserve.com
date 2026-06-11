@@ -142,7 +142,7 @@ export default function DashboardNotifications() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative p-2 rounded-xl text-text-secondary hover:text-white hover:bg-bg-tertiary transition-colors"
+        className="relative flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-text-secondary hover:text-white hover:bg-bg-tertiary transition-colors"
         aria-label={t("notifications.title")}
       >
         <Bell size={18} />
@@ -154,7 +154,7 @@ export default function DashboardNotifications() {
       </button>
 
       {open && (
-        <div className="fixed inset-x-3 top-[calc(env(safe-area-inset-top,0px)+3.5rem)] sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 w-auto sm:w-80 max-h-[min(70vh,24rem)] overflow-y-auto rounded-xl border border-white/10 bg-bg-secondary shadow-2xl z-50">
+        <div className="fixed inset-x-3 top-[calc(env(safe-area-inset-top,0px)+4rem)] sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 w-auto sm:w-80 max-h-[min(70vh,24rem)] overflow-y-auto rounded-xl border border-white/10 bg-bg-secondary shadow-2xl z-[60]">
           <div className="p-3 border-b border-white/10 flex items-center justify-between gap-2">
             <p className="text-sm font-semibold text-white">{t("notifications.title")}</p>
             {unreadCount > 0 && (

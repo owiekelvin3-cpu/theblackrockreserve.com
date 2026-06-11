@@ -1,22 +1,13 @@
 import type { Messages } from "@/lib/i18n/messages/en";
 import en from "@/lib/i18n/messages/en";
 import type { LocaleCode } from "@/lib/i18n/locales";
-import { applyFlatTranslations } from "@/lib/i18n/flatten";
-import { LOCALE_TRANSLATIONS } from "@/lib/i18n/translations/all";
-import { LOCALE_SUPPLEMENT } from "@/lib/i18n/translations/supplement";
+
+export { en as englishMessages };
 
 export function buildMessages(locale: LocaleCode): Messages {
   if (locale === "en") return en;
-  const patch = {
-    ...LOCALE_TRANSLATIONS[locale],
-    ...LOCALE_SUPPLEMENT[locale],
-  };
-  if (!patch) return en;
-  return applyFlatTranslations(en, patch);
+  // Lazy-load translation tables so English pages avoid a large initial bundle.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { buildLocaleMessages } = require("./build-locale-messages") as typeof import("./build-locale-messages");
+  return buildLocaleMessages(locale as Exclude<LocaleCode, "en">);
 }
-
-export const allMessages: Record<LocaleCode, Messages> = Object.fromEntries(
-  (["en", "fr", "es", "pt", "de", "it", "nl", "ru", "ar", "zh", "ja", "ko", "hi", "tr", "sw"] as LocaleCode[]).map(
-    (code) => [code, buildMessages(code)]
-  )
-) as Record<LocaleCode, Messages>;

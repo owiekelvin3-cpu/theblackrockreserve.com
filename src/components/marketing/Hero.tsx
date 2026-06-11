@@ -1,12 +1,16 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Button from "@/components/ui/Button";
-import DashboardPreview from "@/components/marketing/DashboardPreview";
 import { stagger, fadeUp } from "@/components/ui/AnimateIn";
 import { useI18n } from "@/components/providers/I18nProvider";
+
+const DashboardPreview = dynamic(() => import("@/components/marketing/DashboardPreview"), {
+  ssr: true,
+});
 
 export default function Hero() {
   const { t } = useI18n();
@@ -15,10 +19,10 @@ export default function Hero() {
     <section className="relative min-h-screen flex flex-col items-center overflow-hidden">
       <div className="hero-halo" />
       <div className="hero-halo-arc" />
-      <div className="neon-streak top-[20%] left-[-5%] w-[110%] h-24 opacity-30" />
+      <div className="neon-streak top-[20%] left-0 w-full h-24 opacity-30" />
 
       <motion.div
-        className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-32 sm:pt-36 pb-12 text-center w-full"
+        className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-[calc(8rem+env(safe-area-inset-top,0px))] sm:pt-[calc(9rem+env(safe-area-inset-top,0px))] pb-12 text-center w-full"
         initial="hidden"
         animate="visible"
         variants={stagger}

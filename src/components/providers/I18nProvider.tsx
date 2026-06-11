@@ -19,7 +19,7 @@ import {
   parseLocaleCode,
   type LocaleCode,
 } from "@/lib/i18n/locales";
-import { allMessages, buildMessages } from "@/lib/i18n/messages/overrides";
+import { buildMessages, englishMessages } from "@/lib/i18n/messages/overrides";
 import type { Messages } from "@/lib/i18n/messages/en";
 import { createTranslator } from "@/lib/i18n/translate";
 import { formatCurrencyLocale, formatDateLocale, formatTimeLocale } from "@/lib/i18n/format";
@@ -75,7 +75,7 @@ function applyDocumentLocale(code: LocaleCode) {
 function createFallbackContext(locale: LocaleCode): I18nContextValue {
   const messages = buildMessages(locale);
   const def = getLocaleDefinition(locale);
-  const t = createTranslator(locale, messages, allMessages.en);
+  const t = createTranslator(locale, messages, englishMessages);
 
   return {
     locale,
@@ -143,7 +143,7 @@ export function I18nProvider({
   const def = getLocaleDefinition(locale);
 
   const value = useMemo<I18nContextValue>(() => {
-    const t = createTranslator(locale, messages, allMessages.en);
+    const t = createTranslator(locale, messages, englishMessages);
     return {
       locale,
       messages,

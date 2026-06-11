@@ -24,7 +24,14 @@ const nextConfig = {
     ],
   },
   experimental: {
-    optimizePackageImports: ["lucide-react", "recharts", "framer-motion", "react-icons"],
+    optimizePackageImports: [
+      "lucide-react",
+      "recharts",
+      "framer-motion",
+      "react-icons",
+      "sonner",
+      "@hookform/resolvers",
+    ],
   },
   async headers() {
     const securityHeaders = [
@@ -42,11 +49,23 @@ const nextConfig = {
       });
     }
 
+    const staticCache = [
+      {
+        source: "/_next/static/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
+      {
+        source: "/favicon.svg",
+        headers: [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }],
+      },
+    ];
+
     return [
       {
         source: "/(.*)",
         headers: securityHeaders,
       },
+      ...staticCache,
     ];
   },
 };

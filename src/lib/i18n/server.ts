@@ -7,7 +7,7 @@ import {
   parseLocaleCode,
   type LocaleCode,
 } from "@/lib/i18n/locales";
-import { buildMessages, allMessages } from "@/lib/i18n/messages/overrides";
+import { buildMessages, englishMessages } from "@/lib/i18n/messages/overrides";
 import { createTranslator } from "@/lib/i18n/translate";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -53,7 +53,7 @@ export function getLocaleDir(code: LocaleCode): "ltr" | "rtl" {
 
 export function createServerTranslator(locale: LocaleCode) {
   const messages = buildMessages(locale);
-  const english = allMessages.en;
+  const english = englishMessages;
 
   return {
     locale,

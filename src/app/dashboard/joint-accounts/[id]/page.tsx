@@ -298,18 +298,18 @@ export default function JointAccountDetailPage() {
                 <Card>
                   <h3 className="font-semibold text-[var(--text-primary)] mb-3">Recent Transactions</h3>
                   {data.transactions.slice(0, 5).map((t) => (
-                    <div key={t.id} className="flex justify-between py-2 border-b border-[var(--border-subtle)]/50 text-sm">
-                      <span className="text-[var(--text-secondary)]">{t.description}</span>
-                      <span className="font-mono">{formatCurrency(t.amount)}</span>
+                    <div key={t.id} className="flex justify-between gap-3 py-2 border-b border-[var(--border-subtle)]/50 text-sm min-w-0">
+                      <span className="text-[var(--text-secondary)] min-w-0 flex-1 truncate">{t.description}</span>
+                      <span className="font-mono shrink-0">{formatCurrency(t.amount)}</span>
                     </div>
                   ))}
                 </Card>
                 <Card>
                   <h3 className="font-semibold text-[var(--text-primary)] mb-3">Investment History</h3>
                   {data.investmentHistory.slice(0, 5).map((i) => (
-                    <div key={i.id} className="flex justify-between py-2 border-b border-[var(--border-subtle)]/50 text-sm">
-                      <span className="text-[var(--text-secondary)]">{i.symbol} — {i.assetName}</span>
-                      <span className="font-mono">{formatCurrency(i.totalCost)}</span>
+                    <div key={i.id} className="flex justify-between gap-3 py-2 border-b border-[var(--border-subtle)]/50 text-sm min-w-0">
+                      <span className="text-[var(--text-secondary)] min-w-0 flex-1 truncate">{i.symbol} — {i.assetName}</span>
+                      <span className="font-mono shrink-0">{formatCurrency(i.totalCost)}</span>
                     </div>
                   ))}
                 </Card>
