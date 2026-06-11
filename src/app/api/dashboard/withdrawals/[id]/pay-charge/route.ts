@@ -1,10 +1,95 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUserId, unauthorizedResponse } from "@/lib/api-auth";
+import { getWithdrawalMethodLabel } from "@/lib/withdrawal-methods";
+import { formatWithdrawalStatus, formatChargePaymentStatus } from "@/lib/withdrawal-charge";
+import { getPublicDepositSettings } from "@/lib/platform-settings";
 import { withdrawalChargePaymentSubmitSchema } from "@/lib/validations";
 import { requireTransactionPin } from "@/lib/transaction-pin";
 import { createUserNotification } from "@/lib/user-notifications";
 import { formatCurrency } from "@/lib/utils";
 import { prisma } from "@/lib/prisma";
+import QRCode from "qrcode";
+
+export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+  const userId = await getSessionUserId();
+  if (!userId) return unauthorizedResponse();
+
+  try {
+    const withdrawal = await prisma.withdrawalRequest.findFirst({
+      where: { id: params.id, userId },
+      include: { chargePayment: true },
+    });
+
+    if (!withdrawal) {
+      return NextResponse.json({ error: "Withdrawal not found" }, { status: 404 });
+    }
+
+    const account = await prisma.bankAccount.findFirst({
+      where: { id: withdrawal.accountId, userId },
+      select: { name: true },
+    });
+
+    const depositSettings = await getPublicDepositSettings();
+    let qrCodeDataUrl = "";
+    if (depositSettings.bitcoinWalletAddress) {
+      try {
+        qrCodeDataUrl = await QRCode.toDataURL(`bitcoin:${depositSettings.bitcoinWalletAddress}`, {
+          width: 220,
+          margin: 2,
+          color: { dark: "#FF5F05", light: "#0F0F0F" },
+        });
+      } catch {
+        /* ignore qr errors */
+      }
+    }
+
+    const chargeAmount =
+      withdrawal.assignedChargeAmount != null
+        ? Number(withdrawal.assignedChargeAmount)
+        : withdrawal.chargePayment
+          ? Number(withdrawal.chargePayment.amountUsd)
+          : null;
+
+    return NextResponse.json({
+      withdrawal: {
+        id: withdrawal.id,
+        amountUsd: Number(withdrawal.amountUsd),
+        method: withdrawal.method,
+        methodLabel: getWithdrawalMethodLabel(withdrawal.method),
+        destination: withdrawal.destination,
+        accountName: account?.name ?? null,
+        status: withdrawal.status,
+        statusLabel: formatWithdrawalStatus(withdrawal.status),
+        assignedChargeAmount: chargeAmount,
+        createdAt: withdrawal.createdAt.toISOString(),
+      },
+      chargePayment: withdrawal.chargePayment
+        ? {
+            id: withdrawal.chargePayment.id,
+            status: withdrawal.chargePayment.status,
+            statusLabel: formatChargePaymentStatus(withdrawal.chargePayment.status),
+            amountUsd: Number(withdrawal.chargePayment.amountUsd),
+            txHash: withdrawal.chargePayment.txHash,
+            proofNote: withdrawal.chargePayment.proofNote,
+            paidAt: withdrawal.chargePayment.paidAt?.toISOString() ?? null,
+          }
+        : null,
+      chargePaymentMethods: {
+        bitcoinWalletAddress: depositSettings.bitcoinWalletAddress,
+        bitcoinPurchaseLink: depositSettings.bitcoinPurchaseLink,
+        depositInstructions: depositSettings.depositInstructions,
+        qrCodeDataUrl,
+      },
+      canPay:
+        withdrawal.status === "AWAITING_CHARGE_PAYMENT" &&
+        !!withdrawal.chargePayment &&
+        (withdrawal.chargePayment.status === "UNPAID" || withdrawal.chargePayment.status === "REJECTED"),
+    });
+  } catch (error) {
+    console.error("Pay charge GET error:", error);
+    return NextResponse.json({ error: "Failed to load charge payment details" }, { status: 500 });
+  }
+}
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const userId = await getSessionUserId();

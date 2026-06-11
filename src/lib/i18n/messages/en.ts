@@ -402,6 +402,25 @@ const enBase = {
     submitWithdrawal: "Submit {method} Withdrawal",
     history: "Withdrawal History",
     payCharge: "Pay Charge",
+    chargePay: {
+      badge: "Step 2 of 2",
+      title: "Pay Processing Charge",
+      subtitle: "Complete this payment before your withdrawal can proceed to review.",
+      back: "Back to withdrawals",
+      loadError: "Could not load charge payment details",
+      copied: "Wallet address copied",
+      defaultInstructions:
+        "Send a new deposit to the wallet below. This payment is separate from your account balances and will be verified by our treasury team.",
+      submittedTitle: "Payment proof submitted",
+      submittedDesc:
+        "Our treasury team is verifying your deposit. You will be notified once your withdrawal moves to review.",
+      paidTitle: "Charge verified",
+      paidDesc: "Your processing charge has been confirmed. Your withdrawal is now pending admin review.",
+      rejectedTitle: "Previous payment not accepted",
+      rejectedDesc: "Please submit a new deposit with valid proof of payment below.",
+      returnWithdrawals: "Return to withdrawals",
+      goDashboard: "Go to dashboard",
+    },
     confirmation: "Your withdrawal request has been submitted. Our team will review and process it according to your selected payout method.",
     availableBalance: "{name} ({currency}) — {amount} available",
     receipt: {

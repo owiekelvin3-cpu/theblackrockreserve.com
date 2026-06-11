@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowUpFromLine, AlertCircle, Check, CreditCard } from "lucide-react";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
@@ -8,7 +9,6 @@ import Input from "@/components/ui/Input";
 import DashboardGate from "@/components/dashboard/DashboardGate";
 import EmptyState from "@/components/dashboard/EmptyState";
 import WithdrawalMethodIcon from "@/components/dashboard/WithdrawalMethodIcon";
-import { PayWithdrawalChargeModal, WithdrawalChargeNoticeModal } from "@/components/dashboard/WithdrawalChargeModals";
 import WithdrawalReceiptModal, { type WithdrawalReceiptData } from "@/components/dashboard/WithdrawalReceiptModal";
 import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
 import { useTransactionPin } from "@/hooks/use-transaction-pin";
@@ -72,6 +72,7 @@ const emptyData: WithdrawalData = {
 };
 
 export default function WithdrawalsPage() {
+  const router = useRouter();
   const { t, formatCurrency } = useI18n();
   const [data, setData] = useState<WithdrawalData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -83,10 +84,6 @@ export default function WithdrawalsPage() {
   const [destinationExtra, setDestinationExtra] = useState("");
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [chargeModalOpen, setChargeModalOpen] = useState(false);
-  const [pendingChargeAmount, setPendingChargeAmount] = useState<number | null>(null);
-  const [payChargeWithdrawalId, setPayChargeWithdrawalId] = useState<string | null>(null);
-  const [payChargeAmount, setPayChargeAmount] = useState<number | null>(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [receiptData, setReceiptData] = useState<WithdrawalReceiptData | null>(null);
 
@@ -146,7 +143,7 @@ export default function WithdrawalsPage() {
 
   const { open: pinOpen, loading: pinLoading, error: pinError, requestPin, closePin, confirmPin } = useTransactionPin();
 
-  const buildPayload = (transactionPin: string, chargeAcknowledged?: boolean) => ({
+  const buildPayload = (transactionPin: string) => ({
     accountId,
     method,
     amountUsd: Number(amountUsd),
@@ -154,41 +151,37 @@ export default function WithdrawalsPage() {
     destinationExtra: destinationExtra || undefined,
     note: note || undefined,
     transactionPin,
-    ...(chargeAcknowledged ? { chargeAcknowledged: true } : {}),
+    ...(withdrawalData.userCharge ? { chargeAcknowledged: true } : {}),
   });
 
-  const submitWithdrawal = async (transactionPin: string, chargeAcknowledged = false) => {
+  const submitWithdrawal = async (transactionPin: string) => {
     setSubmitting(true);
     try {
       const res = await fetch("/api/dashboard/withdrawals", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(buildPayload(transactionPin, chargeAcknowledged)),
+        body: JSON.stringify(buildPayload(transactionPin)),
       });
       const json = await res.json();
-      if (res.status === 200 && json.requiresChargeAcknowledgment) {
-        setPendingChargeAmount(json.chargeAmount);
-        setChargeModalOpen(true);
-        return;
-      }
       if (!res.ok) throw new Error(json.error || "Submission failed");
-      toast.success(json.message || withdrawalData.confirmationMessage);
+
       setAmountUsd("");
       setDestination("");
       setDestinationExtra("");
       setNote("");
-      setChargeModalOpen(false);
-      setPendingChargeAmount(null);
+
+      if (json.requiresChargePayment && json.withdrawal?.id) {
+        router.push(`/dashboard/withdrawals/${json.withdrawal.id}/pay-charge`);
+        return;
+      }
+
+      toast.success(json.message || withdrawalData.confirmationMessage);
       if (json.receipt) {
         setReceiptData(json.receipt as WithdrawalReceiptData);
         setReceiptOpen(true);
       }
       load();
-      if (json.requiresChargePayment && json.withdrawal?.id) {
-        setPayChargeWithdrawalId(json.withdrawal.id);
-        setPayChargeAmount(json.chargeAmount ?? json.withdrawal.assignedChargeAmount);
-      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to submit");
     } finally {
@@ -199,13 +192,7 @@ export default function WithdrawalsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     requestPin(async (transactionPin) => {
-      await submitWithdrawal(transactionPin, false);
-    });
-  };
-
-  const handleChargeContinue = () => {
-    requestPin(async (transactionPin) => {
-      await submitWithdrawal(transactionPin, true);
+      await submitWithdrawal(transactionPin);
     });
   };
 
@@ -387,12 +374,9 @@ export default function WithdrawalsPage() {
                         {canPayCharge && (
                           <Button
                             size="sm"
-                            onClick={() => {
-                              setPayChargeWithdrawalId(w.id);
-                              setPayChargeAmount(w.assignedChargeAmount ?? w.chargePayment!.amountUsd);
-                            }}
+                            onClick={() => router.push(`/dashboard/withdrawals/${w.id}/pay-charge`)}
                           >
-                            Pay Charge
+                            {t("withdrawals.payCharge")}
                           </Button>
                         )}
                       </div>
@@ -405,16 +389,6 @@ export default function WithdrawalsPage() {
         )}
       </div>
 
-      <WithdrawalChargeNoticeModal
-        open={chargeModalOpen}
-        chargeAmount={pendingChargeAmount ?? withdrawalData.userCharge?.amountUsd ?? 0}
-        onCancel={() => {
-          setChargeModalOpen(false);
-          setPendingChargeAmount(null);
-        }}
-        onContinue={handleChargeContinue}
-      />
-
       <TransactionPinModal
         open={pinOpen}
         onClose={closePin}
@@ -422,21 +396,6 @@ export default function WithdrawalsPage() {
         loading={pinLoading || submitting}
         error={pinError}
       />
-
-      {payChargeWithdrawalId && payChargeAmount != null && (
-        <PayWithdrawalChargeModal
-          open={!!payChargeWithdrawalId}
-          withdrawalId={payChargeWithdrawalId}
-          chargeAmount={payChargeAmount}
-          methods={withdrawalData.chargePaymentMethods}
-          qrCodeDataUrl={withdrawalData.chargePaymentMethods.qrCodeDataUrl}
-          onClose={() => {
-            setPayChargeWithdrawalId(null);
-            setPayChargeAmount(null);
-          }}
-          onPaid={() => load(true)}
-        />
-      )}
 
       <WithdrawalReceiptModal
         open={receiptOpen}
