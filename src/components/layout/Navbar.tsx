@@ -4,12 +4,11 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ArrowRight, Bot } from "lucide-react";
+import { Menu, X, ArrowRight } from "lucide-react";
 import Logo from "./Logo";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import LanguageSelector from "@/components/ui/LanguageSelector";
 import { useI18n } from "@/components/providers/I18nProvider";
-import { useChat } from "@/components/providers/ChatProvider";
 import { cn } from "@/lib/utils";
 
 const NAV_OFFSET = 96;
@@ -27,7 +26,6 @@ const primaryLinkClass =
 
 export default function Navbar() {
   const { t } = useI18n();
-  const { openChat } = useChat();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hash, setHash] = useState("");
   const pathname = usePathname();
@@ -101,14 +99,6 @@ export default function Navbar() {
                 {t(link.labelKey)}
               </Link>
             ))}
-            <button
-              type="button"
-              onClick={openChat}
-              className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap text-text-secondary hover:text-white hover:bg-white/5"
-            >
-              <Bot size={15} strokeWidth={1.75} />
-              {t("nav.supportChat")}
-            </button>
           </div>
         </div>
 
@@ -170,17 +160,6 @@ export default function Navbar() {
                     {t(link.labelKey)}
                   </Link>
                 ))}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMobileOpen(false);
-                    openChat();
-                  }}
-                  className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium text-text-secondary hover:text-white hover:bg-white/5 transition-colors"
-                >
-                  <Bot size={16} strokeWidth={1.75} />
-                  {t("nav.supportChat")}
-                </button>
                 <div className="pt-3 mt-2 border-t border-white/10 flex flex-col gap-3">
                   <LanguageSelector variant="full" />
                   <div className="flex items-center justify-between px-1">

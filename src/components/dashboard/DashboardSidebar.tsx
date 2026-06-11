@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import {
   LayoutDashboard, ArrowUpFromLine, Wallet,
-  RefreshCw, MessageSquare, Search, Zap, X, LineChart, Users, Landmark, LogOut, Bot,
+  RefreshCw, MessageSquare, Search, Zap, X, LineChart, Users, Landmark, LogOut,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -14,8 +14,6 @@ import ProfileAvatar from "@/components/ui/ProfileAvatar";
 import LanguageSelector from "@/components/ui/LanguageSelector";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { useProfileImage } from "@/components/providers/ProfileImageProvider";
-import { useChat } from "@/components/providers/ChatProvider";
-
 const mainNav = [
   { href: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard, badge: null },
   { href: "/dashboard/deposit", labelKey: "nav.deposit", icon: Wallet, badge: null },
@@ -39,7 +37,6 @@ export default function DashboardSidebar() {
   const { sidebarOpen, closeSidebar, openSidebar } = useDashboardLayout();
   const { t } = useI18n();
   const { image: profileImage } = useProfileImage();
-  const { openChat } = useChat();
   const [query, setQuery] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -89,16 +86,7 @@ export default function DashboardSidebar() {
   const visibleMain = useMemo(() => mainNav.filter(matchesQuery), [matchesQuery]);
   const visibleFeature = useMemo(() => featureNav.filter(matchesQuery), [matchesQuery]);
   const hasQuery = normalizedQuery.length > 0;
-  const supportChatLabel = t("nav.supportChat");
-  const supportChatVisible =
-    !hasQuery ||
-    supportChatLabel.toLowerCase().includes(normalizedQuery) ||
-    "chat".includes(normalizedQuery) ||
-    "support".includes(normalizedQuery) ||
-    "assistant".includes(normalizedQuery);
-
-  const noResults =
-    hasQuery && visibleMain.length === 0 && visibleFeature.length === 0 && !supportChatVisible;
+  const noResults = hasQuery && visibleMain.length === 0 && visibleFeature.length === 0;
 
   const goToFirstMatch = () => {
     const first = visibleMain[0] ?? visibleFeature[0];
@@ -216,28 +204,6 @@ export default function DashboardSidebar() {
                   )}
                   <div className="space-y-0.5">{visibleFeature.map(navLink)}</div>
                 </>
-              )}
-
-              {supportChatVisible && (
-                <div className={cn("space-y-0.5", (visibleMain.length > 0 || visibleFeature.length > 0) && "mt-6")}>
-                  {!hasQuery && (
-                    <p className="px-3 mb-2 text-[10px] font-semibold text-text-muted uppercase tracking-widest">
-                      {t("common.help")}
-                    </p>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setQuery("");
-                      closeSidebar();
-                      openChat();
-                    }}
-                    className="dash-nav-item flex w-full items-center gap-3 px-3 py-3 text-sm font-medium min-h-[44px]"
-                  >
-                    <Bot size={18} strokeWidth={1.75} />
-                    <span className="flex-1 text-left">{supportChatLabel}</span>
-                  </button>
-                </div>
               )}
             </>
           )}
