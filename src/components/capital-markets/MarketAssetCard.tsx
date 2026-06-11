@@ -8,6 +8,7 @@ import Badge from "@/components/ui/Badge";
 import StockIcon from "@/components/capital-markets/StockIcon";
 import type { MarketAssetRecord, ReturnPeriodKey } from "@/lib/market-asset-mapper";
 import { getReturnForPeriod } from "@/lib/market-asset-mapper";
+import { useI18n } from "@/components/providers/I18nProvider";
 
 export type MarketAssetCardData = MarketAssetRecord;
 
@@ -49,6 +50,7 @@ export default function MarketAssetCard({
   onInvest,
   index = 0,
 }: MarketAssetCardProps) {
+  const { t } = useI18n();
   const positive = asset.changePercent >= 0;
   const periodReturn = getReturnForPeriod(asset, returnPeriod);
   const periodPositive = periodReturn >= 0;
@@ -143,7 +145,7 @@ export default function MarketAssetCard({
           <p className="text-sm font-semibold text-accent-brand">~{asset.expectedReturnPercent}% p.a.</p>
         </div>
         <Button size="sm" onClick={() => onInvest(asset)} className="shrink-0">
-          Invest
+          {t("trade.buy")}
         </Button>
       </div>
     </motion.article>

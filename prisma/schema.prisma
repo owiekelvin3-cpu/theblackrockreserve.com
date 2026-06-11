@@ -189,11 +189,13 @@ model InvestmentOrder {
   accountId       String
   symbol          String
   assetName       String
+  side            String   @default("BUY")
   amountUsd       Decimal  @db.Decimal(15, 2)
   shares          Decimal  @db.Decimal(15, 6)
   priceAtPurchase Decimal  @db.Decimal(15, 2)
   fee             Decimal  @default(0) @db.Decimal(15, 2)
   totalCost       Decimal  @db.Decimal(15, 2)
+  realizedPnl     Decimal? @db.Decimal(15, 2)
   status          String   @default("COMPLETED")
   createdAt       DateTime @default(now())
 
@@ -624,6 +626,7 @@ enum TransactionType {
   TRANSFER
   PAYMENT
   INVESTMENT
+  SALE
   PROFIT_CREDIT
   PROFIT_DEBIT
 }

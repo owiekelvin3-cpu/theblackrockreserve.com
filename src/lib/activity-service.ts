@@ -13,7 +13,7 @@ export type ActivityCategory =
 const CATEGORY_TYPES: Record<ActivityCategory, TransactionType[]> = {
   deposits: ["DEPOSIT"],
   withdrawals: ["WITHDRAWAL"],
-  investments: ["INVESTMENT"],
+  investments: ["INVESTMENT", "SALE"],
   profits: ["PROFIT_CREDIT", "PROFIT_DEBIT"],
   transfers: ["TRANSFER"],
   account_updates: ["PAYMENT"],
@@ -23,7 +23,7 @@ const CATEGORY_TYPES: Record<ActivityCategory, TransactionType[]> = {
 export function categoryForType(type: TransactionType): ActivityCategory {
   if (type === "DEPOSIT") return "deposits";
   if (type === "WITHDRAWAL") return "withdrawals";
-  if (type === "INVESTMENT") return "investments";
+  if (type === "INVESTMENT" || type === "SALE") return "investments";
   if (type === "PROFIT_CREDIT" || type === "PROFIT_DEBIT") return "profits";
   if (type === "TRANSFER") return "transfers";
   if (type === "PAYMENT") return "account_updates";

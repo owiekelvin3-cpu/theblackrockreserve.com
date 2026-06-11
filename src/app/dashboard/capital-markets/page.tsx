@@ -15,6 +15,7 @@ import DashboardGate from "@/components/dashboard/DashboardGate";
 import ChartContainer from "@/components/ui/ChartContainer";
 import MarketAssetCard, { type MarketAssetCardData } from "@/components/capital-markets/MarketAssetCard";
 import InvestModal from "@/components/capital-markets/InvestModal";
+import SellModal, { type SellHoldingData } from "@/components/capital-markets/SellModal";
 import StockIcon from "@/components/capital-markets/StockIcon";
 import { formatCurrency, cn } from "@/lib/utils";
 import { fetchDashboardJson } from "@/lib/fetch-json";
@@ -47,10 +48,12 @@ interface HistoryItem {
   id: string;
   symbol: string;
   assetName: string;
+  side: "BUY" | "SELL";
   amountUsd: number;
   shares: number;
   fee: number;
   totalCost: number;
+  realizedPnl: number | null;
   createdAt: string;
 }
 
@@ -77,6 +80,7 @@ interface CapitalMarketsData {
   assets: MarketAssetCardData[];
   history: HistoryItem[];
   analytics: Analytics;
+  profitBalance: number;
 }
 
 type Tab = "marketplace" | "portfolio" | "analytics";
@@ -196,6 +200,7 @@ export default function CapitalMarketsPage() {
   const [sort, setSort] = useState<SortKey>("admin");
   const [returnPeriod, setReturnPeriod] = useState<ReturnPeriodKey>("30d");
   const [investAsset, setInvestAsset] = useState<MarketAssetCardData | null>(null);
+  const [sellHolding, setSellHolding] = useState<SellHoldingData | null>(null);
 
   const load = useCallback((silent = false) => {
     if (!silent) setLoading(true);
@@ -256,6 +261,24 @@ export default function CapitalMarketsPage() {
   }, [data?.assets, filterAssets, returnPeriod]);
 
   const marketLabel = data?.marketStatus?.label ?? t("capitalMarkets.marketClosed");
+
+  const openSell = (h: Holding) => {
+    const asset = data?.assets.find((a) => a.symbol === h.symbol);
+    setSellHolding({
+      symbol: h.symbol,
+      name: h.name,
+      sector: h.sector,
+      shares: h.shares,
+      avgPrice: h.avgPrice,
+      marketPrice: h.marketPrice,
+      marketValue: h.marketValue,
+      gainLoss: h.gainLoss,
+      gainLossPercent: h.gainLossPercent,
+      logoDomain: asset?.logoDomain,
+      logoUrl: asset?.logoUrl,
+      minSaleUsd: asset?.minInvestment ?? 50,
+    });
+  };
 
   return (
     <DashboardGate isLoading={loading}>
@@ -536,6 +559,7 @@ export default function CapitalMarketsPage() {
                             <th className="text-right py-3 font-medium">{t("investments.value")}</th>
                             <th className="text-right py-3 font-medium">{t("capitalMarkets.pl")}</th>
                             <th className="text-right py-3 font-medium hidden sm:table-cell">{t("capitalMarkets.roi")}</th>
+                            <th className="text-right py-3 font-medium">{t("trade.action")}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -578,6 +602,15 @@ export default function CapitalMarketsPage() {
                                   {h.roiPercent.toFixed(2)}%
                                 </span>
                               </td>
+                              <td className="text-right py-4">
+                                <button
+                                  type="button"
+                                  onClick={() => openSell(h)}
+                                  className="inline-flex items-center justify-center px-3 py-1.5 min-h-[36px] rounded-lg text-xs font-semibold border border-accent-red/30 text-accent-red hover:bg-accent-red/10 transition-colors"
+                                >
+                                  {t("trade.sell")}
+                                </button>
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -589,20 +622,23 @@ export default function CapitalMarketsPage() {
                 <Card>
                   <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                     <History size={18} />
-                    {t("capitalMarkets.investmentHistory")}
+                    {t("capitalMarkets.tradeHistory")}
                   </h2>
                   {data.history.length === 0 ? (
                     <p className="text-sm text-[var(--text-secondary)] py-6 text-center">{t("capitalMarkets.noHistory")}</p>
                   ) : (
                     <div className="overflow-x-auto">
-                      <table className="w-full text-sm min-w-[560px]">
+                      <table className="w-full text-sm min-w-[680px]">
                         <thead>
                           <tr className="border-b border-[var(--border-subtle)] text-[var(--text-secondary)]">
                             <th className="text-left py-3 font-medium">{t("capitalMarkets.date")}</th>
+                            <th className="text-left py-3 font-medium">{t("capitalMarkets.type")}</th>
                             <th className="text-left py-3 font-medium">{t("investments.asset")}</th>
+                            <th className="text-right py-3 font-medium hidden sm:table-cell">{t("investments.shares")}</th>
                             <th className="text-right py-3 font-medium">{t("common.amount")}</th>
-                            <th className="text-right py-3 font-medium hidden sm:table-cell">{t("capitalMarkets.fee")}</th>
+                            <th className="text-right py-3 font-medium hidden md:table-cell">{t("capitalMarkets.fee")}</th>
                             <th className="text-right py-3 font-medium">{t("capitalMarkets.total")}</th>
+                            <th className="text-right py-3 font-medium hidden lg:table-cell">{t("capitalMarkets.realizedPl")}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -612,15 +648,31 @@ export default function CapitalMarketsPage() {
                                 {new Date(h.createdAt).toLocaleString()}
                               </td>
                               <td className="py-3">
-                                <Badge variant="gold">{h.symbol}</Badge>
+                                <Badge variant={h.side === "BUY" ? "gold" : "red"}>
+                                  {h.side === "BUY" ? t("trade.buy") : t("trade.sell")}
+                                </Badge>
+                              </td>
+                              <td className="py-3">
+                                <span className="font-mono text-accent-brand">{h.symbol}</span>
                                 <span className="ml-2 text-[var(--text-secondary)] hidden sm:inline">{h.assetName}</span>
                               </td>
+                              <td className="text-right font-mono hidden sm:table-cell py-3">{h.shares.toFixed(4)}</td>
                               <td className="text-right font-mono py-3">{formatCurrency(h.amountUsd)}</td>
-                              <td className="text-right font-mono text-[var(--text-muted)] hidden sm:table-cell py-3">
+                              <td className="text-right font-mono text-[var(--text-muted)] hidden md:table-cell py-3">
                                 {formatCurrency(h.fee)}
                               </td>
                               <td className="text-right font-mono font-medium text-[var(--text-primary)] py-3">
                                 {formatCurrency(h.totalCost)}
+                              </td>
+                              <td className="text-right font-mono hidden lg:table-cell py-3">
+                                {h.realizedPnl != null ? (
+                                  <span className={h.realizedPnl >= 0 ? "text-accent-green" : "text-accent-red"}>
+                                    {h.realizedPnl >= 0 ? "+" : ""}
+                                    {formatCurrency(h.realizedPnl)}
+                                  </span>
+                                ) : (
+                                  <span className="text-[var(--text-muted)]">—</span>
+                                )}
                               </td>
                             </tr>
                           ))}
@@ -729,6 +781,13 @@ export default function CapitalMarketsPage() {
         walletBalance={data?.availableCash ?? 0}
         open={!!investAsset}
         onClose={() => setInvestAsset(null)}
+        onSuccess={() => load()}
+      />
+
+      <SellModal
+        holding={sellHolding}
+        open={!!sellHolding}
+        onClose={() => setSellHolding(null)}
         onSuccess={() => load()}
       />
     </DashboardGate>

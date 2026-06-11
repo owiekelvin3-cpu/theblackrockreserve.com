@@ -315,6 +315,18 @@ export const investSubmitSchema = z.object({
   transactionPin: transactionPinSchema,
 });
 
+export const sellSubmitSchema = z
+  .object({
+    symbol: z.string().min(1).max(12),
+    shares: z.coerce.number().positive().max(1_000_000_000).optional(),
+    amountUsd: z.coerce.number().positive().max(10_000_000).optional(),
+    accountId: z.string().optional(),
+    transactionPin: transactionPinSchema,
+  })
+  .refine((data) => data.shares != null || data.amountUsd != null, {
+    message: "Enter shares or a sale amount",
+  });
+
 export const jointMoneyActionSchema = z.object({
   amount: z.coerce.number().positive().max(10_000_000),
   personalAccountId: z.string().optional(),

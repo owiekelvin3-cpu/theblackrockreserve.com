@@ -12,7 +12,8 @@ const TYPE_LABELS: Record<string, string> = {
   WITHDRAWAL: "Withdrawal",
   TRANSFER: "Transfer",
   PAYMENT: "Payment",
-  INVESTMENT: "Investment",
+  INVESTMENT: "Buy Order",
+  SALE: "Sell Order",
   PROFIT_CREDIT: "Profit Credit",
   PROFIT_DEBIT: "Profit Debit",
 };

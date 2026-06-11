@@ -41,6 +41,7 @@ const TYPE_ICONS: Record<string, typeof Wallet> = {
   TRANSFER: RefreshCw,
   PAYMENT: Receipt,
   INVESTMENT: TrendingUp,
+  SALE: ArrowUpRight,
   PROFIT_CREDIT: ArrowDownLeft,
   PROFIT_DEBIT: ArrowUpRight,
 };

@@ -128,6 +128,7 @@ export async function executeInvestment(
         accountId: account.id,
         symbol: normalizedSymbol,
         assetName: asset.name,
+        side: "BUY",
         amountUsd,
         shares,
         priceAtPurchase,

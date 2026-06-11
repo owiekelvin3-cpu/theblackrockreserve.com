@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getAccounts, getInvestments } from "@/lib/dashboard-data";
+import { getProfitBalance } from "@/lib/user-balances";
 import { getMarketAssets, getMarketStatus, type MarketAssetDto } from "@/lib/market-assets";
 
 export interface EnrichedHolding {
@@ -23,11 +24,13 @@ export interface InvestmentHistoryItem {
   id: string;
   symbol: string;
   assetName: string;
+  side: "BUY" | "SELL";
   amountUsd: number;
   shares: number;
   priceAtPurchase: number;
   fee: number;
   totalCost: number;
+  realizedPnl: number | null;
   status: string;
   createdAt: string;
 }
@@ -45,7 +48,7 @@ export interface PortfolioAnalytics {
 }
 
 export async function getCapitalMarketsData(userId: string) {
-  const [holdings, accounts, assets, orders] = await Promise.all([
+  const [holdings, accounts, assets, orders, profitBalance] = await Promise.all([
     getInvestments(userId),
     getAccounts(userId),
     getMarketAssets(),
@@ -54,6 +57,7 @@ export async function getCapitalMarketsData(userId: string) {
       orderBy: { createdAt: "desc" },
       take: 100,
     }),
+    getProfitBalance(userId),
   ]);
 
   const assetMap = new Map(assets.map((a) => [a.symbol, a]));
@@ -66,7 +70,7 @@ export async function getCapitalMarketsData(userId: string) {
     const gainLoss = marketValue - costBasis;
     const gainLossPercent = costBasis > 0 ? (gainLoss / costBasis) * 100 : 0;
 
-    const firstOrder = orders.find((o) => o.symbol === h.symbol);
+    const firstOrder = orders.find((o) => o.symbol === h.symbol && o.side !== "SELL");
 
     return {
       id: h.id,
@@ -130,11 +134,13 @@ export async function getCapitalMarketsData(userId: string) {
     id: o.id,
     symbol: o.symbol,
     assetName: o.assetName,
+    side: (o.side === "SELL" ? "SELL" : "BUY") as "BUY" | "SELL",
     amountUsd: Number(o.amountUsd),
     shares: Number(o.shares),
     priceAtPurchase: Number(o.priceAtPurchase),
     fee: Number(o.fee),
     totalCost: Number(o.totalCost),
+    realizedPnl: o.realizedPnl != null ? Number(o.realizedPnl) : null,
     status: o.status,
     createdAt: o.createdAt.toISOString(),
   }));
@@ -162,12 +168,13 @@ export async function getCapitalMarketsData(userId: string) {
     assets: assets as MarketAssetDto[],
     history,
     analytics,
+    profitBalance,
     primaryAccountId: accounts.find((a) => a.type === "checking")?.id ?? accounts[0]?.id ?? null,
   };
 }
 
 function buildMonthlyGrowth(
-  orders: { createdAt: Date; amountUsd: { toString(): string }; symbol: string }[],
+  orders: { createdAt: Date; amountUsd: { toString(): string }; symbol: string; side: string }[],
   holdings: EnrichedHolding[]
 ) {
   const months: { month: string; invested: number; value: number }[] = [];
@@ -179,7 +186,7 @@ function buildMonthlyGrowth(
     const endOfMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
 
     const invested = orders
-      .filter((o) => o.createdAt <= endOfMonth)
+      .filter((o) => o.createdAt <= endOfMonth && o.side !== "SELL")
       .reduce((sum, o) => sum + Number(o.amountUsd), 0);
 
     const growthFactor = 1 + (holdings.length > 0 ? 0.02 * (5 - i) : 0);
