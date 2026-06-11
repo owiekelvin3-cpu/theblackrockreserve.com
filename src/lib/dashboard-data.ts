@@ -88,29 +88,27 @@ export async function getDashboardOverview(userId: string) {
   const CREDIT_TYPES = new Set(["DEPOSIT", "PROFIT_CREDIT"]);
 
   const currentMonthIndex = now.getMonth();
-  const cashFlowData = MONTHS.slice(0, currentMonthIndex + 1)
-    .map((month, index) => {
-      const monthTx = yearTransactions.filter((t) => {
-        const d = new Date(t.createdAt);
-        return d.getFullYear() === now.getFullYear() && d.getMonth() === index;
-      });
-      const monthTotal = monthTx.reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
-      const inflow = monthTx.reduce((sum, t) => {
-        if (CREDIT_TYPES.has(t.type)) return sum + Number(t.amount);
-        return sum;
-      }, 0);
-      const outflow = monthTx.reduce((sum, t) => {
-        if (!CREDIT_TYPES.has(t.type)) return sum + Math.abs(Number(t.amount));
-        return sum;
-      }, 0);
-      const tooltipDate = new Date(now.getFullYear(), index, 23).toLocaleDateString("en-US", {
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-      });
-      return { month, value: monthTotal, inflow, outflow, tooltipDate };
-    })
-    .filter((row) => row.value > 0 || row.inflow > 0 || row.outflow > 0);
+  const cashFlowData = MONTHS.slice(0, currentMonthIndex + 1).map((month, index) => {
+    const monthTx = yearTransactions.filter((t) => {
+      const d = new Date(t.createdAt);
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === index;
+    });
+    const monthTotal = monthTx.reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
+    const inflow = monthTx.reduce((sum, t) => {
+      if (CREDIT_TYPES.has(t.type)) return sum + Number(t.amount);
+      return sum;
+    }, 0);
+    const outflow = monthTx.reduce((sum, t) => {
+      if (!CREDIT_TYPES.has(t.type)) return sum + Math.abs(Number(t.amount));
+      return sum;
+    }, 0);
+    const tooltipDate = new Date(now.getFullYear(), index, 23).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+    return { month, value: monthTotal, inflow, outflow, tooltipDate };
+  });
 
   const activities = recentTransactions.map((t) => ({
     id: t.id,
