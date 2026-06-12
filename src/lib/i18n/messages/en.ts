@@ -450,6 +450,8 @@ const enBase = {
     },
     submitWithdrawal: "Submit {method} Withdrawal",
     history: "Withdrawal History",
+    historyViewMore: "View more ({count})",
+    historyShowLess: "Show less",
     payCharge: "Pay Charge",
     chargePay: {
       badge: "Step 2 of 2",

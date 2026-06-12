@@ -64,6 +64,8 @@ interface WithdrawalData {
   confirmationMessage: string;
 }
 
+const WITHDRAWAL_HISTORY_PREVIEW = 2;
+
 const emptyData: WithdrawalData = {
   accounts: [],
   userCharge: null,
@@ -87,6 +89,7 @@ export default function WithdrawalsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [receiptData, setReceiptData] = useState<WithdrawalReceiptData | null>(null);
+  const [historyExpanded, setHistoryExpanded] = useState(false);
 
   const selectedMethodDef = getWithdrawalMethod(method)!;
 
@@ -362,9 +365,12 @@ export default function WithdrawalsPage() {
 
         {withdrawalData.withdrawals.length > 0 && (
           <Card>
-            <h2 className="font-semibold text-white mb-4">Withdrawal History</h2>
+            <h2 className="font-semibold text-white mb-4">{t("withdrawals.history")}</h2>
             <div className="space-y-3">
-              {withdrawalData.withdrawals.map((w) => {
+              {(historyExpanded
+                ? withdrawalData.withdrawals
+                : withdrawalData.withdrawals.slice(0, WITHDRAWAL_HISTORY_PREVIEW)
+              ).map((w) => {
                 const methodDef = getWithdrawalMethod(w.method);
                 const canPayCharge =
                   w.status === "AWAITING_CHARGE_PAYMENT" &&
@@ -411,6 +417,19 @@ export default function WithdrawalsPage() {
                 );
               })}
             </div>
+            {withdrawalData.withdrawals.length > WITHDRAWAL_HISTORY_PREVIEW && (
+              <button
+                type="button"
+                onClick={() => setHistoryExpanded((expanded) => !expanded)}
+                className="mt-4 w-full text-sm font-medium text-accent-brand hover:text-accent-brand/80 transition-colors py-2"
+              >
+                {historyExpanded
+                  ? t("withdrawals.historyShowLess")
+                  : t("withdrawals.historyViewMore", {
+                      count: withdrawalData.withdrawals.length - WITHDRAWAL_HISTORY_PREVIEW,
+                    })}
+              </button>
+            )}
           </Card>
         )}
       </div>
