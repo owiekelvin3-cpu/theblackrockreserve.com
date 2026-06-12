@@ -49,30 +49,42 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       parsed.data.content
     );
 
-    if (conversation?.user) {
-      const title = "Support team replied";
-      const message =
-        "A client services specialist has responded to your support request. Open Support Chat in your dashboard to continue the conversation.";
-      await createUserNotification({
-        userId: conversation.user.id,
-        type: "SUPPORT_REPLY",
-        title,
-        message,
-      });
-      void sendUserNotificationEmail({
-        userId: conversation.user.id,
-        title,
-        message,
-      });
+    if (!conversation) {
+      return NextResponse.json({ error: "Reply saved but conversation could not be reloaded" }, { status: 500 });
     }
 
-    await logAdminAction(
-      session.user.id,
-      "REPLY_SUPPORT_CHAT",
-      { conversationId: params.id },
-      conversation?.user?.id,
-      getClientIp(req)
-    );
+    if (conversation.user) {
+      try {
+        const title = "Support team replied";
+        const message =
+          "A client services specialist has responded to your support request. Open Support Chat in your dashboard to continue the conversation.";
+        await createUserNotification({
+          userId: conversation.user.id,
+          type: "SUPPORT_REPLY",
+          title,
+          message,
+        });
+        void sendUserNotificationEmail({
+          userId: conversation.user.id,
+          title,
+          message,
+        });
+      } catch (notifyError) {
+        console.error("Support reply notification failed:", notifyError);
+      }
+    }
+
+    try {
+      await logAdminAction(
+        session.user.id,
+        "REPLY_SUPPORT_CHAT",
+        { conversationId: params.id },
+        conversation.user?.id,
+        getClientIp(req)
+      );
+    } catch (auditError) {
+      console.error("Support reply audit log failed:", auditError);
+    }
 
     invalidateAdminCaches();
 

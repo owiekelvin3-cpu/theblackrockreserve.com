@@ -113,33 +113,33 @@ export async function sendUserSupportMessage(userId: string, content: string) {
 export async function getAdminSupportConversations() {
   try {
     const conversations = await prisma.supportConversation.findMany({
-    where: {
-      messages: { some: { role: "USER" } },
-    },
-    orderBy: { updatedAt: "desc" },
-    include: {
-      user: { select: { id: true, name: true, email: true } },
-      messages: {
-        where: { role: { in: ["USER", "ADMIN"] } },
-        orderBy: { createdAt: "desc" },
-        take: 1,
-        select: { content: true, createdAt: true, role: true },
+      where: {
+        messages: { some: { role: "USER" } },
       },
-      _count: { select: { messages: true } },
-    },
-  });
+      orderBy: { updatedAt: "desc" },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        messages: {
+          where: { role: { in: ["USER", "ADMIN"] } },
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { content: true, createdAt: true, role: true },
+        },
+        _count: { select: { messages: true } },
+      },
+    });
 
-  return conversations.map((c): SupportConversationSummary => ({
-    id: c.id,
-    userId: c.user.id,
-    userName: c.user.name,
-    userEmail: c.user.email,
-    status: c.status,
-    adminUnread: c.adminUnread,
-    lastMessage: c.messages[0]?.content ?? "",
-    lastMessageAt: (c.messages[0]?.createdAt ?? c.updatedAt).toISOString(),
-    messageCount: c._count.messages,
-  }));
+    return conversations.map((c): SupportConversationSummary => ({
+      id: c.id,
+      userId: c.user.id,
+      userName: c.user.name,
+      userEmail: c.user.email,
+      status: c.status,
+      adminUnread: c.adminUnread,
+      lastMessage: c.messages[0]?.content ?? "",
+      lastMessageAt: (c.messages[0]?.createdAt ?? c.updatedAt).toISOString(),
+      messageCount: c._count.messages,
+    }));
   } catch (error) {
     console.error("Support conversations unavailable:", error);
     return [];
@@ -147,33 +147,38 @@ export async function getAdminSupportConversations() {
 }
 
 export async function getAdminSupportConversation(id: string) {
-  const conversation = await prisma.supportConversation.findUnique({
-    where: { id },
-    include: {
-      user: { select: { id: true, name: true, email: true } },
-      messages: {
-        orderBy: { createdAt: "asc" },
-        include: { admin: { select: { name: true } } },
-      },
-    },
-  });
-
-  if (!conversation) return null;
-
-  if (conversation.adminUnread) {
-    await prisma.supportConversation.update({
+  try {
+    const conversation = await prisma.supportConversation.findUnique({
       where: { id },
-      data: { adminUnread: false },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        messages: {
+          orderBy: { createdAt: "asc" },
+          include: { admin: { select: { name: true } } },
+        },
+      },
     });
-  }
 
-  return {
-    id: conversation.id,
-    status: conversation.status,
-    adminUnread: false,
-    user: conversation.user,
-    messages: conversation.messages.map(mapMessage),
-  };
+    if (!conversation) return null;
+
+    if (conversation.adminUnread) {
+      await prisma.supportConversation.update({
+        where: { id },
+        data: { adminUnread: false },
+      });
+    }
+
+    return {
+      id: conversation.id,
+      status: conversation.status,
+      adminUnread: false,
+      user: conversation.user,
+      messages: conversation.messages.map(mapMessage),
+    };
+  } catch (error) {
+    console.error("getAdminSupportConversation error:", error);
+    return null;
+  }
 }
 
 export async function sendAdminSupportReply(
@@ -192,23 +197,43 @@ export async function sendAdminSupportReply(
   if (!conversation) throw new Error("Conversation not found");
   if (conversation.status === "CLOSED") throw new Error("Conversation is closed");
 
-  await prisma.$transaction([
-    prisma.supportMessage.create({
-      data: {
-        conversationId,
-        role: "ADMIN",
-        content: trimmed,
-        adminId,
-      },
-    }),
-    prisma.supportConversation.update({
-      where: { id: conversationId },
-      data: {
-        userHasUnreadReply: true,
-        updatedAt: new Date(),
-      },
-    }),
-  ]);
+  const messageData = {
+    conversationId,
+    role: "ADMIN" as const,
+    content: trimmed,
+    adminId,
+  };
+
+  try {
+    await prisma.$transaction([
+      prisma.supportMessage.create({ data: messageData }),
+      prisma.supportConversation.update({
+        where: { id: conversationId },
+        data: {
+          userHasUnreadReply: true,
+          updatedAt: new Date(),
+        },
+      }),
+    ]);
+  } catch (error) {
+    console.error("Admin reply with adminId failed, retrying without link:", error);
+    await prisma.$transaction([
+      prisma.supportMessage.create({
+        data: {
+          conversationId,
+          role: "ADMIN",
+          content: trimmed,
+        },
+      }),
+      prisma.supportConversation.update({
+        where: { id: conversationId },
+        data: {
+          userHasUnreadReply: true,
+          updatedAt: new Date(),
+        },
+      }),
+    ]);
+  }
 
   return getAdminSupportConversation(conversationId);
 }

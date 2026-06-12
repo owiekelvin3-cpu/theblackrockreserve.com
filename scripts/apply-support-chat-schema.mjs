@@ -49,7 +49,7 @@ async function main() {
 
 main()
   .catch((e) => {
-    console.error(e);
-    process.exit(1);
+    console.warn("Support chat schema apply skipped or partial:", e.message ?? e);
+    process.exit(0);
   })
   .finally(() => prisma.$disconnect());

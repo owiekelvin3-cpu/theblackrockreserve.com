@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npx prisma@5.22.0 generate && next build",
+    "build": "npx prisma@5.22.0 generate && node scripts/apply-support-chat-schema.mjs && next build",
     "start": "next start",
     "lint": "next lint",
     "clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\"",
