@@ -5,6 +5,9 @@ import { Send, Users } from "lucide-react";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
+import MemberTransferReceiptModal, {
+  type MemberTransferReceiptData,
+} from "@/components/dashboard/MemberTransferReceiptModal";
 import { useTransactionPin } from "@/hooks/use-transaction-pin";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { toast } from "sonner";
@@ -30,6 +33,8 @@ export default function MemberTransferPanel({ accounts, onSuccess, className }: 
   const [amountUsd, setAmountUsd] = useState("");
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [receiptOpen, setReceiptOpen] = useState(false);
+  const [receiptData, setReceiptData] = useState<MemberTransferReceiptData | null>(null);
 
   const selectedAccount = accounts.find((a) => a.id === accountId);
   const { open: pinOpen, loading: pinLoading, error: pinError, requestPin, closePin, confirmPin } = useTransactionPin();
@@ -52,7 +57,12 @@ export default function MemberTransferPanel({ accounts, onSuccess, className }: 
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || t("withdrawals.memberTransfer.failed"));
 
-      toast.success(json.message || t("withdrawals.memberTransfer.success"));
+      if (json.receipt) {
+        setReceiptData(json.receipt as MemberTransferReceiptData);
+        setReceiptOpen(true);
+      } else {
+        toast.success(json.message || t("withdrawals.memberTransfer.success"));
+      }
       setRecipientEmail("");
       setAmountUsd("");
       setNote("");
@@ -172,6 +182,15 @@ export default function MemberTransferPanel({ accounts, onSuccess, className }: 
         onConfirm={confirmPin}
         loading={pinLoading || submitting}
         error={pinError}
+      />
+
+      <MemberTransferReceiptModal
+        open={receiptOpen}
+        receipt={receiptData}
+        onClose={() => {
+          setReceiptOpen(false);
+          setReceiptData(null);
+        }}
       />
     </>
   );

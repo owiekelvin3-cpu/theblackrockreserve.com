@@ -134,5 +134,17 @@ export async function transferToMember(
     recipientName: recipient.name,
     referenceId: result.id,
     message: `Successfully sent $${amount.toFixed(2)} to ${recipient.name}`,
+    receipt: {
+      id: result.id,
+      amount,
+      recipientEmail: recipient.email,
+      recipientName: recipient.name,
+      senderName: sender.name,
+      senderEmail: sender.email,
+      accountName: senderAccount.name,
+      note: memo ?? null,
+      createdAt: result.createdAt.toISOString(),
+      status: "COMPLETED" as const,
+    },
   };
 }

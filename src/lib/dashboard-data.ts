@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getSignedTransactionAmount } from "@/lib/transaction-amount";
 import { getInvestedBalance, getProfitBalance } from "@/lib/user-balances";
 import { ensureCheckingAndSavingsAccounts, getSavingsSummary } from "@/lib/savings-service";
 
@@ -85,8 +86,6 @@ export async function getDashboardOverview(userId: string) {
 
   const totalBalance = accounts.reduce((sum, a) => sum + a.balance, 0);
 
-  const CREDIT_TYPES = new Set(["DEPOSIT", "PROFIT_CREDIT"]);
-
   const currentMonthIndex = now.getMonth();
   const cashFlowData = MONTHS.slice(0, currentMonthIndex + 1).map((month, index) => {
     const monthTx = yearTransactions.filter((t) => {
@@ -95,12 +94,12 @@ export async function getDashboardOverview(userId: string) {
     });
     const monthTotal = monthTx.reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
     const inflow = monthTx.reduce((sum, t) => {
-      if (CREDIT_TYPES.has(t.type)) return sum + Number(t.amount);
-      return sum;
+      const signed = getSignedTransactionAmount(t.type, t.amount, t.description);
+      return signed > 0 ? sum + signed : sum;
     }, 0);
     const outflow = monthTx.reduce((sum, t) => {
-      if (!CREDIT_TYPES.has(t.type)) return sum + Math.abs(Number(t.amount));
-      return sum;
+      const signed = getSignedTransactionAmount(t.type, t.amount, t.description);
+      return signed < 0 ? sum + Math.abs(signed) : sum;
     }, 0);
     const tooltipDate = new Date(now.getFullYear(), index, 23).toLocaleDateString("en-US", {
       month: "long",
@@ -123,10 +122,7 @@ export async function getDashboardOverview(userId: string) {
       hour: "numeric",
       minute: "2-digit",
     }),
-    price:
-      t.type === "DEPOSIT" || t.type === "PROFIT_CREDIT"
-        ? Number(t.amount)
-        : -Math.abs(Number(t.amount)),
+    price: getSignedTransactionAmount(t.type, t.amount, t.description),
     status: t.status.charAt(0) + t.status.slice(1).toLowerCase(),
     type: t.type,
   }));
@@ -158,9 +154,11 @@ export async function getAnalytics(userId: string) {
 
   const spendingByType: Record<string, number> = {};
   for (const t of transactions) {
+    const signed = getSignedTransactionAmount(t.type, t.amount, t.description);
+    if (signed >= 0) continue;
     if (t.type === "WITHDRAWAL" || t.type === "PAYMENT" || t.type === "TRANSFER") {
       const key = t.type.charAt(0) + t.type.slice(1).toLowerCase();
-      spendingByType[key] = (spendingByType[key] ?? 0) + Math.abs(Number(t.amount));
+      spendingByType[key] = (spendingByType[key] ?? 0) + Math.abs(signed);
     }
   }
 

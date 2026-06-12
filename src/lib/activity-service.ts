@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getSignedTransactionAmount } from "@/lib/transaction-amount";
 import type { TransactionStatus, TransactionType } from "@prisma/client";
 
 export type ActivityCategory =
@@ -105,10 +106,7 @@ export async function queryActivities(params: ActivityQuery) {
     name: t.description,
     orderId: `#${t.id.slice(-8).toUpperCase()}`,
     date: t.createdAt.toISOString(),
-    amount:
-      t.type === "DEPOSIT" || t.type === "PROFIT_CREDIT"
-        ? Number(t.amount)
-        : -Math.abs(Number(t.amount)),
+    amount: getSignedTransactionAmount(t.type, t.amount, t.description),
     status: t.status,
     type: t.type,
     category: categoryForType(t.type),
@@ -145,10 +143,7 @@ export async function getActivityById(userId: string, id: string) {
 
   if (!row) return null;
 
-  const amount =
-    row.type === "DEPOSIT" || row.type === "PROFIT_CREDIT"
-      ? Number(row.amount)
-      : -Math.abs(Number(row.amount));
+  const amount = getSignedTransactionAmount(row.type, row.amount, row.description);
 
   return {
     id: row.id,
