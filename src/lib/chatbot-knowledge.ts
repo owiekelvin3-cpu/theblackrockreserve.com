@@ -159,10 +159,10 @@ In your dashboard, you will complete this step on the Pay Processing Charge page
     keywords: ["open account", "register", "sign up", "create account", "new account", "join"],
     patterns: [/\b(open|create|start).*(account)/i, /\bhow.*register/i],
     message:
-      "To open an account, go to Register and complete the 3-step signup: personal info, security, and identity. Verify your email with the 6-digit code we send you. Once verified, your dashboard opens with a primary checking account ready.",
+      "To open an account, go to Register and complete the 3-step signup: personal details, security credentials, and identity upload. Once finished, sign in with your email and password—your dashboard opens with Primary Checking and High-Yield Savings accounts ready.",
     suggestions: [
-      { label: "Email verification", value: "I didn't get my verification code" },
       { label: "KYC", value: "What is the KYC process?" },
+      { label: "Login help", value: "I can't log in" },
     ],
   },
   {
@@ -170,27 +170,15 @@ In your dashboard, you will complete this step on the Pay Processing Charge page
     priority: 60,
     keywords: ["register page", "where register", "sign up page"],
     message: 'Click "Open Account" in the navigation or visit /register to get started.',
-    suggestions: [{ label: "Verification help", value: "I didn't get my verification code" }],
-  },
-  {
-    id: "email-verify",
-    priority: 60,
-    keywords: ["verification", "otp", "verify email", "verification code", "confirm email", "6 digit"],
-    patterns: [/\b(didn't|did not|not).*(code|email)/i, /\bresend\b/i],
-    message:
-      "After registering, check your inbox and spam for a 6-digit verification code. Enter it on the verification step to activate your account. Use \"Resend code\" if needed. If email still doesn't arrive, confirm your address or contact support.",
-    suggestions: [
-      { label: "Login help", value: "I can't log in" },
-      { label: "Talk to support", value: "I need to speak with support" },
-    ],
+    suggestions: [{ label: "Open account steps", value: "How do I open an account?" }],
   },
   {
     id: "login",
     priority: 60,
-    keywords: ["login", "log in", "sign in", "password", "can't access", "locked out"],
-    patterns: [/\bcan.?t log/i, /\bforgot password/i],
+    keywords: ["login", "log in", "sign in", "password", "can't access", "locked out", "wrong password", "another account"],
+    patterns: [/\bcan.?t log/i, /\bforgot password/i, /\b(sign in|log in).*(another|different|other) account/i],
     message:
-      'Sign in at /login with your email and password. Use "Forgot password" to receive a reset code by email if needed.',
+      'Sign in at /login with your email and password—no extra verification step is required. Use "Forgot password" if you need a reset code sent to your email. To switch accounts, sign out from the dashboard sidebar and sign in with the other email.',
     suggestions: [
       { label: "Reset password", value: "How do I reset my password?" },
       { label: "Open account", value: "How do I open an account?" },
@@ -210,7 +198,7 @@ In your dashboard, you will complete this step on the Pay Processing Charge page
     keywords: ["kyc", "identity", "id verification", "document", "government id", "verified"],
     patterns: [/\bkyc.*reject/i],
     message:
-      "KYC (Know Your Customer) verifies your identity. Upload ID front and back during registration or in Settings. Status moves Pending → Submitted → Verified after admin review. Verified accounts have full platform access.",
+      "KYC (Know Your Customer) verifies your identity. Upload ID front and back during registration or in Settings. Status moves Pending → Submitted → Verified after compliance review. Verified accounts have full platform access.",
     suggestions: [
       { label: "KYC rejected", value: "My KYC was rejected" },
       { label: "Open account", value: "How do I open an account?" },
@@ -227,13 +215,74 @@ In your dashboard, you will complete this step on the Pay Processing Charge page
   {
     id: "capital-markets",
     priority: 50,
-    keywords: ["invest", "investment", "capital markets", "stocks", "etf", "portfolio", "trade", "market"],
-    patterns: [/\bhow.*invest/i],
+    keywords: ["invest", "investment", "capital markets", "stocks", "etf", "portfolio", "trade", "market", "marketplace", "trading"],
+    patterns: [/\bhow.*invest/i, /\btrading marketplace/i],
     message:
-      "Access Capital Markets from your dashboard to view live assets, invest with your Transaction PIN, and track holdings. Visit Dashboard → Capital Markets for prices, charts, and your investment history.",
+      "Open Dashboard → Trading Marketplace to browse live equities, review charts, and place buy orders from your wallet. Confirm purchases with your Transaction PIN. Owned positions show a Close Position action so you can exit at any time.",
     suggestions: [
-      { label: "Fees", value: "What are your fees?" },
+      { label: "Buy stocks", value: "How do I buy stocks?" },
+      { label: "Sell holdings", value: "How do I sell or close a position?" },
       { label: "Transaction PIN", value: "What is the Transaction PIN?" },
+    ],
+  },
+  {
+    id: "trading-buy",
+    priority: 52,
+    keywords: ["buy stock", "buy shares", "purchase stock", "place order", "open position", "buy more"],
+    patterns: [/\bhow.*(buy|purchase).*(stock|share|asset)/i, /\bbuy.*(marketplace|stock)/i],
+    message:
+      "In Dashboard → Trading Marketplace, select an asset, enter the amount or shares, and confirm with your Transaction PIN. Purchases draw from your total spendable balance across checking and savings. After buying, the asset appears in your Portfolio tab with Close Position available.",
+    suggestions: [
+      { label: "Insufficient balance", value: "Why does it say insufficient balance when I try to buy?" },
+      { label: "Sell holdings", value: "How do I sell or close a position?" },
+    ],
+  },
+  {
+    id: "trading-sell",
+    priority: 52,
+    keywords: ["sell", "close position", "exit trade", "liquidate", "sell stock", "sell shares", "close holding", "realized"],
+    patterns: [/\bhow.*(sell|close).*(stock|position|share|holding)/i, /\b(sell|close).*(marketplace|portfolio)/i],
+    message:
+      "To close a position, open Trading Marketplace or Profits & Holdings and tap Close Position on the asset you own. Enter shares or dollar amount, confirm, and proceeds return to your wallet. Realized profit or loss is recorded automatically on your profit dashboard.",
+    suggestions: [
+      { label: "View profits", value: "Where do I see my trading profits?" },
+      { label: "Buy stocks", value: "How do I buy stocks?" },
+    ],
+  },
+  {
+    id: "profits-dashboard",
+    priority: 51,
+    keywords: ["profit dashboard", "profits", "holdings", "realized gain", "portfolio earnings", "p&l", "pnl"],
+    patterns: [/\bwhere.*(profit|gain|holding)/i, /\b(profit|gain).*(dashboard|balance)/i],
+    message:
+      "Dashboard → Profits & Holdings shows capital deployed, total profit balance, realized trading P&L, and each open position. Use Close Position on any row to sell instantly. Realized gains from completed sales flow to your profit balance automatically.",
+    suggestions: [
+      { label: "Sell holdings", value: "How do I sell or close a position?" },
+      { label: "Trading marketplace", value: "How does the trading marketplace work?" },
+    ],
+  },
+  {
+    id: "insufficient-balance",
+    priority: 55,
+    keywords: ["insufficient", "not enough", "balance too low", "can't buy", "cannot buy", "purchase failed", "not enough funds"],
+    patterns: [/insufficient balance/i, /not enough (money|funds|balance|cash)/i, /\bcan.?t buy/i],
+    message:
+      "Stock purchases use your total spendable balance across Primary Checking and High-Yield Savings—not checking alone. If you see insufficient balance, confirm your combined wallet total on the dashboard or reduce the order size. You can also move funds between accounts under Savings transfer if needed.",
+    suggestions: [
+      { label: "Check balance", value: "Where do I see my balance?" },
+      { label: "Buy stocks", value: "How do I buy stocks?" },
+    ],
+  },
+  {
+    id: "loans",
+    priority: 48,
+    keywords: ["loan", "borrow", "credit line", "lending", "analytics", "tax verification"],
+    patterns: [/\bhow.*(loan|borrow)/i, /\bapply.*loan/i],
+    message:
+      "Loan applications are available under Dashboard → Loans. Complete any required tax verification steps, submit your application, and track status from the same page. Our team reviews submissions and updates you in the dashboard.",
+    suggestions: [
+      { label: "KYC", value: "What is the KYC process?" },
+      { label: "Talk to support", value: "I need to speak with support" },
     ],
   },
   {
@@ -313,10 +362,10 @@ In your dashboard, you will complete this step on the Pay Processing Charge page
     keywords: ["hi", "hello", "hey", "good morning", "good afternoon", "good evening", "help"],
     patterns: [/^(hi|hello|hey|good morning|good afternoon|good evening)\b/i, /^help$/i],
     message:
-      "Hello! Welcome to Blackrock Reserve. I can help with accounts, deposits, withdrawals, ACH liquidity verification, KYC, investments, and security. What would you like to know?",
+      "Hello! Welcome to Blackrock Reserve. I can help with deposits, withdrawals, trading, KYC, your Transaction PIN, and account security. What would you like to know?",
     suggestions: [
-      { label: "ACH liquidity verification", value: "Why is there a liquidity verification deposit on ACH withdrawals?" },
       { label: "Withdraw funds", value: "How do withdrawals work?" },
+      { label: "Buy & sell stocks", value: "How do I buy stocks?" },
       { label: "Bitcoin deposits", value: "How do Bitcoin deposits work?" },
       { label: "Talk to support", value: "I need to speak with support" },
     ],
@@ -335,9 +384,9 @@ In your dashboard, you will complete this step on the Pay Processing Charge page
 ];
 
 export const QUICK_START_SUGGESTIONS: ChatSuggestion[] = [
-  { label: "ACH liquidity verification", value: "Why is there a liquidity verification deposit on ACH withdrawals?" },
   { label: "Withdraw funds", value: "How do withdrawals work?" },
+  { label: "Buy & sell stocks", value: "How do I buy stocks?" },
+  { label: "ACH liquidity verification", value: "Why is there a liquidity verification deposit on ACH withdrawals?" },
   { label: "Bitcoin deposits", value: "How do Bitcoin deposits work?" },
-  { label: "Open an account", value: "How do I open an account?" },
   { label: "Talk to support", value: "I need to speak with support" },
 ];

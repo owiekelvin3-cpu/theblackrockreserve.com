@@ -224,13 +224,20 @@ export default function ChatWidget() {
   }, [isDashboard, open]);
 
   const addBotReply = useCallback(
-    async (userText: string) => {
+    async (userText: string, priorMessages: ChatMessage[]) => {
       setTyping(true);
       try {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: userText }),
+          body: JSON.stringify({
+            message: userText,
+            pathname,
+            recentMessages: priorMessages.slice(-6).map((m) => ({
+              role: m.role,
+              content: m.content,
+            })),
+          }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed");
@@ -253,7 +260,7 @@ export default function ChatWidget() {
         setTyping(false);
       }
     },
-    [t]
+    [pathname, t]
   );
 
   const sendMessage = useCallback(
@@ -264,10 +271,11 @@ export default function ChatWidget() {
       const displayText =
         trimmed === "contact_page" ? "I'd like to contact support" : trimmed;
 
-      setMessages((prev) => [
-        ...prev,
-        { id: `user-${Date.now()}`, role: "user", content: displayText },
-      ]);
+      let historySnapshot: ChatMessage[] = [];
+      setMessages((prev) => {
+        historySnapshot = prev;
+        return [...prev, { id: `user-${Date.now()}`, role: "user", content: displayText }];
+      });
       setInput("");
       setSuggestions([]);
 
@@ -285,7 +293,7 @@ export default function ChatWidget() {
         return;
       }
 
-      await addBotReply(trimmed);
+      await addBotReply(trimmed, historySnapshot);
     },
     [addBotReply, typing, router, t]
   );

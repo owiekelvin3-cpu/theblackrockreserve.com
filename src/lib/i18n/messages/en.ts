@@ -610,8 +610,8 @@ const enBase = {
   chat: {
     assistantName: "Crest Assistant",
     onlineStatus: "Online · Blackrock Reserve",
-    welcomeMessage: "Hi! I'm Crest Assistant, your Blackrock Reserve guide. I can help with accounts, deposits, withdrawals, ACH liquidity verification, KYC, investments, and security. What would you like to know?",
-    placeholder: "Ask about accounts, deposits, KYC...",
+    welcomeMessage: "Hello — I'm Crest Assistant, your Blackrock Reserve concierge. I can guide you through deposits, withdrawals, trading, KYC, security, and your dashboard. What would you like help with?",
+    placeholder: "Ask about withdrawals, trading, deposits, KYC…",
     sendMessage: "Send message",
     minimizeChat: "Minimize chat",
     closeChat: "Close chat",
@@ -626,6 +626,7 @@ const enBase = {
     quickOpenAccount: "Open an account",
     quickBitcoin: "Bitcoin deposits",
     quickWithdraw: "Withdraw funds",
+    quickTrading: "Buy & sell stocks",
     quickKyc: "KYC verification",
     quickSupport: "Talk to support",
   },

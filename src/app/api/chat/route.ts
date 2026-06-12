@@ -4,6 +4,16 @@ import { getChatReply } from "@/lib/chatbot";
 
 const chatSchema = z.object({
   message: z.string().min(1, "Message is required").max(1000),
+  pathname: z.string().max(200).optional(),
+  recentMessages: z
+    .array(
+      z.object({
+        role: z.enum(["user", "bot"]),
+        content: z.string().max(2000),
+      })
+    )
+    .max(8)
+    .optional(),
 });
 
 export async function POST(req: Request) {
@@ -18,7 +28,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const reply = getChatReply(parsed.data.message);
+    const reply = getChatReply(parsed.data.message, {
+      pathname: parsed.data.pathname,
+      recentMessages: parsed.data.recentMessages,
+    });
     return NextResponse.json(reply);
   } catch (error) {
     console.error("Chat error:", error);
