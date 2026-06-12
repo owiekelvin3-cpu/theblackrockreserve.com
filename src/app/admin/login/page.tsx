@@ -105,10 +105,13 @@ function LoginForm() {
           </div>
         )}
 
-        {(error === "not_admin" || formError) && (
+        {(error === "not_admin" || error === "session_timeout" || formError) && (
           <div className="flex items-center gap-2 p-3 rounded-xl bg-accent-red/10 border border-accent-red/20 text-accent-red text-sm mb-6">
             <AlertCircle size={16} />
-            {formError || t("admin.notAdminAccess")}
+            {formError ||
+              (error === "session_timeout"
+                ? "Your session could not be verified. Please sign in again."
+                : t("admin.notAdminAccess"))}
           </div>
         )}
 

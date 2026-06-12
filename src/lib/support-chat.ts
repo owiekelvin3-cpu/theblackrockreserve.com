@@ -111,7 +111,8 @@ export async function sendUserSupportMessage(userId: string, content: string) {
 }
 
 export async function getAdminSupportConversations() {
-  const conversations = await prisma.supportConversation.findMany({
+  try {
+    const conversations = await prisma.supportConversation.findMany({
     where: {
       messages: { some: { role: "USER" } },
     },
@@ -139,6 +140,10 @@ export async function getAdminSupportConversations() {
     lastMessageAt: (c.messages[0]?.createdAt ?? c.updatedAt).toISOString(),
     messageCount: c._count.messages,
   }));
+  } catch (error) {
+    console.error("Support conversations unavailable:", error);
+    return [];
+  }
 }
 
 export async function getAdminSupportConversation(id: string) {

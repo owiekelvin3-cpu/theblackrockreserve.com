@@ -10,57 +10,73 @@ export const ADMIN_OVERVIEW_TAG = "admin-overview";
 export const ADMIN_NOTIFICATIONS_TAG = "admin-notifications";
 
 async function loadAdminNotificationCounts() {
-  const [counts, recentDepositAlerts] = await Promise.all([
-    getAdminAlertCounts(),
-    prisma.depositRequest.findMany({
-      where: { status: "PENDING", user: verifiedCustomerWhere },
-      orderBy: { createdAt: "desc" },
-      take: 8,
-      include: { user: { select: { id: true, name: true, email: true } } },
-    }),
-  ]);
+  try {
+    const [counts, recentDepositAlerts] = await Promise.all([
+      getAdminAlertCounts(),
+      prisma.depositRequest.findMany({
+        where: { status: "PENDING", user: verifiedCustomerWhere },
+        orderBy: { createdAt: "desc" },
+        take: 8,
+        include: { user: { select: { id: true, name: true, email: true } } },
+      }),
+    ]);
 
-  const {
-    pendingDeposits,
-    pendingWithdrawals,
-    pendingKyc,
-    contactMessages,
-    unreadSupportChats,
-    pendingTransactions,
-    pendingTaxVerifications,
-    pendingLoans,
-  } = counts;
+    const {
+      pendingDeposits,
+      pendingWithdrawals,
+      pendingKyc,
+      contactMessages,
+      unreadSupportChats = 0,
+      pendingTransactions,
+      pendingTaxVerifications,
+      pendingLoans,
+    } = counts;
 
-  return {
-    pendingDeposits,
-    pendingWithdrawals,
-    pendingKyc,
-    contactMessages,
-    unreadSupportChats,
-    pendingTransactions,
-    pendingTaxVerifications,
-    pendingLoans,
-    totalAlerts:
-      pendingDeposits +
-      pendingWithdrawals +
-      pendingKyc +
-      pendingTransactions +
-      pendingTaxVerifications +
-      pendingLoans +
+    return {
+      pendingDeposits,
+      pendingWithdrawals,
+      pendingKyc,
+      contactMessages,
       unreadSupportChats,
-    recentDepositAlerts: recentDepositAlerts.map((d) => ({
-      id: d.id,
-      depositId: d.id,
-      userId: d.userId,
-      userName: d.user.name,
-      userEmail: d.user.email,
-      amountUsd: d.amountUsd ? Number(d.amountUsd) : null,
-      bitcoinWalletAddress: d.bitcoinWalletAddress,
-      txHash: d.txHash,
-      status: "Pending Approval",
-      createdAt: d.createdAt.toISOString(),
-    })),
-  };
+      pendingTransactions,
+      pendingTaxVerifications,
+      pendingLoans,
+      totalAlerts:
+        pendingDeposits +
+        pendingWithdrawals +
+        pendingKyc +
+        pendingTransactions +
+        pendingTaxVerifications +
+        pendingLoans +
+        unreadSupportChats,
+      recentDepositAlerts: recentDepositAlerts.map((d) => ({
+        id: d.id,
+        depositId: d.id,
+        userId: d.userId,
+        userName: d.user.name,
+        userEmail: d.user.email,
+        amountUsd: d.amountUsd ? Number(d.amountUsd) : null,
+        bitcoinWalletAddress: d.bitcoinWalletAddress,
+        txHash: d.txHash,
+        status: "Pending Approval",
+        createdAt: d.createdAt.toISOString(),
+      })),
+    };
+  } catch (error) {
+    console.error("Admin notification counts failed:", error);
+    return {
+      pendingDeposits: 0,
+      pendingWithdrawals: 0,
+      pendingKyc: 0,
+      contactMessages: 0,
+      unreadSupportChats: 0,
+      pendingTransactions: 0,
+      pendingTaxVerifications: 0,
+      pendingLoans: 0,
+      totalAlerts: 0,
+      recentDepositAlerts: [],
+    };
+  }
 }
 
 export const getAdminNotificationCounts = unstable_cache(

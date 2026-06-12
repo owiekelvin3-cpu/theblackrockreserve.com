@@ -48,7 +48,7 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid credentials");
         }
 
-        if (user.role === "ADMIN" && process.env.NODE_ENV === "production") {
+        if (user.role === "ADMIN" && process.env.ADMIN_STRICT_EMAIL === "true") {
           const allowedAdmin = process.env.ADMIN_EMAIL?.trim().toLowerCase();
           if (allowedAdmin && user.email.toLowerCase() !== allowedAdmin) {
             throw new Error("Invalid credentials");

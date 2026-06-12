@@ -3,6 +3,15 @@ import { prisma } from "@/lib/prisma";
 /** SQL fragment — registered customers with verified email (excludes admin & incomplete signups) */
 const VC = `role = 'USER' AND "emailVerified" IS NOT NULL`;
 
+async function countUnreadSupportChats(): Promise<number> {
+  try {
+    return await prisma.supportConversation.count({ where: { adminUnread: true } });
+  } catch (error) {
+    console.error("SupportConversation count unavailable:", error);
+    return 0;
+  }
+}
+
 export type AdminStatsRow = {
   totalUsers: number;
   pendingKyc: number;
@@ -51,10 +60,9 @@ export async function getAdminStatsCounts(): Promise<AdminStatsRow> {
       (SELECT COUNT(*)::int FROM "WithdrawalRequest" wr INNER JOIN "User" u ON wr."userId" = u.id WHERE u.${VC}) AS "totalWithdrawalRequests",
       (SELECT COUNT(*)::int FROM "Transaction" t INNER JOIN "User" u ON t."userId" = u.id WHERE t.type = 'WITHDRAWAL' AND u.${VC}) AS "withdrawalCount",
       (SELECT COUNT(*)::int FROM "Transaction" t INNER JOIN "User" u ON t."userId" = u.id WHERE t.type = 'DEPOSIT' AND u.${VC}) AS "depositTxCount",
-      (SELECT COUNT(*)::int FROM "ContactMessage") AS "contactMessages",
-      (SELECT COUNT(*)::int FROM "SupportConversation" WHERE "adminUnread" = true) AS "unreadSupportChats"
+      (SELECT COUNT(*)::int FROM "ContactMessage") AS "contactMessages"
   `);
-  return row;
+  return { ...row, unreadSupportChats: await countUnreadSupportChats() };
 }
 
 /** One round-trip for sidebar / notification badge counts */
@@ -71,10 +79,9 @@ export async function getAdminAlertCounts(): Promise<AdminAlertCounts> {
       )) AS "pendingWithdrawals",
       (SELECT COUNT(*)::int FROM "User" WHERE ${VC} AND "kycStatus" IN ('PENDING', 'SUBMITTED')) AS "pendingKyc",
       (SELECT COUNT(*)::int FROM "ContactMessage") AS "contactMessages",
-      (SELECT COUNT(*)::int FROM "SupportConversation" WHERE "adminUnread" = true) AS "unreadSupportChats",
       (SELECT COUNT(*)::int FROM "Transaction" t INNER JOIN "User" u ON t."userId" = u.id WHERE t.status = 'PENDING' AND u.${VC}) AS "pendingTransactions",
       (SELECT COUNT(*)::int FROM "TaxRefundVerification" tr INNER JOIN "User" u ON tr."userId" = u.id WHERE tr.status IN ('PENDING', 'DOCUMENTS_REQUESTED') AND u.${VC}) AS "pendingTaxVerifications",
       (SELECT COUNT(*)::int FROM "LoanApplication" la INNER JOIN "User" u ON la."userId" = u.id WHERE la.status IN ('SUBMITTED', 'UNDER_REVIEW', 'APPROVED') AND u.${VC}) AS "pendingLoans"
   `);
-  return row;
+  return { ...row, unreadSupportChats: await countUnreadSupportChats() };
 }

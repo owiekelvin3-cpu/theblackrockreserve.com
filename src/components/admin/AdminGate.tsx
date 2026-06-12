@@ -24,6 +24,14 @@ export default function AdminGate({ children }: AdminGateProps) {
     }
   }, [status, session, router]);
 
+  useEffect(() => {
+    if (status !== "loading") return;
+    const timeout = window.setTimeout(() => {
+      router.replace("/admin/login?error=session_timeout");
+    }, 12_000);
+    return () => window.clearTimeout(timeout);
+  }, [status, router]);
+
   if (status === "loading") {
     return (
       <div className="lg:pl-[240px] p-4 sm:p-6 lg:p-8 pt-16 lg:pt-8 max-w-[1400px] mx-auto w-full space-y-4">
