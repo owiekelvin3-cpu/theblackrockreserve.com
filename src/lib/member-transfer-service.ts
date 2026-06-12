@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { reduceProfitBalanceOnSpend } from "@/lib/spendable-balance";
 import { ensureCheckingAndSavingsAccounts } from "@/lib/savings-service";
 import { getAvailableBalance } from "@/lib/withdrawal-balance";
 import { createUserNotification } from "@/lib/user-notifications";
@@ -87,6 +88,8 @@ export async function transferToMember(
       where: { id: fromAccount.id },
       data: { balance: roundMoney(fromBalance - amount) },
     });
+
+    await reduceProfitBalanceOnSpend(tx, senderId, amount);
 
     await tx.bankAccount.update({
       where: { id: toAccount.id },

@@ -1421,17 +1421,59 @@
   padding: 1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom, 0px));
 }
 
-.tx-member-transfer-backdrop {
+html.tx-member-transfer-scroll-lock {
+  overflow: hidden !important;
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+.tx-member-transfer-page {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
   align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
   padding: max(0.75rem, env(safe-area-inset-top, 0px)) 0.75rem max(0.75rem, env(safe-area-inset-bottom, 0px));
+  background: rgba(4, 6, 10, 0.88);
+  isolation: isolate;
+}
+
+.tx-member-transfer-page-blur {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: rgba(6, 8, 12, 0.45);
+  backdrop-filter: blur(24px) saturate(1.1);
+  -webkit-backdrop-filter: blur(24px) saturate(1.1);
+  pointer-events: none;
+}
+
+[data-theme="light"] .tx-member-transfer-page {
+  background: rgba(15, 20, 25, 0.82);
+}
+
+[data-theme="light"] .tx-member-transfer-page-blur {
+  background: rgba(255, 255, 255, 0.35);
 }
 
 .tx-member-transfer-receipt {
+  position: relative;
+  z-index: 1;
   max-width: 26rem;
-  max-height: none;
+  width: 100%;
+  max-height: calc(100dvh - 1.5rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
   overflow: hidden;
   padding: 0.875rem 1rem calc(0.875rem + env(safe-area-inset-bottom, 0px));
   border-radius: 1.125rem;
+  flex-shrink: 0;
+  touch-action: manipulation;
 }
 
 @media (min-width: 640px) {

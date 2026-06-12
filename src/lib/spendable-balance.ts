@@ -5,6 +5,38 @@ function roundMoney(n: number) {
   return Math.round(n * 100) / 100;
 }
 
+/** Profit is credited to the wallet — reduce it when the user spends, up to the spend amount. */
+export async function reduceProfitBalanceOnSpend(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  amount: number
+): Promise<{ profitBefore: number; profitAfter: number; reduced: number }> {
+  const spendAmount = roundMoney(amount);
+  if (spendAmount <= 0) {
+    return { profitBefore: 0, profitAfter: 0, reduced: 0 };
+  }
+
+  const user = await tx.user.findUnique({
+    where: { id: userId },
+    select: { profitBalance: true },
+  });
+  if (!user) throw new Error("User not found");
+
+  const profitBefore = roundMoney(Number(user.profitBalance));
+  const reduced = roundMoney(Math.min(profitBefore, spendAmount));
+  if (reduced <= 0) {
+    return { profitBefore, profitAfter: profitBefore, reduced: 0 };
+  }
+
+  const profitAfter = roundMoney(profitBefore - reduced);
+  await tx.user.update({
+    where: { id: userId },
+    data: { profitBalance: profitAfter },
+  });
+
+  return { profitBefore, profitAfter, reduced };
+}
+
 function accountDebitPriority(
   type: string,
   id: string,
@@ -81,6 +113,8 @@ export async function deductFromUserAccounts(
     sorted[0]?.id;
 
   if (!primaryAccountId) throw new Error("No account available for investment");
+
+  await reduceProfitBalanceOnSpend(tx, userId, amountDue);
 
   return { debits, primaryAccountId };
 }
