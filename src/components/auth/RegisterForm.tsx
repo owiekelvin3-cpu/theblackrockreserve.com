@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Upload, Check, Mail, RefreshCw } from "lucide-react";
+import { Upload, Check } from "lucide-react";
 import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
@@ -17,8 +17,6 @@ import { useValidationSchemas } from "@/lib/i18n/use-validation-schemas";
 type Step1Data = RegisterStep1Input;
 type Step2Data = RegisterStep2Input;
 
-const RESEND_COOLDOWN = 60;
-
 export default function RegisterForm() {
   const { t } = useI18n();
   const schemas = useValidationSchemas();
@@ -26,23 +24,13 @@ export default function RegisterForm() {
   const [step1Data, setStep1Data] = useState<Step1Data | null>(null);
   const [step2Data, setStep2Data] = useState<Step2Data | null>(null);
   const [kycFiles, setKycFiles] = useState<{ front?: string; back?: string }>({});
-  const [otp, setOtp] = useState("");
-  const [showOtp, setShowOtp] = useState(false);
-  const [devOtp, setDevOtp] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(0);
 
   const step1Form = useForm<Step1Data>({ resolver: zodResolver(schemas.registerStep1Schema) });
   const step2Form = useForm<Step2Data>({
     resolver: zodResolver(schemas.registerStep2Schema),
     defaultValues: { accountType: "PERSONAL" },
   });
-
-  useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const timer = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [resendCooldown]);
 
   const handleStep1 = (data: Step1Data) => {
     setStep1Data(data);
@@ -83,50 +71,6 @@ export default function RegisterForm() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || t("auth.registrationFailed"));
 
-      setShowOtp(true);
-      setResendCooldown(RESEND_COOLDOWN);
-      if (data.devOtp) setDevOtp(data.devOtp);
-      toast.success(data.message || t("auth.accountSaved"));
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("auth.registrationFailed"));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleResendOtp = useCallback(async () => {
-    if (!step1Data?.email || resendCooldown > 0) return;
-
-    try {
-      const res = await fetch("/api/auth/resend-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: step1Data.email, purpose: "verify" }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || t("auth.resendFailed"));
-      if (data.devOtp) setDevOtp(data.devOtp);
-      setResendCooldown(RESEND_COOLDOWN);
-      toast.success(t("auth.newCodeSent"));
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("auth.resendFailed"));
-    }
-  }, [step1Data?.email, resendCooldown, t]);
-
-  const handleVerifyOtp = async () => {
-    if (!step1Data || !step2Data) return;
-    setIsLoading(true);
-
-    try {
-      const res = await fetch("/api/auth/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: step1Data.email, otp }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || t("auth.verificationFailed"));
-
       const result = await signIn("credentials", {
         email: step1Data.email,
         password: step2Data.password,
@@ -134,65 +78,19 @@ export default function RegisterForm() {
       });
 
       if (result?.error) {
-        toast.success(t("auth.emailVerifiedSignIn"));
+        toast.success(t("auth.accountSaved"));
         window.location.href = "/login";
         return;
       }
 
+      toast.success(data.message || t("auth.accountSaved"));
       window.location.href = "/dashboard";
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("auth.verificationFailed"));
+      toast.error(err instanceof Error ? err.message : t("auth.registrationFailed"));
     } finally {
       setIsLoading(false);
     }
   };
-
-  if (showOtp) {
-    return (
-      <Card>
-        <div className="flex justify-center mb-4">
-          <div className="h-14 w-14 rounded-2xl bg-accent-brand/15 border border-accent-brand/30 flex items-center justify-center">
-            <Mail size={28} className="text-accent-brand" />
-          </div>
-        </div>
-        <h1 className="font-display text-2xl font-bold text-text-primary text-center">{t("auth.verifyEmailTitle")}</h1>
-        <p className="text-sm text-text-secondary text-center mt-2">
-          {t("auth.verifyEmailSubtitle", { email: step1Data?.email ?? "" })}
-        </p>
-        <p className="text-xs text-text-muted text-center mt-1">{t("auth.checkInbox")}</p>
-        {devOtp && (
-          <div className="mt-4 p-3 rounded-xl bg-accent-brand/10 border border-accent-brand/30 text-center">
-            <p className="text-xs text-text-secondary mb-1">{t("auth.devOtpLabel")}</p>
-            <p className="text-2xl font-mono font-bold text-accent-brand tracking-widest">{devOtp}</p>
-          </div>
-        )}
-        <div className="mt-8 space-y-4">
-          <Input
-            label={t("auth.verificationCode")}
-            value={otp}
-            onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-            placeholder="000000"
-            maxLength={6}
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            className="text-center text-2xl tracking-[0.5em] font-mono"
-          />
-          <Button onClick={handleVerifyOtp} isLoading={isLoading} className="w-full" disabled={otp.length !== 6}>
-            {t("auth.verifyContinue")}
-          </Button>
-          <button
-            type="button"
-            onClick={handleResendOtp}
-            disabled={resendCooldown > 0}
-            className="w-full flex items-center justify-center gap-2 text-sm text-text-secondary hover:text-accent-gold transition-colors disabled:opacity-50 disabled:cursor-not-allowed py-2"
-          >
-            <RefreshCw size={14} />
-            {resendCooldown > 0 ? t("auth.resendCodeIn", { seconds: resendCooldown }) : t("auth.resendCode")}
-          </button>
-        </div>
-      </Card>
-    );
-  }
 
   return (
     <Card>

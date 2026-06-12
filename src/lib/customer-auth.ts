@@ -16,5 +16,5 @@ export function isVerifiedCustomerToken(token: {
   role?: string;
   emailVerified?: boolean;
 } | null) {
-  return Boolean(token?.sub && token.role === "USER" && token.emailVerified);
+  return Boolean(token?.sub && token.role === "USER");
 }

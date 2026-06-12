@@ -26,15 +26,11 @@ export default function DashboardAuthGuard({ children }: { children: React.React
       return;
     }
 
-    if (!session?.user?.emailVerified) {
-      router.replace(`${loginUrl}&error=verify_email`);
-    }
   }, [status, session, router, pathname]);
 
   const allowed =
     status === "authenticated" &&
-    session?.user?.role === "USER" &&
-    session.user.emailVerified;
+    session?.user?.role === "USER";
 
   if (status === "loading" || !allowed) {
     return (

@@ -2,17 +2,17 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { registerApiSchema } from "@/lib/validations";
-import { generateOtp, sendEmail, isEmailConfigured } from "@/lib/email";
-import { verificationEmail } from "@/lib/email-templates";
+import { sendEmail } from "@/lib/email";
+import { welcomeEmail } from "@/lib/email-templates";
+import { parseLocaleCode } from "@/lib/i18n/locales";
 import { getServerLocale } from "@/lib/i18n/server";
 import { getClientIp } from "@/lib/admin-audit";
 import { captureUserLocationAsync } from "@/lib/user-location";
 
-async function deliverVerificationEmail(name: string, email: string, otp: string) {
-  const locale = await getServerLocale();
-  const mail = verificationEmail(name, otp, locale);
-  const result = await sendEmail({ to: email, ...mail });
-  return result;
+async function deliverWelcomeEmail(name: string, email: string, preferredLocale: string | null) {
+  const locale = parseLocaleCode(preferredLocale) ?? (await getServerLocale());
+  const mail = welcomeEmail(name, locale);
+  return sendEmail({ to: email, ...mail });
 }
 
 export async function POST(req: Request) {
@@ -31,9 +31,8 @@ export async function POST(req: Request) {
       parsed.data;
 
     const hashedPassword = await bcrypt.hash(password, 12);
-    const otp = generateOtp();
-    const otpExpires = new Date(Date.now() + 15 * 60 * 1000);
     const preferredLocale = await getServerLocale();
+    const verifiedAt = new Date();
 
     const existing = await prisma.user.findUnique({
       where: { email },
@@ -59,8 +58,9 @@ export async function POST(req: Request) {
           kycIdFront: kycIdFront || null,
           kycIdBack: kycIdBack || null,
           kycStatus: kycIdFront ? "SUBMITTED" : "PENDING",
-          otpCode: otp,
-          otpExpires,
+          emailVerified: verifiedAt,
+          otpCode: null,
+          otpExpires: null,
           preferredLocale,
         },
       });
@@ -89,8 +89,7 @@ export async function POST(req: Request) {
             kycIdFront: kycIdFront || null,
             kycIdBack: kycIdBack || null,
             kycStatus: kycIdFront ? "SUBMITTED" : "PENDING",
-            otpCode: otp,
-            otpExpires,
+            emailVerified: verifiedAt,
             preferredLocale,
           },
         });
@@ -109,30 +108,15 @@ export async function POST(req: Request) {
 
     captureUserLocationAsync(userId, getClientIp(req), { isSignup: true });
 
-    let emailSent = false;
-    let devOtp: string | undefined;
-
     try {
-      const result = await deliverVerificationEmail(fullName, email, otp);
-      emailSent = result.sent;
-      if (result.dev) devOtp = otp;
+      await deliverWelcomeEmail(fullName, email, preferredLocale);
     } catch (err) {
-      console.error("Verification email failed:", err);
-      if (process.env.NODE_ENV === "development") {
-        console.log(`[DEV] OTP for ${email}: ${otp}`);
-        devOtp = otp;
-        emailSent = false;
-      }
+      console.error("Welcome email failed:", err);
     }
 
     return NextResponse.json({
-      message: emailSent
-        ? "Account saved. Check your email for a verification code."
-        : "Account saved. Use the verification code below to activate your account.",
+      message: "Account created successfully.",
       userId,
-      emailSent,
-      ...(devOtp && { devOtp }),
-      ...(!isEmailConfigured() && process.env.NODE_ENV === "development" && !devOtp && { devOtp: otp }),
     });
   } catch (error) {
     console.error("Registration error:", error);

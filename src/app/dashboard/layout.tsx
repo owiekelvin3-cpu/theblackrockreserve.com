@@ -21,9 +21,5 @@ export default async function DashboardLayout({ children }: { children: React.Re
     redirect("/admin");
   }
 
-  if (!session.user.emailVerified) {
-    redirect("/login?error=verify_email&callbackUrl=/dashboard");
-  }
-
   return <DashboardShell session={session}>{children}</DashboardShell>;
 }

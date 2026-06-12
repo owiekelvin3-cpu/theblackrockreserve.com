@@ -15,11 +15,7 @@ function dashboardDeniedResponse(
   }
   const loginUrl = new URL("/login", request.url);
   loginUrl.searchParams.set("callbackUrl", request.nextUrl.pathname);
-  if (!token?.sub) {
-    loginUrl.searchParams.set("error", "sign_in_required");
-  } else {
-    loginUrl.searchParams.set("error", "verify_email");
-  }
+  loginUrl.searchParams.set("error", "sign_in_required");
   return NextResponse.redirect(loginUrl);
 }
 

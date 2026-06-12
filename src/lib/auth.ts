@@ -55,12 +55,15 @@ export const authOptions: NextAuthOptions = {
           }
         }
 
-        if (!user.emailVerified) {
-          throw new Error("Please verify your email before signing in.");
-        }
-
         if (user.status === "SUSPENDED") {
           throw new Error("Your account has been suspended. Contact support.");
+        }
+
+        if (!user.emailVerified) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { emailVerified: new Date(), otpCode: null, otpExpires: null },
+          });
         }
 
         return {
@@ -68,7 +71,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
-          emailVerified: !!user.emailVerified,
+          emailVerified: true,
         };
       },
     }),
