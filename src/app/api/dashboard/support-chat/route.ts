@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSessionUserId, unauthorizedResponse } from "@/lib/api-auth";
+import { invalidateAdminCaches } from "@/lib/admin-cache";
 import {
   getUserSupportConversation,
   markSupportRepliesRead,
@@ -42,6 +43,7 @@ export async function POST(req: Request) {
     }
 
     const conversation = await sendUserSupportMessage(userId, parsed.data.content);
+    invalidateAdminCaches();
     return NextResponse.json({ conversation });
   } catch (error) {
     console.error("Support chat POST error:", error);

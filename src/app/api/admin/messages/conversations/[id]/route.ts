@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminSession, forbiddenResponse } from "@/lib/api-auth";
+import { invalidateAdminCaches } from "@/lib/admin-cache";
 import { logAdminAction, getClientIp } from "@/lib/admin-audit";
 import { createUserNotification, sendUserNotificationEmail } from "@/lib/user-notifications";
 import {
@@ -72,6 +73,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       conversation?.user?.id,
       getClientIp(req)
     );
+
+    invalidateAdminCaches();
 
     return NextResponse.json({ conversation });
   } catch (error) {

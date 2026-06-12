@@ -8,11 +8,30 @@ export async function GET() {
   if (!session) return forbiddenResponse();
 
   try {
-    const [messages, conversations] = await Promise.all([
+    const [messagesResult, conversationsResult] = await Promise.allSettled([
       getAdminMessages(),
       getAdminSupportConversations(),
     ]);
-    return NextResponse.json({ messages, conversations });
+
+    if (messagesResult.status === "rejected") {
+      console.error("Admin contact messages error:", messagesResult.reason);
+    }
+    if (conversationsResult.status === "rejected") {
+      console.error("Admin support conversations error:", conversationsResult.reason);
+    }
+
+    if (messagesResult.status === "rejected" && conversationsResult.status === "rejected") {
+      return NextResponse.json({ error: "Failed to load messages" }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      messages: messagesResult.status === "fulfilled" ? messagesResult.value : [],
+      conversations: conversationsResult.status === "fulfilled" ? conversationsResult.value : [],
+      partialError:
+        messagesResult.status === "rejected" || conversationsResult.status === "rejected"
+          ? "Some message data could not be loaded. Try refreshing."
+          : undefined,
+    });
   } catch (error) {
     console.error("Admin messages error:", error);
     return NextResponse.json({ error: "Failed to load messages" }, { status: 500 });

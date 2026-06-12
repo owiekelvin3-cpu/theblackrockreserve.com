@@ -112,10 +112,14 @@ export async function sendUserSupportMessage(userId: string, content: string) {
 
 export async function getAdminSupportConversations() {
   const conversations = await prisma.supportConversation.findMany({
+    where: {
+      messages: { some: { role: "USER" } },
+    },
     orderBy: { updatedAt: "desc" },
     include: {
       user: { select: { id: true, name: true, email: true } },
       messages: {
+        where: { role: { in: ["USER", "ADMIN"] } },
         orderBy: { createdAt: "desc" },
         take: 1,
         select: { content: true, createdAt: true, role: true },

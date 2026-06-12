@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Mail, MessageSquare, Send, Trash2, User } from "lucide-react";
 import { toast } from "sonner";
+import Skeleton from "@/components/ui/Skeleton";
 import { AdminPageHeader } from "@/components/admin/AdminUi";
 import AdminFetchState from "@/components/admin/AdminFetchState";
 import { useAdminFetch } from "@/hooks/use-admin-fetch";
@@ -45,11 +46,17 @@ interface ConversationDetail {
 
 type Tab = "chat" | "contact";
 
+type MessagesPayload = {
+  messages: ContactRow[];
+  conversations: ConversationRow[];
+  partialError?: string;
+};
+
 export default function AdminMessagesPage() {
-  const { data, error, loading, refresh, lastUpdated } = useAdminFetch<{
-    messages: ContactRow[];
-    conversations: ConversationRow[];
-  }>("/api/admin/messages");
+  const { data, error, loading, refresh, lastUpdated } = useAdminFetch<MessagesPayload>(
+    "/api/admin/messages",
+    { pollMs: 30_000 }
+  );
   const [tab, setTab] = useState<Tab>("chat");
   const [selectedContact, setSelectedContact] = useState<ContactRow | null>(null);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
@@ -62,6 +69,21 @@ export default function AdminMessagesPage() {
 
   const contacts = useMemo(() => data?.messages ?? [], [data?.messages]);
   const conversations = useMemo(() => data?.conversations ?? [], [data?.conversations]);
+
+  useEffect(() => {
+    if (data?.partialError) {
+      toast.error(data.partialError, { id: "admin-messages-partial" });
+    }
+  }, [data?.partialError]);
+
+  useEffect(() => {
+    if (loading) return;
+    if (tab === "chat" && conversations.length === 0 && contacts.length > 0) {
+      setTab("contact");
+    } else if (tab === "contact" && contacts.length === 0 && conversations.length > 0) {
+      setTab("chat");
+    }
+  }, [loading, tab, conversations.length, contacts.length]);
 
   useEffect(() => {
     if (contacts.length === 0) {
@@ -84,31 +106,44 @@ export default function AdminMessagesPage() {
     }
   }, [conversations, selectedChatId]);
 
-  const loadThread = useCallback(async (id: string) => {
-    setThreadLoading(true);
-    try {
-      const res = await fetch(`/api/admin/messages/conversations/${id}`, {
-        credentials: "include",
-        cache: "no-store",
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Failed to load conversation");
-      setThread(json.conversation);
-      refresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to load conversation");
-      setThread(null);
-    } finally {
-      setThreadLoading(false);
-    }
-  }, [refresh]);
+  const loadThread = useCallback(
+    async (id: string, options?: { silent?: boolean; refreshList?: boolean }) => {
+      const silent = options?.silent ?? false;
+      if (!silent) setThreadLoading(true);
+
+      try {
+        const res = await fetch(`/api/admin/messages/conversations/${id}`, {
+          credentials: "include",
+          cache: "no-store",
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Failed to load conversation");
+        setThread(json.conversation);
+        if (options?.refreshList) refresh();
+      } catch (err) {
+        if (!silent) {
+          toast.error(err instanceof Error ? err.message : "Failed to load conversation");
+          setThread(null);
+        }
+      } finally {
+        if (!silent) setThreadLoading(false);
+      }
+    },
+    [refresh]
+  );
 
   useEffect(() => {
     if (tab !== "chat" || !selectedChatId) return;
-    loadThread(selectedChatId);
+
+    setThread((current) => (current?.id === selectedChatId ? current : null));
+    loadThread(selectedChatId, { refreshList: true });
+
     const id = window.setInterval(() => {
-      if (document.visibilityState === "visible") loadThread(selectedChatId);
-    }, 15000);
+      if (document.visibilityState === "visible") {
+        loadThread(selectedChatId, { silent: true });
+      }
+    }, 15_000);
+
     return () => window.clearInterval(id);
   }, [tab, selectedChatId, loadThread]);
 
@@ -156,6 +191,7 @@ export default function AdminMessagesPage() {
   };
 
   const unreadChats = conversations.filter((c) => c.adminUnread).length;
+  const threadReady = thread?.id === selectedChatId;
 
   return (
     <div>
@@ -208,60 +244,81 @@ export default function AdminMessagesPage() {
         isEmpty={
           !loading &&
           !error &&
-          (tab === "chat" ? conversations.length === 0 : contacts.length === 0)
+          conversations.length === 0 &&
+          contacts.length === 0
         }
-        emptyMessage={
-          tab === "chat"
-            ? "No support chat conversations yet"
-            : "No contact form messages in the database"
-        }
+        emptyMessage="No messages yet — support chats and contact form submissions will appear here"
       >
         {tab === "chat" ? (
-          <div className="grid lg:grid-cols-5 gap-4 h-[calc(100vh-280px)] min-h-[420px]">
-            <div className="lg:col-span-2 admin-card overflow-y-auto">
-              {conversations.map((c) => (
+          conversations.length === 0 ? (
+            <div className="admin-card p-10 text-center text-[var(--admin-muted)]">
+              <p>No support chat conversations yet.</p>
+              <p className="text-xs mt-2">
+                When a client switches to Human Support in their dashboard and sends a message, it will appear here.
+              </p>
+              {contacts.length > 0 && (
                 <button
-                  key={c.id}
-                  onClick={() => setSelectedChatId(c.id)}
-                  className={`w-full text-left p-4 border-b border-[var(--admin-border)]/50 hover:bg-white/[0.02] transition-colors ${
-                    selectedChatId === c.id ? "bg-accent-brand/10 border-l-2 border-l-accent-brand" : ""
-                  }`}
+                  type="button"
+                  onClick={() => setTab("contact")}
+                  className="admin-btn-ghost text-xs px-4 py-2 mt-4"
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-medium text-white truncate">{c.userName}</p>
-                    {c.adminUnread && (
-                      <span className="shrink-0 h-2 w-2 rounded-full bg-accent-brand" />
-                    )}
-                  </div>
-                  <p className="text-xs text-[var(--admin-muted)] mt-0.5 truncate">{c.userEmail}</p>
-                  <p className="text-xs text-[var(--admin-muted)] mt-2 line-clamp-2">{c.lastMessage}</p>
-                  <p className="text-[10px] text-[var(--admin-muted)] mt-1">
-                    {new Date(c.lastMessageAt).toLocaleString()}
-                  </p>
+                  View {contacts.length} contact form message{contacts.length === 1 ? "" : "s"}
                 </button>
-              ))}
+              )}
             </div>
+          ) : (
+            <div className="grid lg:grid-cols-5 gap-4 h-[calc(100vh-280px)] min-h-[420px]">
+              <div className="lg:col-span-2 admin-card overflow-y-auto">
+                {conversations.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setSelectedChatId(c.id)}
+                    className={`w-full text-left p-4 border-b border-[var(--admin-border)]/50 hover:bg-white/[0.02] transition-colors ${
+                      selectedChatId === c.id ? "bg-accent-brand/10 border-l-2 border-l-accent-brand" : ""
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium text-white truncate">{c.userName}</p>
+                      {c.adminUnread && (
+                        <span className="shrink-0 h-2 w-2 rounded-full bg-accent-brand" />
+                      )}
+                    </div>
+                    <p className="text-xs text-[var(--admin-muted)] mt-0.5 truncate">{c.userEmail}</p>
+                    <p className="text-xs text-[var(--admin-muted)] mt-2 line-clamp-2">{c.lastMessage}</p>
+                    <p className="text-[10px] text-[var(--admin-muted)] mt-1">
+                      {new Date(c.lastMessageAt).toLocaleString()}
+                    </p>
+                  </button>
+                ))}
+              </div>
 
-            <div className="lg:col-span-3 admin-card flex flex-col min-h-0">
-              {selectedChatId && thread ? (
-                <>
-                  <div className="p-4 border-b border-[var(--admin-border)] shrink-0">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-accent-brand/20 flex items-center justify-center">
-                        <User size={18} className="text-accent-brand" />
-                      </div>
-                      <div>
-                        <h2 className="font-semibold text-white">{thread.user.name}</h2>
-                        <p className="text-sm text-[var(--admin-muted)]">{thread.user.email}</p>
+              <div className="lg:col-span-3 admin-card flex flex-col min-h-0">
+                {!selectedChatId ? (
+                  <p className="p-6 text-[var(--admin-muted)]">Select a support conversation</p>
+                ) : !threadReady ? (
+                  <div className="p-6 space-y-3">
+                    <Skeleton className="h-10 w-48 rounded-xl" />
+                    <Skeleton className="h-16 w-full rounded-2xl" />
+                    <Skeleton className="h-16 w-3/4 rounded-2xl ml-auto" />
+                    <Skeleton className="h-16 w-full rounded-2xl" />
+                  </div>
+                ) : (
+                  <>
+                    <div className="p-4 border-b border-[var(--admin-border)] shrink-0">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-accent-brand/20 flex items-center justify-center">
+                          <User size={18} className="text-accent-brand" />
+                        </div>
+                        <div>
+                          <h2 className="font-semibold text-white">{thread.user.name}</h2>
+                          <p className="text-sm text-[var(--admin-muted)]">{thread.user.email}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div ref={threadRef} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
-                    {threadLoading && thread.messages.length === 0 ? (
-                      <p className="text-sm text-[var(--admin-muted)]">Loading conversation…</p>
-                    ) : (
-                      thread.messages.map((m) => (
+                    <div ref={threadRef} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
+                      {thread.messages.map((m) => (
                         <div
                           key={m.id}
                           className={`flex ${m.role === "USER" ? "justify-start" : "justify-end"}`}
@@ -286,40 +343,51 @@ export default function AdminMessagesPage() {
                             </p>
                           </div>
                         </div>
-                      ))
-                    )}
-                  </div>
+                      ))}
+                    </div>
 
-                  <form
-                    className="p-4 border-t border-[var(--admin-border)] flex gap-2 shrink-0"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      sendReply();
-                    }}
-                  >
-                    <textarea
-                      value={reply}
-                      onChange={(e) => setReply(e.target.value)}
-                      placeholder="Type your reply to the client…"
-                      rows={2}
-                      className="flex-1 rounded-xl border border-[var(--admin-border)] bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder:text-[var(--admin-muted)] focus:border-accent-brand/50 focus:outline-none resize-none"
-                      maxLength={4000}
-                      disabled={sending}
-                    />
-                    <button
-                      type="submit"
-                      disabled={!reply.trim() || sending}
-                      className="admin-btn-primary h-auto px-4 flex items-center gap-2 shrink-0"
+                    <form
+                      className="p-4 border-t border-[var(--admin-border)] flex gap-2 shrink-0"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        sendReply();
+                      }}
                     >
-                      <Send size={16} />
-                      Send
-                    </button>
-                  </form>
-                </>
-              ) : (
-                <p className="p-6 text-[var(--admin-muted)]">Select a support conversation</p>
-              )}
+                      <textarea
+                        value={reply}
+                        onChange={(e) => setReply(e.target.value)}
+                        placeholder="Type your reply to the client…"
+                        rows={2}
+                        className="flex-1 rounded-xl border border-[var(--admin-border)] bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder:text-[var(--admin-muted)] focus:border-accent-brand/50 focus:outline-none resize-none"
+                        maxLength={4000}
+                        disabled={sending}
+                      />
+                      <button
+                        type="submit"
+                        disabled={!reply.trim() || sending}
+                        className="admin-btn-primary h-auto px-4 flex items-center gap-2 shrink-0"
+                      >
+                        <Send size={16} />
+                        Send
+                      </button>
+                    </form>
+                  </>
+                )}
+              </div>
             </div>
+          )
+        ) : contacts.length === 0 ? (
+          <div className="admin-card p-10 text-center text-[var(--admin-muted)]">
+            <p>No contact form messages in the database.</p>
+            {conversations.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setTab("chat")}
+                className="admin-btn-ghost text-xs px-4 py-2 mt-4"
+              >
+                View {conversations.length} support chat{conversations.length === 1 ? "" : "s"}
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid lg:grid-cols-5 gap-4 h-[calc(100vh-280px)] min-h-[400px]">
@@ -327,6 +395,7 @@ export default function AdminMessagesPage() {
               {contacts.map((m) => (
                 <button
                   key={m.id}
+                  type="button"
                   onClick={() => setSelectedContact(m)}
                   className={`w-full text-left p-4 border-b border-[var(--admin-border)]/50 hover:bg-white/[0.02] transition-colors ${
                     selectedContact?.id === m.id ? "bg-accent-brand/10 border-l-2 border-l-accent-brand" : ""
