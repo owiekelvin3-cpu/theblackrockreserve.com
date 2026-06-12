@@ -214,6 +214,16 @@ export default function AdminUserDetailPage() {
         action={
           <div className="flex gap-2 flex-wrap">
             <button type="button" onClick={refresh} className="admin-btn-ghost text-xs px-3 py-1.5">Refresh</button>
+            {!user.emailVerified && (
+              <button
+                type="button"
+                onClick={() => patchUser({ emailVerified: true }, "Email marked as verified")}
+                disabled={saving}
+                className="admin-btn-ghost flex items-center gap-1.5 text-xs text-emerald-400 border-emerald-500/30"
+              >
+                <CheckCircle size={14} /> Verify email
+              </button>
+            )}
             <button onClick={toggleStatus} disabled={saving} className="admin-btn-ghost flex items-center gap-1.5 text-xs">
               {user.status === "ACTIVE" ? <><Ban size={14} /> Suspend</> : <><CheckCircle size={14} /> Activate</>}
             </button>

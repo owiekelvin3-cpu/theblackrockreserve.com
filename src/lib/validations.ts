@@ -111,6 +111,7 @@ export const adminUserUpdateSchema = z.object({
   accountType: z.enum(["PERSONAL", "BUSINESS"]).optional(),
   kycStatus: z.enum(["PENDING", "SUBMITTED", "VERIFIED", "REJECTED"]).optional(),
   status: z.enum(["ACTIVE", "SUSPENDED"]).optional(),
+  emailVerified: z.boolean().optional(),
 });
 
 export const adminPasswordResetSchema = z.object({

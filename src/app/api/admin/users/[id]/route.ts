@@ -5,6 +5,7 @@ import { registeredCustomerWhere } from "@/lib/customer-auth";
 import { logAdminAction, getClientIp } from "@/lib/admin-audit";
 import { adminUserUpdateSchema } from "@/lib/validations";
 import { prisma } from "@/lib/prisma";
+import { ensureUserBankAccounts } from "@/lib/dashboard-data";
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getAdminSession();
@@ -41,14 +42,29 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       if (dup) return NextResponse.json({ error: "Email already in use" }, { status: 409 });
     }
 
+    const { emailVerified: verifyFlag, ...profileFields } = parsed.data;
+    const data: Parameters<typeof prisma.user.update>[0]["data"] = { ...profileFields };
+
+    if (verifyFlag === true && !existing.emailVerified) {
+      data.emailVerified = new Date();
+      data.otpCode = null;
+      data.otpExpires = null;
+    } else if (verifyFlag === false) {
+      data.emailVerified = null;
+    }
+
     const user = await prisma.user.update({
       where: { id: params.id },
-      data: parsed.data,
+      data,
       select: {
         id: true, name: true, email: true, phone: true, accountType: true,
-        kycStatus: true, status: true,
+        kycStatus: true, status: true, emailVerified: true,
       },
     });
+
+    if (verifyFlag === true && !existing.emailVerified) {
+      await ensureUserBankAccounts(params.id);
+    }
 
     await logAdminAction(
       session.user.id,
