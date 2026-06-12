@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { MessageCircle, X, Send, Bot, User, Minimize2 } from "lucide-react";
+import { MessageCircle, X, Send, Bot, User, Minimize2, Headphones, Info } from "lucide-react";
 import type { ChatSuggestion } from "@/lib/chatbot";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/components/providers/I18nProvider";
@@ -12,13 +12,16 @@ import { getLocalizedWelcome } from "@/lib/i18n/chat-i18n";
 
 type ChatMessage = {
   id: string;
-  role: "user" | "bot";
+  role: "user" | "bot" | "admin" | "system";
   content: string;
 };
+
+type ChatMode = "bot" | "human";
 
 type LauncherPosition = { x: number; y: number };
 
 const STORAGE_KEY = "pcb-chat-messages";
+const MODE_KEY = "pcb-chat-mode";
 const POSITION_KEY = "pcb-chat-position";
 const LAUNCHER_SIZE = 56;
 const DRAG_THRESHOLD = 8;
@@ -39,6 +42,20 @@ function loadMessages(): ChatMessage[] {
 
 function saveMessages(messages: ChatMessage[]) {
   sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-30)));
+}
+
+function loadChatMode(): ChatMode {
+  if (typeof window === "undefined") return "bot";
+  try {
+    const raw = sessionStorage.getItem(MODE_KEY);
+    return raw === "human" ? "human" : "bot";
+  } catch {
+    return "bot";
+  }
+}
+
+function saveChatMode(mode: ChatMode) {
+  sessionStorage.setItem(MODE_KEY, mode);
 }
 
 function readStoredPosition(): LauncherPosition | null {
@@ -115,6 +132,10 @@ export default function ChatWidget() {
   const [position, setPosition] = useState<LauncherPosition | null>(null);
   const [dragging, setDragging] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [humanMessages, setHumanMessages] = useState<ChatMessage[]>([]);
+  const [chatMode, setChatMode] = useState<ChatMode>("bot");
+  const [humanLoading, setHumanLoading] = useState(false);
+  const [humanSending, setHumanSending] = useState(false);
   const [suggestions, setSuggestions] = useState<ChatSuggestion[]>(welcome.suggestions ?? []);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
@@ -200,19 +221,110 @@ export default function ChatWidget() {
       setMessages([{ id: "welcome", role: "bot", content: w.message }]);
       setSuggestions(w.suggestions ?? []);
     }
+    if (isDashboard) setChatMode(loadChatMode());
     setInitialized(true);
-  }, [t]);
+  }, [t, isDashboard]);
 
   useEffect(() => {
-    if (initialized) saveMessages(messages);
-  }, [messages, initialized]);
+    if (initialized && chatMode === "bot") saveMessages(messages);
+  }, [messages, initialized, chatMode]);
+
+  const mapHumanMessages = useCallback(
+    (items: { id: string; role: string; content: string }[]): ChatMessage[] =>
+      items.map((m) => ({
+        id: m.id,
+        content: m.content,
+        role:
+          m.role === "USER"
+            ? "user"
+            : m.role === "ADMIN"
+              ? "admin"
+              : m.role === "SYSTEM"
+                ? "system"
+                : "bot",
+      })),
+    []
+  );
+
+  const fetchHumanConversation = useCallback(async () => {
+    if (!isDashboard) return;
+    try {
+      const res = await fetch("/api/dashboard/support-chat", {
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.conversation?.messages) {
+        setHumanMessages(mapHumanMessages(data.conversation.messages));
+      }
+    } catch {
+      /* polling should not break chat */
+    }
+  }, [isDashboard, mapHumanMessages]);
+
+  useEffect(() => {
+    if (!isDashboard || chatMode !== "human" || !open) return;
+    setHumanLoading(true);
+    fetchHumanConversation().finally(() => setHumanLoading(false));
+    const id = window.setInterval(() => {
+      if (document.visibilityState === "visible") fetchHumanConversation();
+    }, 12000);
+    return () => window.clearInterval(id);
+  }, [isDashboard, chatMode, open, fetchHumanConversation]);
+
+  const switchMode = useCallback(
+    (mode: ChatMode) => {
+      setChatMode(mode);
+      if (isDashboard) saveChatMode(mode);
+      setSuggestions(mode === "bot" ? getLocalizedWelcome(t).suggestions ?? [] : []);
+    },
+    [isDashboard, t]
+  );
+
+  const sendHumanMessage = useCallback(
+    async (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed || humanSending) return;
+
+      setHumanSending(true);
+      setInput("");
+      setHumanMessages((prev) => [
+        ...prev,
+        { id: `user-${Date.now()}`, role: "user", content: trimmed },
+      ]);
+
+      try {
+        const res = await fetch("/api/dashboard/support-chat", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: trimmed }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed");
+
+        if (data.conversation?.messages) {
+          setHumanMessages(mapHumanMessages(data.conversation.messages));
+        }
+      } catch {
+        setHumanMessages((prev) => [
+          ...prev,
+          { id: `err-${Date.now()}`, role: "system", content: t("chat.humanSendError") },
+        ]);
+      } finally {
+        setHumanSending(false);
+      }
+    },
+    [humanSending, mapHumanMessages, t]
+  );
 
   useEffect(() => {
     if (open) {
       listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
       setTimeout(() => inputRef.current?.focus(), 200);
     }
-  }, [open, messages, typing]);
+  }, [open, messages, humanMessages, typing, chatMode, humanLoading]);
 
   useEffect(() => {
     if (!isDashboard || !open) return;
@@ -266,7 +378,12 @@ export default function ChatWidget() {
   const sendMessage = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
-      if (!trimmed || typing) return;
+      if (!trimmed || typing || humanSending) return;
+
+      if (isDashboard && chatMode === "human") {
+        await sendHumanMessage(trimmed);
+        return;
+      }
 
       const displayText =
         trimmed === "contact_page" ? "I'd like to contact support" : trimmed;
@@ -295,7 +412,7 @@ export default function ChatWidget() {
 
       await addBotReply(trimmed, historySnapshot);
     },
-    [addBotReply, typing, router, t]
+    [addBotReply, typing, humanSending, router, t, isDashboard, chatMode, sendHumanMessage]
   );
 
   const handleLauncherPointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
@@ -365,6 +482,11 @@ export default function ChatWidget() {
     ? computePanelPosition(position, panelWidth, panelHeight)
     : { left: VIEWPORT_MARGIN, top: VIEWPORT_MARGIN };
 
+  const activeMessages = isDashboard && chatMode === "human" ? humanMessages : messages;
+  const isHumanMode = isDashboard && chatMode === "human";
+  const inputDisabled = typing || humanSending || (isHumanMode && humanLoading);
+  const showSuggestions = !isHumanMode && suggestions.length > 0 && !typing;
+
   return (
     <>
       <AnimatePresence>
@@ -420,13 +542,19 @@ export default function ChatWidget() {
                   isDashboard ? "h-11 w-11" : "h-9 w-9"
                 )}
               >
-                <Bot size={isDashboard ? 20 : 18} className="text-white" />
+                {isHumanMode ? (
+                  <Headphones size={isDashboard ? 20 : 18} className="text-white" />
+                ) : (
+                  <Bot size={isDashboard ? 20 : 18} className="text-white" />
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <p className={cn("font-semibold text-white", isDashboard ? "text-base" : "text-sm")}>
                   {isDashboard ? t("nav.supportChat") : t("chat.assistantName")}
                 </p>
-                <p className="text-[10px] text-white/70 sm:text-xs">{t("chat.onlineStatus")}</p>
+                <p className="text-[10px] text-white/70 sm:text-xs">
+                  {isHumanMode ? t("chat.humanStatus") : t("chat.onlineStatus")}
+                </p>
               </div>
               {isDashboard ? (
                 <button
@@ -459,6 +587,51 @@ export default function ChatWidget() {
               )}
             </div>
 
+            {isDashboard && (
+              <div className="px-4 sm:px-6 py-3 border-b border-white/10 bg-white/[0.03] shrink-0">
+                <div className="flex rounded-xl bg-white/10 p-1 max-w-3xl mx-auto">
+                  <button
+                    type="button"
+                    onClick={() => switchMode("bot")}
+                    className={cn(
+                      "flex-1 rounded-lg py-2 text-xs font-medium transition-colors",
+                      chatMode === "bot"
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-white/80 hover:text-white"
+                    )}
+                  >
+                    {t("chat.modeBot")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => switchMode("human")}
+                    className={cn(
+                      "flex-1 rounded-lg py-2 text-xs font-medium transition-colors",
+                      chatMode === "human"
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-white/80 hover:text-white"
+                    )}
+                  >
+                    {t("chat.modeHuman")}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {isHumanMode && (
+              <div
+                className={cn(
+                  "shrink-0 border-b border-amber-500/20 bg-amber-500/10",
+                  isDashboard ? "px-4 sm:px-6 py-3 max-w-3xl mx-auto w-full" : "px-4 py-3"
+                )}
+              >
+                <div className="flex gap-2.5">
+                  <Info size={16} className="text-amber-300 shrink-0 mt-0.5" />
+                  <p className="text-xs leading-relaxed text-amber-100/90">{t("chat.humanSlaNotice")}</p>
+                </div>
+              </div>
+            )}
+
             {/* Messages */}
             <div
               ref={listRef}
@@ -467,19 +640,38 @@ export default function ChatWidget() {
                 isDashboard ? "p-4 sm:p-6 max-w-3xl mx-auto w-full" : "p-4"
               )}
             >
-              {messages.map((msg) => (
+              {isHumanMode && humanMessages.length === 0 && !humanLoading && (
+                <div className="rounded-2xl border border-border bg-surface-overlay/60 px-4 py-3 text-sm text-text-secondary leading-relaxed">
+                  {t("chat.humanEmptyState")}
+                </div>
+              )}
+
+              {activeMessages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={cn("flex gap-2", msg.role === "user" ? "flex-row-reverse" : "flex-row")}
+                  className={cn(
+                    "flex gap-2",
+                    msg.role === "user" ? "flex-row-reverse" : "flex-row"
+                  )}
                 >
                   <div
                     className={cn(
                       "h-7 w-7 rounded-full shrink-0 flex items-center justify-center",
-                      msg.role === "user" ? "bg-accent-brand/20" : "bg-surface-overlay"
+                      msg.role === "user"
+                        ? "bg-accent-brand/20"
+                        : msg.role === "admin"
+                          ? "bg-emerald-500/20"
+                          : msg.role === "system"
+                            ? "bg-amber-500/15"
+                            : "bg-surface-overlay"
                     )}
                   >
                     {msg.role === "user" ? (
                       <User size={14} className="text-accent-brand" />
+                    ) : msg.role === "admin" ? (
+                      <Headphones size={14} className="text-emerald-400" />
+                    ) : msg.role === "system" ? (
+                      <Info size={14} className="text-amber-400" />
                     ) : (
                       <Bot size={14} className="text-white/80" />
                     )}
@@ -489,15 +681,24 @@ export default function ChatWidget() {
                       "max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed",
                       msg.role === "user"
                         ? "bg-accent-brand text-white rounded-tr-sm"
-                        : "bg-surface-overlay text-text-secondary border border-border rounded-tl-sm"
+                        : msg.role === "admin"
+                          ? "bg-emerald-500/15 text-text-primary border border-emerald-500/25 rounded-tl-sm"
+                          : msg.role === "system"
+                            ? "bg-amber-500/10 text-text-secondary border border-amber-500/20 rounded-tl-sm text-xs"
+                            : "bg-surface-overlay text-text-secondary border border-border rounded-tl-sm"
                     )}
                   >
+                    {msg.role === "admin" && (
+                      <p className="text-[10px] font-medium text-emerald-400 mb-1">
+                        {t("chat.supportSpecialist")}
+                      </p>
+                    )}
                     {msg.content}
                   </div>
                 </div>
               ))}
 
-              {typing && (
+              {typing && !isHumanMode && (
                 <div className="flex gap-2">
                   <div className="h-7 w-7 rounded-full bg-surface-overlay flex items-center justify-center">
                     <Bot size={14} className="text-text-secondary" />
@@ -516,7 +717,7 @@ export default function ChatWidget() {
             </div>
 
             {/* Quick replies */}
-            {suggestions.length > 0 && !typing && (
+            {showSuggestions && (
               <div
                 className={cn(
                   "flex flex-wrap gap-1.5 shrink-0",
@@ -552,14 +753,16 @@ export default function ChatWidget() {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={t("chat.placeholder")}
+                placeholder={
+                  isHumanMode ? t("chat.humanPlaceholder") : t("chat.placeholder")
+                }
                 className="flex-1 rounded-xl border border-border bg-surface-overlay px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent-brand/50 focus:outline-none focus:ring-1 focus:ring-accent-brand/30"
-                maxLength={1000}
-                disabled={typing}
+                maxLength={isHumanMode ? 2000 : 1000}
+                disabled={inputDisabled}
               />
               <button
                 type="submit"
-                disabled={!input.trim() || typing}
+                disabled={!input.trim() || inputDisabled}
                 className="h-10 w-10 rounded-xl brand-gradient-bg flex items-center justify-center text-white disabled:opacity-40 transition-opacity shadow-brand"
                 aria-label={t("chat.sendMessage")}
               >

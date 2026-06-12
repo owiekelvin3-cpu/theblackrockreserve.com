@@ -138,7 +138,7 @@ const enBase = {
     noCashFlow: "No cash flow data",
     noCashFlowDesc: "Transaction activity will populate this chart over time.",
     supportChatTitle: "Support Chat",
-    supportChatDesc: "Ask about deposits, withdrawals, KYC, and account security. Our AI assistant is available 24/7.",
+    supportChatDesc: "Switch between our AI assistant for instant answers and human client services for account-specific help. Human responses typically arrive within 24–48 business hours.",
     savings: "Savings",
     save: "Save",
     withdrawSavings: "Withdraw",
@@ -671,6 +671,18 @@ const enBase = {
     quickTrading: "Buy & sell stocks",
     quickKyc: "KYC verification",
     quickSupport: "Talk to support",
+    modeBot: "AI Assistant",
+    modeHuman: "Human Support",
+    humanStatus: "Client services · 24–48 hr response",
+    humanSlaNotice:
+      "You are messaging our client services team. A specialist will review your request and respond within 24–48 business hours (Monday–Friday, excluding U.S. bank holidays). For urgent security concerns, include as much detail as possible.",
+    humanEmptyState:
+      "Send your question below and our team will follow up in this thread. You may switch back to the AI assistant anytime for general guidance.",
+    humanPlaceholder: "Describe your question for our client services team…",
+    humanSendError: "We could not deliver your message. Please try again in a moment.",
+    humanDelivered: "Message sent to client services.",
+    supportSpecialist: "Client Services",
+    systemMessage: "Notice",
   },
   transactionPin: {
     title: "Transaction PIN",

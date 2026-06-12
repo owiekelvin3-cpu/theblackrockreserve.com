@@ -18,7 +18,7 @@ type NavItem = {
   labelKey: string;
   icon: typeof LayoutDashboard;
   exact?: boolean;
-  countKey?: "pendingDeposits" | "pendingWithdrawals" | "pendingTransactions" | "pendingKyc" | "contactMessages" | "pendingTaxVerifications" | "pendingLoans" | null;
+  countKey?: "pendingDeposits" | "pendingWithdrawals" | "pendingTransactions" | "pendingKyc" | "contactMessages" | "unreadSupportChats" | "pendingTaxVerifications" | "pendingLoans" | null;
 };
 
 const navGroups: { titleKey: string; items: NavItem[] }[] = [
@@ -54,7 +54,7 @@ const navGroups: { titleKey: string; items: NavItem[] }[] = [
       { href: "/admin/kyc", labelKey: "admin.kycReview", icon: ShieldCheck, countKey: "pendingKyc" },
       { href: "/admin/tax-verifications", labelKey: "admin.taxVerification", icon: FileCheck, countKey: "pendingTaxVerifications" },
       { href: "/admin/loans", labelKey: "admin.loanManagement", icon: Landmark, countKey: "pendingLoans" },
-      { href: "/admin/messages", labelKey: "admin.messages", icon: Mail, countKey: "contactMessages" },
+      { href: "/admin/messages", labelKey: "admin.messages", icon: Mail, countKey: "unreadSupportChats" },
       { href: "/admin/settings", labelKey: "admin.settings", icon: Settings, countKey: null },
     ],
   },

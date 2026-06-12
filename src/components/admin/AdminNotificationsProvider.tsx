@@ -10,6 +10,7 @@ export type AdminNotificationData = {
   pendingWithdrawals: number;
   pendingKyc: number;
   contactMessages: number;
+  unreadSupportChats: number;
   pendingTransactions: number;
   recentDepositAlerts: {
     id: string;
@@ -86,5 +87,6 @@ export type AdminSidebarCounts = {
   pendingWithdrawals: number;
   pendingKyc: number;
   contactMessages: number;
+  unreadSupportChats: number;
   pendingTransactions: number;
 };

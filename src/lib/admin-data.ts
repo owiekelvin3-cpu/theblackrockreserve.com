@@ -25,6 +25,7 @@ async function loadAdminNotificationCounts() {
     pendingWithdrawals,
     pendingKyc,
     contactMessages,
+    unreadSupportChats,
     pendingTransactions,
     pendingTaxVerifications,
     pendingLoans,
@@ -35,6 +36,7 @@ async function loadAdminNotificationCounts() {
     pendingWithdrawals,
     pendingKyc,
     contactMessages,
+    unreadSupportChats,
     pendingTransactions,
     pendingTaxVerifications,
     pendingLoans,
@@ -44,7 +46,8 @@ async function loadAdminNotificationCounts() {
       pendingKyc +
       pendingTransactions +
       pendingTaxVerifications +
-      pendingLoans,
+      pendingLoans +
+      unreadSupportChats,
     recentDepositAlerts: recentDepositAlerts.map((d) => ({
       id: d.id,
       depositId: d.id,
@@ -124,6 +127,7 @@ async function loadAdminOverview() {
       totalAccounts: stats.totalAccounts,
       totalAum: stats.totalAum,
       contactMessages: stats.contactMessages,
+      unreadSupportChats: stats.unreadSupportChats,
       pendingDeposits: stats.pendingDeposits,
       totalDepositRequests: stats.totalDepositRequests,
       pendingWithdrawals: stats.pendingWithdrawals,
