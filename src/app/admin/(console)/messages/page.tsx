@@ -1,10 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Mail, MessageSquare, RefreshCw, Send, Trash2, User } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCheck,
+  MessageSquare,
+  RefreshCw,
+  Search,
+  Send,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import Skeleton from "@/components/ui/Skeleton";
-import { AdminPageHeader } from "@/components/admin/AdminUi";
 import AdminFetchState from "@/components/admin/AdminFetchState";
 import { useAdminFetch } from "@/hooks/use-admin-fetch";
 
@@ -59,12 +66,69 @@ type Selection =
   | { kind: "contact"; id: string }
   | null;
 
+function getInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("") || "?";
+}
+
+function formatInboxTime(iso: string) {
+  const date = new Date(iso);
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfYesterday = new Date(startOfToday);
+  startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+
+  if (date >= startOfToday) {
+    return date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  }
+  if (date >= startOfYesterday) {
+    return "Yesterday";
+  }
+  const diffDays = Math.floor((startOfToday.getTime() - date.getTime()) / 86_400_000);
+  if (diffDays < 7) {
+    return date.toLocaleDateString(undefined, { weekday: "short" });
+  }
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function formatBubbleTime(iso: string) {
+  return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
+
+function formatDayLabel(iso: string) {
+  const date = new Date(iso);
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfYesterday = new Date(startOfToday);
+  startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+
+  if (date >= startOfToday) return "Today";
+  if (date >= startOfYesterday) return "Yesterday";
+  return date.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+}
+
+function sameDay(a: string, b: string) {
+  const da = new Date(a);
+  const db = new Date(b);
+  return (
+    da.getFullYear() === db.getFullYear() &&
+    da.getMonth() === db.getMonth() &&
+    da.getDate() === db.getDate()
+  );
+}
+
 export default function AdminMessagesPage() {
   const { data, error, loading, refresh, lastUpdated } = useAdminFetch<MessagesPayload>(
     "/api/admin/messages",
     { pollMs: 30_000 }
   );
   const [selection, setSelection] = useState<Selection>(null);
+  const [mobileShowChat, setMobileShowChat] = useState(false);
+  const [search, setSearch] = useState("");
   const [thread, setThread] = useState<ConversationDetail | null>(null);
   const [threadLoading, setThreadLoading] = useState(false);
   const [threadError, setThreadError] = useState<string | null>(null);
@@ -99,6 +163,28 @@ export default function AdminMessagesPage() {
     return items.sort((a, b) => new Date(b.sortAt).getTime() - new Date(a.sortAt).getTime());
   }, [conversations, contacts]);
 
+  const filteredInbox = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return inbox;
+    return inbox.filter((item) => {
+      if (item.kind === "chat") {
+        const c = item.row;
+        return (
+          c.userName.toLowerCase().includes(q) ||
+          c.userEmail.toLowerCase().includes(q) ||
+          c.lastMessage.toLowerCase().includes(q)
+        );
+      }
+      const m = item.row;
+      return (
+        m.name.toLowerCase().includes(q) ||
+        m.email.toLowerCase().includes(q) ||
+        m.subject.toLowerCase().includes(q) ||
+        m.message.toLowerCase().includes(q)
+      );
+    });
+  }, [inbox, search]);
+
   const selectedContact = useMemo(
     () =>
       selection?.kind === "contact"
@@ -106,6 +192,8 @@ export default function AdminMessagesPage() {
         : null,
     [selection, contacts]
   );
+
+  const unreadChats = conversations.filter((c) => c.adminUnread).length;
 
   useEffect(() => {
     if (data?.partialError && !partialErrorShown.current) {
@@ -130,6 +218,15 @@ export default function AdminMessagesPage() {
       setSelection({ kind: first.kind, id: first.id });
     }
   }, [loading, inbox, selection]);
+
+  const selectItem = (item: InboxItem) => {
+    setSelection({ kind: item.kind, id: item.id });
+    setMobileShowChat(true);
+  };
+
+  const backToList = () => {
+    setMobileShowChat(false);
+  };
 
   const loadThread = useCallback(async (id: string, silent = false) => {
     if (!silent) {
@@ -214,6 +311,7 @@ export default function AdminMessagesPage() {
       toast.success("Message deleted");
       if (selection?.kind === "contact" && selection.id === id) {
         setSelection(null);
+        setMobileShowChat(false);
       }
       refresh();
     } catch (err) {
@@ -223,21 +321,12 @@ export default function AdminMessagesPage() {
     }
   };
 
-  const unreadChats = conversations.filter((c) => c.adminUnread).length;
   const threadReady = selection?.kind === "chat" && thread?.id === selection.id;
+  const sidebarClass = mobileShowChat ? "admin-wa-sidebar admin-wa-sidebar-hidden" : "admin-wa-sidebar";
+  const chatClass = mobileShowChat ? "admin-wa-chat admin-wa-chat-open" : "admin-wa-chat";
 
   return (
     <div>
-      <AdminPageHeader
-        title="Messages"
-        description="Support chats and contact form submissions in one inbox — refreshes every 30s"
-        action={
-          <button type="button" onClick={refresh} className="admin-btn-ghost text-xs px-4 py-2">
-            Refresh
-          </button>
-        }
-      />
-
       <AdminFetchState
         loading={loading}
         error={error}
@@ -246,212 +335,320 @@ export default function AdminMessagesPage() {
         isEmpty={!loading && !error && inbox.length === 0}
         emptyMessage="No messages yet. Support chats appear when clients use Human Support; contact form submissions appear here too."
       >
-        <div className="grid lg:grid-cols-5 gap-4 min-h-[480px] lg:h-[calc(100vh-240px)]">
-          {/* Inbox list */}
-          <div className="lg:col-span-2 admin-card overflow-y-auto max-h-[320px] lg:max-h-none">
-            {inbox.map((item) => {
-              const active =
-                selection?.kind === item.kind && selection.id === item.id;
+        <div className="admin-wa-shell">
+          {/* Inbox sidebar — WhatsApp chat list */}
+          <aside className={sidebarClass}>
+            <div className="admin-wa-sidebar-head">
+              <h2>Messages</h2>
+              <button
+                type="button"
+                onClick={refresh}
+                className="admin-wa-icon-btn"
+                aria-label="Refresh inbox"
+                title="Refresh"
+              >
+                <RefreshCw size={18} />
+              </button>
+            </div>
 
-              if (item.kind === "chat") {
-                const c = item.row;
-                return (
-                  <button
-                    key={`chat-${c.id}`}
-                    type="button"
-                    onClick={() => setSelection({ kind: "chat", id: c.id })}
-                    className={`w-full text-left p-4 border-b border-[var(--admin-border)]/50 hover:bg-white/[0.02] transition-colors ${
-                      active ? "bg-accent-brand/10 border-l-2 border-l-accent-brand" : ""
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <MessageSquare size={14} className="text-accent-brand shrink-0" />
-                        <p className="text-sm font-medium text-white truncate">{c.userName}</p>
+            <div className="admin-wa-search-wrap">
+              <label className="admin-wa-search">
+                <Search size={16} className="text-[var(--admin-muted)] shrink-0" />
+                <input
+                  type="search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search or filter messages"
+                  aria-label="Search messages"
+                />
+              </label>
+            </div>
+
+            <div className="admin-wa-inbox">
+              {filteredInbox.length === 0 ? (
+                <p className="px-4 py-6 text-sm text-[var(--admin-muted)] text-center">
+                  No messages match your search.
+                </p>
+              ) : (
+                filteredInbox.map((item) => {
+                  const active =
+                    selection?.kind === item.kind && selection.id === item.id;
+
+                  if (item.kind === "chat") {
+                    const c = item.row;
+                    return (
+                      <button
+                        key={`chat-${c.id}`}
+                        type="button"
+                        onClick={() => selectItem(item)}
+                        className={`admin-wa-inbox-item ${active ? "admin-wa-inbox-item-active" : ""}`}
+                      >
+                        <div className="admin-wa-avatar admin-wa-avatar-chat">
+                          {getInitials(c.userName)}
+                        </div>
+                        <div className="admin-wa-inbox-body">
+                          <div className="admin-wa-inbox-top">
+                            <span className="admin-wa-inbox-name">{c.userName}</span>
+                            <span className="admin-wa-inbox-time">
+                              {formatInboxTime(c.lastMessageAt)}
+                            </span>
+                          </div>
+                          <div className="admin-wa-inbox-preview">
+                            <span className="admin-wa-inbox-snippet">{c.lastMessage}</span>
+                            {c.adminUnread && (
+                              <span className="admin-wa-unread-badge" aria-label="Unread">
+                                1
+                              </span>
+                            )}
+                          </div>
+                          <p className="admin-wa-type-tag">Support chat</p>
+                        </div>
+                      </button>
+                    );
+                  }
+
+                  const m = item.row;
+                  return (
+                    <button
+                      key={`contact-${m.id}`}
+                      type="button"
+                      onClick={() => selectItem(item)}
+                      className={`admin-wa-inbox-item ${active ? "admin-wa-inbox-item-active" : ""}`}
+                    >
+                      <div className="admin-wa-avatar admin-wa-avatar-contact">
+                        {getInitials(m.name)}
                       </div>
-                      {c.adminUnread && (
-                        <span className="shrink-0 h-2 w-2 rounded-full bg-accent-brand" />
-                      )}
-                    </div>
-                    <p className="text-[10px] text-accent-brand/80 mt-1 uppercase tracking-wide">
-                      Support chat
-                    </p>
-                    <p className="text-xs text-[var(--admin-muted)] mt-1 truncate">{c.userEmail}</p>
-                    <p className="text-xs text-[var(--admin-muted)] mt-2 line-clamp-2">{c.lastMessage}</p>
-                    <p className="text-[10px] text-[var(--admin-muted)] mt-1">
-                      {new Date(c.lastMessageAt).toLocaleString()}
-                    </p>
-                  </button>
-                );
-              }
+                      <div className="admin-wa-inbox-body">
+                        <div className="admin-wa-inbox-top">
+                          <span className="admin-wa-inbox-name">{m.name}</span>
+                          <span className="admin-wa-inbox-time">
+                            {formatInboxTime(m.createdAt)}
+                          </span>
+                        </div>
+                        <div className="admin-wa-inbox-preview">
+                          <span className="admin-wa-inbox-snippet">{m.subject}</span>
+                        </div>
+                        <p className="admin-wa-type-tag">Contact form</p>
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </aside>
 
-              const m = item.row;
-              return (
-                <button
-                  key={`contact-${m.id}`}
-                  type="button"
-                  onClick={() => setSelection({ kind: "contact", id: m.id })}
-                  className={`w-full text-left p-4 border-b border-[var(--admin-border)]/50 hover:bg-white/[0.02] transition-colors ${
-                    active ? "bg-accent-brand/10 border-l-2 border-l-accent-brand" : ""
-                  }`}
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Mail size={14} className="text-[var(--admin-muted)] shrink-0" />
-                    <p className="text-sm font-medium text-white truncate">{m.subject}</p>
-                  </div>
-                  <p className="text-[10px] text-[var(--admin-muted)] mt-1 uppercase tracking-wide">
-                    Contact form
-                  </p>
-                  <p className="text-xs text-[var(--admin-muted)] mt-1">{m.name}</p>
-                  <p className="text-[10px] text-[var(--admin-muted)] mt-1">
-                    {new Date(m.createdAt).toLocaleString()}
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Detail panel */}
-          <div className="lg:col-span-3 admin-card flex flex-col min-h-[360px] lg:min-h-0">
+          {/* Conversation panel — WhatsApp thread view */}
+          <section className={chatClass}>
             {!selection ? (
-              <p className="p-6 text-[var(--admin-muted)]">Select a message from the inbox</p>
+              <div className="admin-wa-empty">
+                <div className="admin-wa-empty-icon">
+                  <MessageSquare size={32} />
+                </div>
+                <p className="text-sm font-medium text-[var(--admin-text)]">
+                  Select a conversation
+                </p>
+                <p className="text-xs max-w-xs">
+                  Support chats and contact form messages appear in the inbox on the left.
+                </p>
+              </div>
             ) : selection.kind === "contact" && selectedContact ? (
-              <div className="p-6 overflow-y-auto">
-                <div className="flex items-start justify-between gap-3 mb-6 pb-4 border-b border-[var(--admin-border)]">
-                  <div className="flex items-start gap-3">
-                    <div className="h-10 w-10 rounded-full bg-accent-brand/20 flex items-center justify-center">
-                      <Mail size={18} className="text-accent-brand" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-[var(--admin-muted)] uppercase tracking-wide mb-1">
-                        Contact form
-                      </p>
-                      <h2 className="font-semibold text-white">{selectedContact.subject}</h2>
-                      <p className="text-sm text-[var(--admin-muted)]">
-                        {selectedContact.name} · {selectedContact.email}
-                      </p>
-                      <p className="text-xs text-[var(--admin-muted)] mt-1">
-                        {new Date(selectedContact.createdAt).toLocaleString()}
-                      </p>
+              <>
+                <header className="admin-wa-chat-head">
+                  <button
+                    type="button"
+                    onClick={backToList}
+                    className="admin-wa-icon-btn lg:hidden"
+                    aria-label="Back to inbox"
+                  >
+                    <ArrowLeft size={20} />
+                  </button>
+                  <div className="admin-wa-avatar admin-wa-avatar-contact">
+                    {getInitials(selectedContact.name)}
+                  </div>
+                  <div className="admin-wa-chat-head-info">
+                    <p className="admin-wa-chat-head-name">{selectedContact.name}</p>
+                    <p className="admin-wa-chat-head-sub">
+                      {selectedContact.email} · Contact form
+                    </p>
+                  </div>
+                </header>
+
+                <div ref={threadRef} className="admin-wa-thread">
+                  <div className="admin-wa-date-pill">
+                    <span>{formatDayLabel(selectedContact.createdAt)}</span>
+                  </div>
+                  <div className="admin-wa-bubble-row admin-wa-bubble-row-in">
+                    <div className="admin-wa-bubble admin-wa-bubble-in">
+                      <p className="admin-wa-bubble-sender">{selectedContact.subject}</p>
+                      <p className="admin-wa-bubble-text">{selectedContact.message}</p>
+                      <div className="admin-wa-bubble-meta">
+                        <span>{formatBubbleTime(selectedContact.createdAt)}</span>
+                      </div>
                     </div>
                   </div>
+                  <div className="admin-wa-bubble-row admin-wa-bubble-row-system">
+                    <div className="admin-wa-bubble admin-wa-bubble-system">
+                      Reply to this client at {selectedContact.email} or respond in Support Chat
+                      if they have a dashboard account.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="admin-wa-contact-actions">
                   <button
                     type="button"
                     onClick={() => deleteContact(selectedContact.id)}
                     disabled={deleting === selectedContact.id}
-                    className="admin-btn-ghost text-red-400 text-xs flex items-center gap-1.5 shrink-0"
+                    className="admin-wa-delete-btn"
                   >
-                    <Trash2 size={14} /> Delete
+                    <Trash2 size={15} />
+                    {deleting === selectedContact.id ? "Deleting…" : "Delete message"}
                   </button>
                 </div>
-                <p className="text-sm text-[var(--admin-muted)] leading-relaxed whitespace-pre-wrap">
-                  {selectedContact.message}
-                </p>
-                <p className="text-xs text-[var(--admin-muted)] mt-6 pt-4 border-t border-[var(--admin-border)]">
-                  Reply to this client at <strong className="text-white">{selectedContact.email}</strong> or
-                  respond in Support Chat if they have a dashboard account.
-                </p>
-              </div>
+              </>
             ) : selection.kind === "chat" ? (
               threadLoading && !threadReady ? (
-                <div className="p-6 space-y-3">
-                  <Skeleton className="h-10 w-48 rounded-xl" />
-                  <Skeleton className="h-16 w-full rounded-2xl" />
-                  <Skeleton className="h-16 w-3/4 rounded-2xl ml-auto" />
+                <div className="p-6 space-y-3 flex-1">
+                  <Skeleton className="h-12 w-full rounded-xl" />
+                  <Skeleton className="h-16 w-3/4 rounded-lg" />
+                  <Skeleton className="h-16 w-full rounded-lg ml-auto" />
                 </div>
               ) : threadError ? (
-                <div className="p-8 text-center">
-                  <p className="text-white font-medium">Could not load this conversation</p>
-                  <p className="text-sm text-[var(--admin-muted)] mt-2">{threadError}</p>
+                <div className="admin-wa-empty">
+                  <p className="text-sm font-medium text-[var(--admin-text)]">
+                    Could not load this conversation
+                  </p>
+                  <p className="text-xs">{threadError}</p>
                   <button
                     type="button"
                     onClick={() => loadThread(selection.id)}
-                    className="admin-btn-primary text-xs px-4 py-2 mt-4 inline-flex items-center gap-2"
+                    className="admin-btn-primary text-xs px-4 py-2 inline-flex items-center gap-2"
                   >
                     <RefreshCw size={14} /> Try again
                   </button>
                 </div>
               ) : threadReady && thread ? (
                 <>
-                  <div className="p-4 border-b border-[var(--admin-border)] shrink-0">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-accent-brand/20 flex items-center justify-center">
-                        <User size={18} className="text-accent-brand" />
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-accent-brand uppercase tracking-wide mb-0.5">
-                          Support chat {unreadChats > 0 ? "· unread" : ""}
-                        </p>
-                        <h2 className="font-semibold text-white">{thread.user.name}</h2>
-                        <p className="text-sm text-[var(--admin-muted)]">{thread.user.email}</p>
-                      </div>
+                  <header className="admin-wa-chat-head">
+                    <button
+                      type="button"
+                      onClick={backToList}
+                      className="admin-wa-icon-btn lg:hidden"
+                      aria-label="Back to inbox"
+                    >
+                      <ArrowLeft size={20} />
+                    </button>
+                    <div className="admin-wa-avatar admin-wa-avatar-chat">
+                      {getInitials(thread.user.name)}
                     </div>
-                  </div>
+                    <div className="admin-wa-chat-head-info">
+                      <p className="admin-wa-chat-head-name">{thread.user.name}</p>
+                      <p className="admin-wa-chat-head-sub">
+                        {thread.user.email}
+                        {unreadChats > 0 ? " · unread in inbox" : ""}
+                      </p>
+                    </div>
+                  </header>
 
-                  <div ref={threadRef} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
+                  <div ref={threadRef} className="admin-wa-thread">
                     {thread.messages.length === 0 ? (
-                      <p className="text-sm text-[var(--admin-muted)]">No messages in this thread yet.</p>
+                      <p className="text-sm text-[var(--admin-muted)] text-center py-8">
+                        No messages in this thread yet.
+                      </p>
                     ) : (
-                      thread.messages.map((m) => (
-                        <div
-                          key={m.id}
-                          className={`flex ${m.role === "USER" ? "justify-start" : "justify-end"}`}
-                        >
-                          <div
-                            className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
-                              m.role === "USER"
-                                ? "bg-white/5 text-white border border-[var(--admin-border)] rounded-tl-sm"
-                                : m.role === "SYSTEM"
-                                  ? "bg-amber-500/10 text-amber-100/90 border border-amber-500/20 text-xs"
-                                  : "bg-accent-brand/20 text-white border border-accent-brand/30 rounded-tr-sm"
-                            }`}
-                          >
-                            {m.role === "ADMIN" && (
-                              <p className="text-[10px] text-accent-brand mb-1 font-medium">
-                                {m.adminName ?? "Support"} · Client Services
-                              </p>
+                      thread.messages.map((m, i) => {
+                        const showDate =
+                          i === 0 || !sameDay(m.createdAt, thread.messages[i - 1].createdAt);
+                        const isUser = m.role === "USER";
+                        const isSystem = m.role === "SYSTEM";
+
+                        return (
+                          <div key={m.id}>
+                            {showDate && (
+                              <div className="admin-wa-date-pill">
+                                <span>{formatDayLabel(m.createdAt)}</span>
+                              </div>
                             )}
-                            <p className="whitespace-pre-wrap">{m.content}</p>
-                            <p className="text-[10px] opacity-60 mt-1">
-                              {new Date(m.createdAt).toLocaleString()}
-                            </p>
+                            <div
+                              className={`admin-wa-bubble-row ${
+                                isSystem
+                                  ? "admin-wa-bubble-row-system"
+                                  : isUser
+                                    ? "admin-wa-bubble-row-in"
+                                    : "admin-wa-bubble-row-out"
+                              }`}
+                            >
+                              <div
+                                className={`admin-wa-bubble ${
+                                  isSystem
+                                    ? "admin-wa-bubble-system"
+                                    : isUser
+                                      ? "admin-wa-bubble-in"
+                                      : "admin-wa-bubble-out"
+                                }`}
+                              >
+                                {m.role === "ADMIN" && (
+                                  <p className="admin-wa-bubble-sender">
+                                    {m.adminName ?? "Support"} · Client Services
+                                  </p>
+                                )}
+                                <p className="admin-wa-bubble-text">{m.content}</p>
+                                {!isSystem && (
+                                  <div className="admin-wa-bubble-meta">
+                                    <span>{formatBubbleTime(m.createdAt)}</span>
+                                    {m.role === "ADMIN" && (
+                                      <CheckCheck size={12} className="text-[var(--admin-accent)]" />
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
 
                   <form
-                    className="p-4 border-t border-[var(--admin-border)] flex gap-2 shrink-0"
+                    className="admin-wa-compose"
                     onSubmit={(e) => {
                       e.preventDefault();
                       sendReply();
                     }}
                   >
-                    <textarea
-                      value={reply}
-                      onChange={(e) => setReply(e.target.value)}
-                      placeholder="Type your reply — the client will see it in their dashboard Support Chat…"
-                      rows={2}
-                      className="flex-1 rounded-xl border border-[var(--admin-border)] bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder:text-[var(--admin-muted)] focus:border-accent-brand/50 focus:outline-none resize-none"
-                      maxLength={4000}
-                      disabled={sending}
-                    />
+                    <div className="admin-wa-compose-input-wrap">
+                      <textarea
+                        value={reply}
+                        onChange={(e) => setReply(e.target.value)}
+                        placeholder="Type a message"
+                        rows={1}
+                        maxLength={4000}
+                        disabled={sending}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            sendReply();
+                          }
+                        }}
+                      />
+                    </div>
                     <button
                       type="submit"
                       disabled={!reply.trim() || sending}
-                      className="admin-btn-primary h-auto px-4 flex items-center gap-2 shrink-0 self-end"
+                      className="admin-wa-send-btn"
+                      aria-label={sending ? "Sending" : "Send message"}
                     >
-                      <Send size={16} />
-                      {sending ? "Sending…" : "Send"}
+                      <Send size={18} />
                     </button>
                   </form>
                 </>
               ) : (
-                <p className="p-6 text-[var(--admin-muted)]">Conversation unavailable.</p>
+                <div className="admin-wa-empty">
+                  <p className="text-sm">Conversation unavailable.</p>
+                </div>
               )
             ) : null}
-          </div>
+          </section>
         </div>
       </AdminFetchState>
     </div>
