@@ -23,9 +23,9 @@ export default function AppIconMark({ className, size = 32 }: AppIconMarkProps) 
       className={cn("shrink-0", className)}
     >
       <defs>
-        <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FF5F05" />
-          <stop offset="100%" stopColor="#DC2626" />
+        <linearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#FF8C42" />
+          <stop offset="100%" stopColor="#FF4500" />
         </linearGradient>
       </defs>
       <rect width="32" height="32" rx="7.5" fill={`url(#${gradientId})`} />
