@@ -36,6 +36,9 @@ interface DepositData {
 interface SuccessState {
   title: string;
   message: string;
+  amountUsd: number;
+  amountLabel: string;
+  statusLabel: string;
 }
 
 const DEPOSIT_HISTORY_PREVIEW = 2;
@@ -145,7 +148,14 @@ export default function DepositPage() {
 
         setSuccess({
           title: json.title ?? t("deposit.submitSuccessTitle"),
-          message: json.message ?? data?.successMessage ?? "",
+          message:
+            json.message ??
+            t("deposit.submitSuccessDesc", {
+              amount: json.amountLabel ?? formatCurrency(amount),
+            }),
+          amountUsd: json.amountUsd ?? amount,
+          amountLabel: json.amountLabel ?? formatCurrency(amount),
+          statusLabel: json.statusLabel ?? json.deposit?.statusLabel ?? t("deposit.submitSuccessStatus"),
         });
         clearProofImage();
         setProofNote("");
@@ -196,15 +206,20 @@ export default function DepositPage() {
         )}
 
         {success && (
-          <Card className="border border-accent-green/30 bg-accent-green/5">
+          <Card className="deposit-success-card border border-accent-green/30 bg-accent-green/5 overflow-hidden">
             <div className="flex items-start gap-4">
               <div className="h-12 w-12 rounded-full bg-accent-green/15 flex items-center justify-center shrink-0">
                 <CheckCircle2 size={28} className="text-accent-green" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <h2 className="text-lg font-bold text-white">{success.title}</h2>
-                <p className="text-sm text-text-secondary mt-3 leading-relaxed">{success.message}</p>
-                <Button variant="outline" size="sm" className="mt-4" onClick={() => setSuccess(null)}>
+                <div className="deposit-success-amount mt-4">
+                  <p className="deposit-success-amount-label">{t("deposit.submitSuccessAmountLabel")}</p>
+                  <p className="deposit-success-amount-value">{success.amountLabel}</p>
+                  <span className="deposit-success-status">{success.statusLabel}</span>
+                </div>
+                <p className="text-sm text-text-secondary mt-4 leading-relaxed">{success.message}</p>
+                <Button variant="outline" size="sm" className="mt-5" onClick={() => setSuccess(null)}>
                   {t("deposit.submitAnother")}
                 </Button>
               </div>

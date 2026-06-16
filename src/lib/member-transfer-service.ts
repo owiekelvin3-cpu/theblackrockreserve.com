@@ -6,6 +6,8 @@ import {
   isValidBankAccountNumber,
   normalizeBankAccountNumber,
   findPrimaryCheckingAccount,
+  getUserAccountNumber,
+  resolveActiveMemberByAccountNumber,
 } from "@/lib/bank-account-number";
 
 function roundMoney(n: number) {
@@ -21,35 +23,21 @@ export async function lookupMemberTransferRecipient(
     return { found: false as const, reason: "invalid" as const };
   }
 
-  const recipientAccount = await prisma.bankAccount.findUnique({
-    where: { accountNumber },
-    include: {
-      user: {
-        select: { id: true, name: true, role: true, status: true },
-      },
-    },
-  });
-
-  if (!recipientAccount?.user) {
+  const resolved = await resolveActiveMemberByAccountNumber(accountNumber);
+  if (!resolved) {
     return { found: false as const, reason: "not_found" as const };
   }
 
-  const recipient = recipientAccount.user;
-  if (recipient.role !== "USER" || recipient.status !== "ACTIVE") {
-    return { found: false as const, reason: "not_found" as const };
-  }
-
+  const recipient = resolved.user;
   if (recipient.id === senderId) {
     return { found: false as const, reason: "self" as const };
   }
-
-  const primary = await findPrimaryCheckingAccount(recipient.id);
 
   return {
     found: true as const,
     name: recipient.name,
     accountNumber,
-    accountName: primary?.name ?? "Primary Checking",
+    accountName: resolved.primaryChecking.name ?? "Primary Checking",
   };
 }
 
@@ -80,24 +68,12 @@ export async function transferToMember(
     throw new Error("Your account cannot send transfers right now");
   }
 
-  const recipientAccount = await prisma.bankAccount.findUnique({
-    where: { accountNumber },
-    include: {
-      user: {
-        select: { id: true, name: true, role: true, status: true },
-      },
-    },
-  });
-
-  if (!recipientAccount?.user) {
+  const resolved = await resolveActiveMemberByAccountNumber(accountNumber);
+  if (!resolved) {
     throw new Error("No active member account was found with that account number");
   }
 
-  const recipient = recipientAccount.user;
-  if (recipient.role !== "USER" || recipient.status !== "ACTIVE") {
-    throw new Error("No active member account was found with that account number");
-  }
-
+  const recipient = resolved.user;
   if (recipient.id === senderId) {
     throw new Error("You cannot transfer funds to your own account number");
   }
@@ -180,6 +156,8 @@ export async function transferToMember(
     return debitTx;
   });
 
+  const senderAccountNumber = await getUserAccountNumber(senderId);
+
   return {
     amount,
     recipientAccountNumber: accountNumber,
@@ -193,7 +171,7 @@ export async function transferToMember(
       recipientName: recipient.name,
       senderName: sender.name,
       senderVerificationBadge: sender.verificationBadge,
-      senderAccountNumber: senderAccount.accountNumber ?? null,
+      senderAccountNumber,
       accountName: senderAccount.name,
       note: memo ?? null,
       createdAt: result.createdAt.toISOString(),

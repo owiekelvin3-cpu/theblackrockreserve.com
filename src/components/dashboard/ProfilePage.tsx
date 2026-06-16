@@ -5,14 +5,10 @@ import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
-  Check,
-  Copy,
   CreditCard,
   Globe,
-  Landmark,
   Lock,
   Mail,
-  PiggyBank,
   Shield,
   Sparkles,
   User,
@@ -20,6 +16,7 @@ import {
 } from "lucide-react";
 import ProfileAvatar from "@/components/ui/ProfileAvatar";
 import VerificationBadge from "@/components/ui/VerificationBadge";
+import AccountNumberDisplay from "@/components/dashboard/AccountNumberDisplay";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import LanguageSelector from "@/components/ui/LanguageSelector";
@@ -40,14 +37,6 @@ import {
 type NotifyKey = keyof NotificationPrefs;
 type ProfileTab = "profile" | "accounts" | "security" | "preferences";
 
-type BankAccountSummary = {
-  id: string;
-  name: string;
-  type: string;
-  currency: string;
-  accountNumber: string | null;
-};
-
 const NOTIFY_KEYS: {
   key: NotifyKey;
   labelKey: string;
@@ -66,15 +55,6 @@ const TAB_ITEMS: { id: ProfileTab; labelKey: string; icon: typeof User }[] = [
   { id: "security", labelKey: "settings.security", icon: Lock },
   { id: "preferences", labelKey: "settings.preferencesTab", icon: Globe },
 ];
-
-function accountIcon(type: string) {
-  return type === "savings" ? PiggyBank : Landmark;
-}
-
-function maskAccountNumber(value: string) {
-  if (value.length <= 8) return value;
-  return `${value.slice(0, 4)} •••• •••• ${value.slice(-4)}`;
-}
 
 function ProfileSkeleton() {
   return (
@@ -125,8 +105,9 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState("");
   const [memberSince, setMemberSince] = useState<string | null>(null);
   const [notificationPrefs, setNotificationPrefs] = useState<NotificationPrefs>(DEFAULT_NOTIFICATION_PREFS);
-  const [bankAccounts, setBankAccounts] = useState<BankAccountSummary[]>([]);
-  const [copiedAccountId, setCopiedAccountId] = useState<string | null>(null);
+  const [userAccountNumber, setUserAccountNumber] = useState<string | null>(null);
+  const [accountNumberRevealed, setAccountNumberRevealed] = useState(false);
+  const [copiedAccountNumber, setCopiedAccountNumber] = useState(false);
   const [loading, setLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingNotifyKey, setSavingNotifyKey] = useState<NotifyKey | null>(null);
@@ -151,7 +132,7 @@ export default function ProfilePage() {
         if (data.phone) setPhone(data.phone);
         if (data.memberSince) setMemberSince(data.memberSince);
         if (data.notificationPrefs) setNotificationPrefs(data.notificationPrefs);
-        if (Array.isArray(data.bankAccounts)) setBankAccounts(data.bankAccounts);
+        if (data.accountNumber) setUserAccountNumber(data.accountNumber);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -204,13 +185,13 @@ export default function ProfilePage() {
     }
   };
 
-  const copyAccountNumber = async (account: BankAccountSummary) => {
-    if (!account.accountNumber) return;
+  const copyUserAccountNumber = async () => {
+    if (!userAccountNumber) return;
     try {
-      await navigator.clipboard.writeText(account.accountNumber);
-      setCopiedAccountId(account.id);
+      await navigator.clipboard.writeText(userAccountNumber);
+      setCopiedAccountNumber(true);
       toast.success(t("settings.accountNumberCopied"));
-      window.setTimeout(() => setCopiedAccountId(null), 2000);
+      window.setTimeout(() => setCopiedAccountNumber(false), 2000);
     } catch {
       toast.error(t("common.error"));
     }
@@ -367,60 +348,24 @@ export default function ProfilePage() {
                 <p className="profile-card-subtitle">{t("settings.bankAccountsDesc")}</p>
               </div>
               <div className="profile-card-body">
-                {bankAccounts.length === 0 ? (
-                  <p className="profile-empty">{t("common.loading")}</p>
-                ) : (
-                  <div className="profile-accounts-list">
-                    {bankAccounts.map((account, index) => {
-                      const Icon = accountIcon(account.type);
-                      const isPrimary = account.type === "checking" && index === 0;
-                      return (
-                        <article
-                          key={account.id}
-                          className={cn("profile-bank-card", isPrimary && "profile-bank-card-primary")}
-                        >
-                          <div className="profile-bank-card-header">
-                            <div className="profile-bank-card-brand">
-                              <span className="profile-bank-card-mark">BR</span>
-                              <div className="min-w-0">
-                                <p className="profile-bank-card-name">{account.name}</p>
-                                <p className="profile-bank-card-type capitalize">
-                                  {account.type} · {account.currency}
-                                </p>
-                              </div>
-                            </div>
-                            <Icon size={20} className="profile-bank-card-icon" />
-                          </div>
-                          <p className="profile-bank-card-number">
-                            {account.accountNumber ? maskAccountNumber(account.accountNumber) : "—"}
-                          </p>
-                          <div className="profile-bank-card-footer">
-                            <span className="profile-bank-card-holder truncate">{displayName}</span>
-                            {account.accountNumber && (
-                              <button
-                                type="button"
-                                onClick={() => void copyAccountNumber(account)}
-                                className="profile-bank-card-copy"
-                                aria-label={t("settings.copyAccountNumber")}
-                              >
-                                {copiedAccountId === account.id ? (
-                                  <>
-                                    <Check size={14} className="text-accent-green" />
-                                    <span>{t("common.completed")}</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Copy size={14} />
-                                    <span>{t("settings.copyAccountNumber")}</span>
-                                  </>
-                                )}
-                              </button>
-                            )}
-                          </div>
-                        </article>
-                      );
-                    })}
+                {userAccountNumber ? (
+                  <div className="profile-user-account-number">
+                    <AccountNumberDisplay
+                      value={userAccountNumber}
+                      revealed={accountNumberRevealed}
+                      onToggleReveal={() => setAccountNumberRevealed((v) => !v)}
+                      onCopy={() => void copyUserAccountNumber()}
+                      copied={copiedAccountNumber}
+                      size="lg"
+                      label={t("settings.accountNumberLabel")}
+                      copyLabel={t("settings.copyAccountNumber")}
+                      showNumberLabel={t("settings.showAccountNumber")}
+                      hideNumberLabel={t("settings.hideAccountNumber")}
+                    />
+                    <p className="profile-user-account-number-hint">{t("settings.incomingTransfersToMain")}</p>
                   </div>
+                ) : (
+                  <p className="profile-empty">{t("common.loading")}</p>
                 )}
               </div>
             </div>

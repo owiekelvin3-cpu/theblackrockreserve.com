@@ -2,7 +2,6 @@ import { prisma, runInteractiveTransaction } from "@/lib/prisma";
 import { currencyFlag } from "@/lib/currency-flags";
 import { getPlatformSettings, SETTING_KEYS } from "@/lib/platform-settings";
 import {
-  allocateUniqueBankAccountNumber,
   ensureUserPrimaryAccountNumber,
 } from "@/lib/bank-account-number";
 import {
@@ -67,16 +66,7 @@ export async function ensureCheckingAndSavingsAccounts(userId: string) {
         type: "checking",
         currency: "USD",
         balance: 0,
-        ...(caps.bankAccountNumbers
-          ? { accountNumber: await allocateUniqueBankAccountNumber() }
-          : {}),
       },
-      select,
-    })) as BankAccountRow;
-  } else if (caps.bankAccountNumbers && !checking.accountNumber) {
-    checking = (await prisma.bankAccount.update({
-      where: { id: checking.id },
-      data: { accountNumber: await allocateUniqueBankAccountNumber() },
       select,
     })) as BankAccountRow;
   }

@@ -148,12 +148,40 @@ export async function findBankAccountByUserAccountNumber(
   client: DbClient = prisma
 ) {
   const normalized = normalizeBankAccountNumber(accountNumber);
-  const match = await client.bankAccount.findUnique({
-    where: { accountNumber: normalized },
-    select: { id: true, userId: true, name: true, type: true },
-  });
-  if (!match) return null;
+  const resolved = await resolveActiveMemberByAccountNumber(normalized, client);
+  if (!resolved) return null;
 
-  const primary = await findPrimaryCheckingAccount(match.userId, client);
-  return { match, primary, userId: match.userId };
+  return {
+    match: resolved.primaryChecking,
+    primary: resolved.primaryChecking,
+    userId: resolved.user.id,
+  };
+}
+
+/** Member transfers resolve only through a user's single primary checking number. */
+export async function resolveActiveMemberByAccountNumber(
+  accountNumberRaw: string,
+  client: DbClient = prisma
+) {
+  const accountNumber = normalizeBankAccountNumber(accountNumberRaw);
+  if (!isValidBankAccountNumber(accountNumber)) return null;
+
+  const row = await client.bankAccount.findUnique({
+    where: { accountNumber },
+    select: { id: true, userId: true, name: true, type: true, accountNumber: true, balance: true, currency: true },
+  });
+  if (!row?.accountNumber) return null;
+
+  const primary = await findPrimaryCheckingAccount(row.userId, client);
+  if (!primary?.accountNumber || primary.id !== row.id || primary.accountNumber !== accountNumber) {
+    return null;
+  }
+
+  const user = await client.user.findUnique({
+    where: { id: row.userId },
+    select: { id: true, name: true, role: true, status: true, verificationBadge: true },
+  });
+  if (!user || user.role !== "USER" || user.status !== "ACTIVE") return null;
+
+  return { user, accountNumber, primaryChecking: primary };
 }

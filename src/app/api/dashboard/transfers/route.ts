@@ -5,12 +5,19 @@ import { transferToMember } from "@/lib/member-transfer-service";
 import { requireTransactionPin } from "@/lib/transaction-pin";
 import { getAvailableBalancesMap } from "@/lib/withdrawal-balance";
 import { prisma } from "@/lib/prisma";
+import { ensureUserPrimaryAccountNumber } from "@/lib/bank-account-number";
+import { getDbSchemaCapabilities } from "@/lib/db-schema-capabilities";
 
 export async function GET() {
   const userId = await getSessionUserId();
   if (!userId) return unauthorizedResponse();
 
   try {
+    const caps = await getDbSchemaCapabilities();
+    if (caps.bankAccountNumbers) {
+      await ensureUserPrimaryAccountNumber(userId);
+    }
+
     const accounts = await prisma.bankAccount.findMany({
       where: { userId },
       select: { id: true, name: true, currency: true, balance: true },

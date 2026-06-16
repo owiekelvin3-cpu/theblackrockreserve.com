@@ -8,12 +8,11 @@ import { parseLocaleCode } from "@/lib/i18n/locales";
 import { getServerLocale } from "@/lib/i18n/server";
 import { getClientIp } from "@/lib/admin-audit";
 import { captureUserLocationAsync } from "@/lib/user-location";
-import { allocateUniqueBankAccountNumber } from "@/lib/bank-account-number";
+import { ensureUserPrimaryAccountNumber } from "@/lib/bank-account-number";
 
 async function buildDefaultBankAccounts(userId: string) {
-  const checkingNumber = await allocateUniqueBankAccountNumber();
   return [
-    { userId, name: "Primary Checking", type: "checking", accountNumber: checkingNumber, currency: "USD", balance: 0 },
+    { userId, name: "Primary Checking", type: "checking", currency: "USD", balance: 0 },
     { userId, name: "High-Yield Savings", type: "savings", currency: "USD", balance: 0 },
   ];
 }
@@ -80,6 +79,7 @@ export async function POST(req: Request) {
         await prisma.bankAccount.createMany({
           data: await buildDefaultBankAccounts(userId),
         });
+        await ensureUserPrimaryAccountNumber(userId);
       }
     } else {
       const created = await runInteractiveTransaction(async (tx) => {
@@ -103,6 +103,8 @@ export async function POST(req: Request) {
         await tx.bankAccount.createMany({
           data: await buildDefaultBankAccounts(user.id),
         });
+
+        await ensureUserPrimaryAccountNumber(user.id, tx);
 
         return user;
       });

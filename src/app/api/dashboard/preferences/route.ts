@@ -6,7 +6,6 @@ import { LOCALE_CODES } from "@/lib/i18n/locales";
 import { parseNotificationPrefs, type NotificationPrefs } from "@/lib/notification-prefs";
 import { ensureUserPrimaryAccountNumber } from "@/lib/bank-account-number";
 import {
-  bankAccountNumberSelect,
   getDbSchemaCapabilities,
   userVerificationBadgeSelect,
 } from "@/lib/db-schema-capabilities";
@@ -55,27 +54,17 @@ export async function GET() {
       },
     });
 
-    if (caps.bankAccountNumbers) {
-      await ensureUserPrimaryAccountNumber(userId);
-    }
+    const accountNumber = caps.bankAccountNumbers
+      ? await ensureUserPrimaryAccountNumber(userId)
+      : null;
 
     const bankAccountsRaw = await prisma.bankAccount.findMany({
       where: { userId },
       orderBy: { createdAt: "asc" },
-      select: {
-        ...BANK_ACCOUNT_CORE_SELECT,
-        ...bankAccountNumberSelect(caps),
-      },
+      select: BANK_ACCOUNT_CORE_SELECT,
     });
 
-    const primaryCheckingId = bankAccountsRaw.find((a) => a.type === "checking")?.id;
-    const bankAccounts = bankAccountsRaw.map((account) => ({
-      ...account,
-      accountNumber:
-        caps.bankAccountNumbers && account.id === primaryCheckingId
-          ? account.accountNumber
-          : null,
-    }));
+    const bankAccounts = bankAccountsRaw.map((account) => ({ ...account, accountNumber: null }));
 
     const userWithBadge = user as typeof user & { verificationBadge?: string };
 
@@ -87,6 +76,7 @@ export async function GET() {
       notificationPrefs: parseNotificationPrefs(user?.notificationPrefs),
       verificationBadge: userWithBadge?.verificationBadge ?? "NONE",
       memberSince: user?.createdAt ?? null,
+      accountNumber,
       bankAccounts,
     });
   } catch (error) {
@@ -100,6 +90,7 @@ export async function GET() {
         notificationPrefs: parseNotificationPrefs(null),
         verificationBadge: "NONE",
         memberSince: null,
+        accountNumber: null,
         bankAccounts: [],
       },
       { status: 200 }

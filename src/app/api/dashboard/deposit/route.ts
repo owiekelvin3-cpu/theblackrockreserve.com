@@ -121,7 +121,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: proofCheck.error }, { status: 400 });
     }
 
-    const successMessage = resolveSuccessMessage(settings.depositConfirmationMessage);
     const amountLabel = formatCurrency(parsed.data.amountUsd);
 
     const depositTitle = "Deposit request submitted";
@@ -163,7 +162,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       title: "Deposit Request Submitted Successfully",
-      message: successMessage,
+      message: `We have received your deposit request for ${amountLabel}. Our team will verify your payment proof and notify you once the funds are credited to your account.`,
+      amountUsd: parsed.data.amountUsd,
+      amountLabel,
+      statusLabel: formatDepositStatus("PENDING"),
       deposit: {
         id: deposit.id,
         status: deposit.status,

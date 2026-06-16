@@ -2828,3 +2828,158 @@ html.tx-member-transfer-scroll-lock {
     background-position: -200% 0;
   }
 }
+
+.profile-user-account-number {
+  padding: 1.25rem;
+  border-radius: 0.875rem;
+  background: var(--dash-inner);
+  border: 1px solid rgba(255, 95, 5, 0.2);
+}
+
+[data-theme="light"] .profile-user-account-number {
+  background: #ffffff;
+  border-color: rgba(255, 95, 5, 0.18);
+}
+
+.profile-user-account-number-hint {
+  margin-top: 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.profile-bank-card-footer-simple {
+  border-top: none;
+  padding-top: 0;
+}
+
+.profile-acct-number {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.profile-acct-number-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.profile-acct-number-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.profile-acct-number-value {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.06em;
+}
+
+.profile-acct-number-lg .profile-acct-number-value {
+  font-size: 1.125rem;
+}
+
+.profile-acct-number-md .profile-acct-number-value {
+  font-size: 1rem;
+}
+
+.profile-acct-number-sm .profile-acct-number-value {
+  font-size: 0.875rem;
+}
+
+.profile-acct-number-segment {
+  white-space: nowrap;
+}
+
+.profile-acct-number-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.profile-acct-number-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.625rem;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+
+[data-theme="light"] .profile-acct-number-btn {
+  background: rgba(15, 20, 25, 0.04);
+  border-color: rgba(15, 20, 25, 0.08);
+}
+
+.profile-acct-number-btn:hover {
+  color: var(--accent-brand);
+  border-color: rgba(255, 95, 5, 0.3);
+  background: rgba(255, 95, 5, 0.08);
+}
+
+.profile-acct-number-btn-copied {
+  color: var(--accent-green);
+  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.deposit-success-card {
+  box-shadow: 0 8px 32px rgba(34, 197, 94, 0.08);
+}
+
+.deposit-success-amount {
+  padding: 1rem 1.125rem;
+  border-radius: 0.875rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] .deposit-success-amount {
+  background: rgba(15, 20, 25, 0.03);
+  border-color: rgba(15, 20, 25, 0.08);
+}
+
+.deposit-success-amount-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.deposit-success-amount-value {
+  margin-top: 0.35rem;
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.deposit-success-status {
+  display: inline-flex;
+  margin-top: 0.75rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent-brand);
+  background: rgba(255, 95, 5, 0.12);
+  border: 1px solid rgba(255, 95, 5, 0.25);
+}
