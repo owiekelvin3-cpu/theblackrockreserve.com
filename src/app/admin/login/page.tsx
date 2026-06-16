@@ -4,7 +4,8 @@ import { useState, useEffect, Suspense } from "react";
 import { signIn, signOut, getSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Shield, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { AlertCircle, Eye, EyeOff } from "lucide-react";
+import { LogoMark } from "@/components/layout/Logo";
 import { useI18n } from "@/components/providers/I18nProvider";
 import LanguageSelector from "@/components/ui/LanguageSelector";
 
@@ -84,9 +85,7 @@ function LoginForm() {
 
       <div className="admin-card admin-card-glow w-full max-w-md p-8 relative z-10">
         <div className="flex items-center gap-3 mb-8">
-          <div className="h-11 w-11 rounded-xl brand-gradient-bg flex items-center justify-center shadow-brand">
-            <Shield size={22} className="text-white" />
-          </div>
+          <LogoMark size="md" className="rounded-xl" />
           <div>
             <h1 className="text-lg font-bold text-white">
               {t("admin.consoleTitle")} <span className="gold-gradient-text">{t("admin.consoleHighlight")}</span>

@@ -10,8 +10,8 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     orientation: "portrait-primary",
-    background_color: "#121214",
-    theme_color: "#121214",
+    background_color: "#000000",
+    theme_color: "#000000",
     categories: ["finance", "business"],
     icons: [
       {
@@ -31,6 +31,12 @@ export default function manifest(): MetadataRoute.Manifest {
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",
+      },
+      {
+        src: "/apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+        purpose: "any",
       },
       {
         src: "/favicon.svg",

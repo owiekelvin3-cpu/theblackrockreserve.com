@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, Copy, Check, Download, X } from "lucide-react";
 import Button from "@/components/ui/Button";
+import AppIconMark from "@/components/ui/AppIconMark";
+import UserDisplayName from "@/components/ui/UserDisplayName";
 import { useI18n } from "@/components/providers/I18nProvider";
 import {
   buildReceiptDownloadText,
@@ -12,6 +14,7 @@ import {
   formatReferenceId,
 } from "@/lib/transaction-receipt";
 import { formatBankAccountNumberDisplay } from "@/lib/bank-account-number";
+import type { VerificationBadgeType } from "@/lib/verification-badge";
 import { toast } from "sonner";
 
 export type MemberTransferReceiptData = {
@@ -19,7 +22,9 @@ export type MemberTransferReceiptData = {
   amount: number;
   recipientAccountNumber: string;
   recipientName: string;
+  recipientVerificationBadge?: VerificationBadgeType | string | null;
   senderName: string;
+  senderVerificationBadge?: VerificationBadgeType | string | null;
   senderAccountNumber?: string | null;
   accountName: string;
   note?: string | null;
@@ -169,8 +174,8 @@ function MemberTransferReceiptView({
       >
         <div className="tx-mt-top">
           <div className="tx-mt-brand">
-            <span className="tx-receipt-brand-mark" aria-hidden>
-              BR
+            <span className="tx-mt-brand-icon" aria-hidden>
+              <AppIconMark size={32} className="rounded-lg" />
             </span>
             <div className="min-w-0">
               <p className="tx-mt-brand-name">{t("brand.name")}</p>
@@ -203,7 +208,14 @@ function MemberTransferReceiptView({
           <DetailItem label={t("withdrawals.receipt.sourceAccount")} value={receipt.accountName} />
           <DetailItem
             label={t("withdrawals.memberTransfer.receipt.sender")}
-            value={receipt.senderName}
+            valueNode={
+              <UserDisplayName
+                name={receipt.senderName}
+                verificationBadge={receipt.senderVerificationBadge}
+                badgeSize="xs"
+                nameClassName="text-sm font-medium text-text-primary"
+              />
+            }
             sub={
               receipt.senderAccountNumber
                 ? formatBankAccountNumberDisplay(receipt.senderAccountNumber)
@@ -212,7 +224,14 @@ function MemberTransferReceiptView({
           />
           <DetailItem
             label={t("withdrawals.memberTransfer.receipt.beneficiary")}
-            value={receipt.recipientName}
+            valueNode={
+              <UserDisplayName
+                name={receipt.recipientName}
+                verificationBadge={receipt.recipientVerificationBadge}
+                badgeSize="xs"
+                nameClassName="text-sm font-medium text-text-primary"
+              />
+            }
             sub={formatBankAccountNumberDisplay(receipt.recipientAccountNumber)}
           />
           {receipt.note && (
@@ -243,17 +262,19 @@ function MemberTransferReceiptView({
 function DetailItem({
   label,
   value,
+  valueNode,
   sub,
 }: {
   label: string;
-  value: string;
+  value?: string;
+  valueNode?: ReactNode;
   sub?: string;
 }) {
   return (
     <div className="tx-mt-detail">
       <dt className="tx-mt-detail-label">{label}</dt>
       <dd className="tx-mt-detail-value">
-        <span>{value}</span>
+        {valueNode ?? <span>{value}</span>}
         {sub && <span className="tx-mt-detail-sub">{sub}</span>}
       </dd>
     </div>

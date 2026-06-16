@@ -1577,6 +1577,14 @@ html.tx-member-transfer-scroll-lock {
   min-width: 0;
 }
 
+.tx-mt-brand .tx-receipt-brand-mark,
+.tx-mt-brand-icon {
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+}
+
 .tx-mt-brand .tx-receipt-brand-mark {
   width: 2rem;
   height: 2rem;
@@ -1853,6 +1861,13 @@ html.tx-member-transfer-scroll-lock {
   background: rgba(34, 197, 94, 0.12);
   border: 1px solid rgba(34, 197, 94, 0.25);
   flex-shrink: 0;
+}
+
+.tx-receipt-brand-icon-wrap {
+  background: transparent;
+  border: none;
+  border-radius: 0.75rem;
+  padding: 0;
 }
 
 .tx-detail-type-icon {

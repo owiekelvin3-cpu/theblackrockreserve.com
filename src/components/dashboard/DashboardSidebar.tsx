@@ -5,11 +5,12 @@ import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import {
   LayoutDashboard, ArrowUpFromLine, Wallet,
-  RefreshCw, Settings, Search, Zap, X, LineChart, Users, Landmark, LogOut, MessageCircle,
+  RefreshCw, Settings, Search, X, LineChart, Users, Landmark, LogOut, MessageCircle,
   Send, Receipt, CreditCard,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import Logo from "@/components/layout/Logo";
 import { useDashboardLayout } from "@/components/dashboard/DashboardLayoutContext";
 import ProfileAvatar from "@/components/ui/ProfileAvatar";
 import UserDisplayName from "@/components/ui/UserDisplayName";
@@ -17,6 +18,7 @@ import LanguageSelector from "@/components/ui/LanguageSelector";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { useProfileImage } from "@/components/providers/ProfileImageProvider";
 import { useChat } from "@/components/providers/ChatProvider";
+
 const mainNav = [
   { href: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard, badge: null },
   { href: "/dashboard/deposit", labelKey: "nav.deposit", icon: Wallet, badge: null },
@@ -150,14 +152,7 @@ export default function DashboardSidebar() {
         )}
       >
         <div className="flex items-center justify-between gap-2 p-4 sm:p-5 border-b border-white/5 lg:border-0">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="h-9 w-9 rounded-lg brand-gradient-bg flex items-center justify-center shadow-brand shrink-0">
-              <Zap size={18} className="text-white" fill="white" />
-            </div>
-            <span className="text-base font-bold text-text-primary tracking-tight truncate">
-              Blackrock<span className="text-accent-brand">Reserve</span>
-            </span>
-          </div>
+          <Logo href="/dashboard" size="sm" className="min-w-0 flex-1" />
           <button
             type="button"
             className="lg:hidden p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-white/5"

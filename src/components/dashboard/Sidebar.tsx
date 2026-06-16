@@ -8,6 +8,7 @@ import {
   Landmark, Settings, LogOut, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import Logo from "@/components/layout/Logo";
+import { LogoMark } from "@/components/layout/Logo";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { cn } from "@/lib/utils";
 
@@ -33,9 +34,9 @@ export default function Sidebar() {
       <div className={cn("p-4 flex items-center", sidebarCollapsed ? "justify-center flex-col gap-3" : "justify-between")}>
         {!sidebarCollapsed && <Logo />}
         {sidebarCollapsed && (
-          <div className="h-9 w-9 rounded-xl bg-accent-brand/20 border border-accent-brand/30 flex items-center justify-center">
-            <span className="text-accent-brand font-bold text-sm">P</span>
-          </div>
+          <Link href="/dashboard" aria-label="Dashboard">
+            <LogoMark size="sm" className="rounded-lg" />
+          </Link>
         )}
         <button
           onClick={toggleSidebar}

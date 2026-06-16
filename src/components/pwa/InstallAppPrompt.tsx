@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Download, Share, Smartphone } from "lucide-react";
+import { Download, Share } from "lucide-react";
 import Button from "@/components/ui/Button";
+import AppIconMark from "@/components/ui/AppIconMark";
 import { useI18n } from "@/components/providers/I18nProvider";
 
 type BeforeInstallPromptEvent = Event & {
@@ -88,8 +89,8 @@ export default function InstallAppPrompt({ variant = "card", className = "" }: I
   return (
     <div className={`rounded-2xl border border-border bg-glass-bg p-5 ${className}`}>
       <div className="flex items-start gap-3">
-        <div className="h-10 w-10 rounded-xl brand-gradient-bg flex items-center justify-center shrink-0">
-          <Smartphone size={18} className="text-white" />
+        <div className="h-10 w-10 rounded-xl overflow-hidden flex items-center justify-center shrink-0 shadow-brand">
+          <AppIconMark size={40} className="rounded-xl" />
         </div>
         <div className="min-w-0 flex-1">
           <h3 className="font-semibold text-text-primary">{t("pwa.installTitle")}</h3>

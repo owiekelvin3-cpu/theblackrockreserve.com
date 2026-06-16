@@ -33,6 +33,18 @@ const themeInitScript = `
 })();
 `;
 
+const splashDismissScript = `
+(function() {
+  var standalone = window.matchMedia('(display-mode: standalone)').matches
+    || (window.navigator.standalone === true);
+  if (!standalone) {
+    document.documentElement.classList.add('app-ready');
+    var el = document.getElementById('app-splash');
+    if (el) el.remove();
+  }
+})();
+`;
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
@@ -73,7 +85,10 @@ export const metadata: Metadata = {
       { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
       { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
-    apple: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
   },
 };
 
@@ -82,8 +97,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#121214" },
-    { media: "(prefers-color-scheme: light)", color: "#e8ebf0" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+    { media: "(prefers-color-scheme: light)", color: "#000000" },
   ],
 };
 
@@ -99,8 +114,25 @@ export default async function RootLayout({
     <html lang={initialLocale} dir={dir} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <script dangerouslySetInnerHTML={{ __html: splashDismissScript }} />
       </head>
       <body className="antialiased bg-bg-primary font-sans">
+        <div id="app-splash" suppressHydrationWarning aria-hidden="true">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/icons/icon-192.png"
+            alt=""
+            width={88}
+            height={88}
+            className="app-splash-icon"
+          />
+          <p className="app-splash-name">BlackrockReserve</p>
+          <div className="app-splash-loader" role="presentation">
+            <span />
+            <span />
+            <span />
+          </div>
+        </div>
         <div className="page-glow" />
         <Providers initialLocale={initialLocale}>{children}</Providers>
       </body>

@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import type { PhysicalCardTier } from "@prisma/client";
 import { Wifi } from "lucide-react";
+import AppIconMark from "@/components/ui/AppIconMark";
 import { CARD_TIER_CONFIG } from "@/lib/physical-cards-constants";
 import { cn } from "@/lib/utils";
 
@@ -52,7 +53,7 @@ export default function PhysicalCardPreview({
         <div className="pc-card-texture" aria-hidden />
         <div className="pc-card-top">
           <div className="pc-card-brand">
-            <span className="pc-card-brand-mark" style={{ color: theme.accent }} />
+            <AppIconMark size={18} className="pc-card-brand-icon rounded-md" />
             <span className="pc-card-brand-name">Blackrock Reserve</span>
           </div>
           <Wifi size={18} className="pc-card-contactless" style={{ color: theme.accent }} strokeWidth={2} />

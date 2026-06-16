@@ -4,10 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  CheckCircle2, Copy, Check, Download, X, Clock, Shield,
+  Copy, Check, Download, X, Clock, Shield,
   ArrowUpRight, FileText,
 } from "lucide-react";
 import Button from "@/components/ui/Button";
+import { LogoMark } from "@/components/layout/Logo";
 import { useI18n } from "@/components/providers/I18nProvider";
 import {
   buildReceiptDownloadText,
@@ -100,8 +101,8 @@ export default function WithdrawalReceiptModal({
             transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
           >
             <div className="tx-receipt-header">
-              <div className="tx-receipt-success-icon" aria-hidden>
-                <CheckCircle2 size={28} className="text-accent-green" />
+              <div className="tx-receipt-success-icon tx-receipt-brand-icon-wrap" aria-hidden>
+                <LogoMark size="sm" className="rounded-lg" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="tx-receipt-eyebrow">{t("brand.name")}</p>

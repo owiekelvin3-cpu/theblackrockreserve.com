@@ -1,5 +1,5 @@
 /* BlackrockReserve service worker — static precache + safe runtime caching */
-const CACHE_VERSION = "br-pwa-v1";
+const CACHE_VERSION = "br-pwa-v2";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const OFFLINE_URL = "/offline";
@@ -8,6 +8,7 @@ const PRECACHE_URLS = [
   "/",
   "/offline",
   "/favicon.svg",
+  "/apple-touch-icon.png",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
   "/icons/icon-maskable-512.png",

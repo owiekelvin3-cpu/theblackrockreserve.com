@@ -12,6 +12,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAdminNotifications } from "@/components/admin/AdminNotificationsProvider";
 import { useI18n } from "@/components/providers/I18nProvider";
+import { LogoMark } from "@/components/layout/Logo";
 
 type NavItem = {
   href: string;
@@ -74,9 +75,7 @@ export default function AdminSidebar() {
     <>
       <div className="p-4 sm:p-5 border-b border-white/10 shrink-0">
         <Link href="/admin" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
-          <div className="h-9 w-9 rounded-xl brand-gradient-bg flex items-center justify-center text-white font-bold text-sm shadow-brand shrink-0">
-            BR
-          </div>
+          <LogoMark size="sm" className="rounded-xl" />
           <div className="min-w-0">
             <p className="text-sm font-semibold text-white leading-tight truncate">{t("admin.brand")}</p>
             <span className="admin-pill mt-0.5">{t("admin.badge")}</span>

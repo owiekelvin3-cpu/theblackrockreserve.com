@@ -3,6 +3,7 @@
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "sonner";
 import ServiceWorkerRegister from "@/components/pwa/ServiceWorkerRegister";
+import AppLaunchSplash from "@/components/pwa/AppLaunchSplash";
 import NotificationAudioUnlock from "@/components/providers/NotificationAudioUnlock";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { I18nProvider } from "@/components/providers/I18nProvider";
@@ -23,6 +24,7 @@ export default function Providers({
         <ChatProvider>
         <NotificationAudioUnlock />
         <ServiceWorkerRegister />
+        <AppLaunchSplash />
         {children}
         <Toaster
           position="top-center"

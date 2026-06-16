@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { useChat } from "@/components/providers/ChatProvider";
 import { getLocalizedWelcome } from "@/lib/i18n/chat-i18n";
+import { LogoMark } from "@/components/layout/Logo";
 
 type ChatMessage = {
   id: string;
@@ -805,11 +806,11 @@ export default function ChatWidget() {
 
           <div
             className={cn(
-              "relative h-14 w-14 rounded-full brand-gradient-bg shadow-brand flex items-center justify-center text-white transition-transform",
+              "relative h-14 w-14 rounded-2xl shadow-brand flex items-center justify-center overflow-hidden transition-transform",
               !dragging && "hover:scale-105"
             )}
           >
-            <MessageCircle size={22} />
+            <LogoMark size="sm" className="rounded-2xl w-full h-full" />
             <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-bg-primary" />
           </div>
         </div>

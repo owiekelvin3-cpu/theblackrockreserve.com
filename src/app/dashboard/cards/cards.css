@@ -233,6 +233,11 @@
   gap: 0.45rem;
 }
 
+.pc-card-brand-icon {
+  flex-shrink: 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+
 .pc-card-brand-mark {
   width: 0.55rem;
   height: 0.55rem;
