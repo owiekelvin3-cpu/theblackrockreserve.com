@@ -237,6 +237,11 @@ export const savingsTransferSchema = z.object({
   transactionPin: transactionPinSchema,
 });
 
+export const profitWithdrawSchema = z.object({
+  amount: z.number().positive("Amount must be greater than zero"),
+  transactionPin: transactionPinSchema,
+});
+
 export const memberTransferSchema = z.object({
   accountId: z.string().min(1, "Account is required"),
   recipientAccountNumber: z

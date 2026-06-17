@@ -93,7 +93,7 @@ export function showBrowserNotification(title: string, body: string, tag?: strin
   if (document.visibilityState === "visible") return;
 
   try {
-    new Notification(title, { body, tag, icon: "/favicon.svg" });
+    new Notification(title, { body, tag, icon: "/icons/icon-192.png" });
   } catch {
     /* ignore unsupported environments */
   }

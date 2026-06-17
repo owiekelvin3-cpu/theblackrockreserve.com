@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import DashboardGate from "@/components/dashboard/DashboardGate";
+import ProfitWithdrawPanel from "@/components/dashboard/ProfitWithdrawPanel";
 import { formatCurrency, cn } from "@/lib/utils";
 import { fetchJson } from "@/lib/fetch-json";
 import { useI18n } from "@/components/providers/I18nProvider";
@@ -28,7 +29,8 @@ export default function InvestmentsPage() {
   const [tradingRealizedProfit, setTradingRealizedProfit] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const loadData = useCallback(() => {
+    setLoading(true);
     fetchJson<{
       holdings: Holding[];
       investedBalance: number;
@@ -43,6 +45,10 @@ export default function InvestmentsPage() {
       })
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const portfolioValue = holdings.reduce((sum, h) => sum + h.value, 0);
 
@@ -69,6 +75,7 @@ export default function InvestmentsPage() {
             <p className="text-sm text-text-secondary">{t("investments.profitBalance")}</p>
             <p className="text-2xl font-bold text-accent-green mt-1">{fmt(profitBalance)}</p>
             <p className="text-xs text-text-muted mt-1">{t("investments.profitBalanceDesc")}</p>
+            <ProfitWithdrawPanel profitBalance={profitBalance} onSuccess={loadData} />
           </Card>
           <Card>
             <p className="text-sm text-text-secondary">{t("investments.tradingProfit")}</p>

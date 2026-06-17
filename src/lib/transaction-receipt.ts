@@ -27,6 +27,8 @@ export function buildReceiptDownloadText(data: {
   referenceId: string;
   status: string;
   amount: string;
+  from?: string;
+  to?: string;
   destination?: string;
   destinationExtra?: string | null;
   paymentMethod?: string;
@@ -43,6 +45,8 @@ export function buildReceiptDownloadText(data: {
     `Reference:     ${data.referenceId}`,
     `Status:        ${data.status}`,
     `Amount:        ${data.amount}`,
+    ...(data.from ? [`From:          ${data.from}`] : []),
+    ...(data.to ? [`To:            ${data.to}`] : []),
     ...(data.paymentMethod ? [`Method:        ${data.paymentMethod}`] : []),
     ...(data.destination ? [`Destination:   ${data.destination}`] : []),
     ...(data.destinationExtra ? [`Details:       ${data.destinationExtra}`] : []),

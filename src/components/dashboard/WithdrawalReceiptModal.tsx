@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -11,11 +11,10 @@ import Button from "@/components/ui/Button";
 import { LogoMark } from "@/components/layout/Logo";
 import { useI18n } from "@/components/providers/I18nProvider";
 import {
-  buildReceiptDownloadText,
-  downloadTextFile,
   formatReferenceId,
   maskDestination,
 } from "@/lib/transaction-receipt";
+import { downloadReceiptAsImage } from "@/lib/receipt-image";
 import { toast } from "sonner";
 import type { WithdrawalReceiptData } from "@/lib/withdrawal-receipt";
 
@@ -34,6 +33,8 @@ export default function WithdrawalReceiptModal({
 }: WithdrawalReceiptModalProps) {
   const { t, formatCurrency, formatDate, formatTime } = useI18n();
   const [copied, setCopied] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const captureRef = useRef<HTMLDivElement>(null);
 
   if (!receipt) return null;
 
@@ -60,22 +61,20 @@ export default function WithdrawalReceiptModal({
     }
   };
 
-  const handleDownload = () => {
-    const text = buildReceiptDownloadText({
-      title: t("withdrawals.receipt.title"),
-      referenceId,
-      status: receipt.displayStatus,
-      amount: formatCurrency(receipt.amountUsd),
-      destination: receipt.destination,
-      destinationExtra: receipt.destinationExtra,
-      paymentMethod: receipt.methodLabel,
-      dateTime,
-      estimatedTime: receipt.estimatedProcessingTime,
-      confirmationMessage,
-      brandName: t("brand.name"),
-    });
-    downloadTextFile(`withdrawal-receipt-${receipt.id.slice(-8)}.txt`, text);
-    toast.success(t("withdrawals.receipt.downloaded"));
+  const handleDownload = async () => {
+    if (!captureRef.current) return;
+    setDownloading(true);
+    try {
+      await downloadReceiptAsImage(
+        captureRef.current,
+        `withdrawal-receipt-${receipt.id.slice(-8)}.png`
+      );
+      toast.success(t("withdrawals.receipt.downloaded"));
+    } catch {
+      toast.error(t("withdrawals.receipt.downloadFailed"));
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
@@ -94,12 +93,17 @@ export default function WithdrawalReceiptModal({
           <motion.div
             role="dialog"
             aria-labelledby="withdrawal-receipt-title"
-            className="tx-receipt-modal"
+            className="tx-receipt-modal tx-receipt-modal-shell"
             initial={{ opacity: 0, y: 32, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 24, scale: 0.98 }}
             transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
           >
+            <button type="button" onClick={onClose} className="tx-receipt-close tx-receipt-close-floating" aria-label={t("common.close")}>
+              <X size={18} />
+            </button>
+
+            <div ref={captureRef} className="tx-receipt-capture">
             <div className="tx-receipt-header">
               <div className="tx-receipt-success-icon tx-receipt-brand-icon-wrap" aria-hidden>
                 <LogoMark size="sm" className="rounded-lg" />
@@ -111,9 +115,6 @@ export default function WithdrawalReceiptModal({
                 </h2>
                 <p className="tx-receipt-subtitle">{t("withdrawals.receipt.subtitle")}</p>
               </div>
-              <button type="button" onClick={onClose} className="tx-receipt-close" aria-label={t("common.close")}>
-                <X size={18} />
-              </button>
             </div>
 
             <div className="tx-receipt-status-banner">
@@ -164,11 +165,18 @@ export default function WithdrawalReceiptModal({
               <Shield size={15} className="text-accent-brand shrink-0 mt-0.5" />
               <p>{confirmationMessage}</p>
             </div>
+            </div>
 
             <div className="tx-receipt-actions">
-              <Button type="button" variant="outline" className="flex-1 min-h-[44px]" onClick={handleDownload}>
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1 min-h-[44px]"
+                onClick={handleDownload}
+                disabled={downloading}
+              >
                 <Download size={16} />
-                {t("withdrawals.receipt.download")}
+                {downloading ? t("common.processing") : t("withdrawals.receipt.download")}
               </Button>
               <Button type="button" variant="outline" className="flex-1 min-h-[44px]" onClick={handleCopy}>
                 {copied ? <Check size={16} className="text-accent-green" /> : <Copy size={16} />}

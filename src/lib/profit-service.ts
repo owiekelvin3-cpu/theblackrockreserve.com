@@ -249,6 +249,96 @@ export async function removeUserProfit(params: {
   };
 }
 
+/** Move funds from the user's profit balance into their primary checking account. */
+export async function withdrawProfitToMain(userId: string, amount: number) {
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error("Enter a valid amount greater than zero");
+  }
+
+  const rounded = Math.round(amount * 100) / 100;
+
+  const user = await prisma.user.findFirst({
+    where: { id: userId, role: "USER" },
+    select: { id: true, name: true, email: true, profitBalance: true },
+  });
+  if (!user) throw new Error("User not found");
+
+  const profitBefore = Number(user.profitBalance);
+  if (profitBefore < rounded) {
+    throw new Error(
+      `Insufficient profit balance (${formatCurrency(profitBefore)} available)`
+    );
+  }
+
+  const bankAccounts = await ensureUserBankAccounts(userId);
+  const account =
+    bankAccounts.find((a) => a.type === "checking") ?? bankAccounts[0];
+  if (!account) throw new Error("No bank account found for user");
+
+  const balanceBefore = Number(account.balance);
+  const profitAfter = Math.round((profitBefore - rounded) * 100) / 100;
+  const balanceAfter = Math.round((balanceBefore + rounded) * 100) / 100;
+
+  const result = await runInteractiveTransaction(async (tx) => {
+    const freshUser = await tx.user.findUnique({
+      where: { id: userId },
+      select: { profitBalance: true },
+    });
+    if (!freshUser) throw new Error("User not found");
+
+    const liveProfit = Number(freshUser.profitBalance);
+    if (liveProfit < rounded) {
+      throw new Error(
+        `Insufficient profit balance (${formatCurrency(liveProfit)} available)`
+      );
+    }
+
+    const bankAccount = await tx.bankAccount.findFirst({
+      where: { id: account.id, userId },
+    });
+    if (!bankAccount) throw new Error("Account not found");
+
+    const liveBalance = Number(bankAccount.balance);
+
+    await tx.user.update({
+      where: { id: userId },
+      data: { profitBalance: Math.round((liveProfit - rounded) * 100) / 100 },
+    });
+
+    await tx.bankAccount.update({
+      where: { id: account.id },
+      data: { balance: Math.round((liveBalance + rounded) * 100) / 100 },
+    });
+
+    const transaction = await tx.transaction.create({
+      data: {
+        userId,
+        accountId: account.id,
+        type: "PROFIT_CREDIT",
+        amount: rounded,
+        description: "Profit withdrawn to main balance",
+        status: "COMPLETED",
+      },
+    });
+
+    return { transaction };
+  });
+
+  const amountLabel = formatCurrency(rounded);
+  const title = "Profit moved to main balance";
+  const message = `${amountLabel} was transferred from your profit balance to your main account.`;
+
+  await createUserNotification({ userId, type: "PROFIT_WITHDRAWAL", title, message });
+  await sendUserNotificationEmail({ userId, title, message });
+
+  return {
+    transactionId: result.transaction.id,
+    profitBalance: profitAfter,
+    mainBalance: balanceAfter,
+    amount: rounded,
+  };
+}
+
 async function sendEmailSafe(
   to: string,
   mail: { subject: string; html: string; text: string }

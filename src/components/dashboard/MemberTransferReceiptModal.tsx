@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Copy, CheckCircle2, Download, X, ArrowDown } from "lucide-react";
@@ -8,11 +8,8 @@ import Button from "@/components/ui/Button";
 import AppIconMark from "@/components/ui/AppIconMark";
 import UserDisplayName from "@/components/ui/UserDisplayName";
 import { useI18n } from "@/components/providers/I18nProvider";
-import {
-  buildReceiptDownloadText,
-  downloadTextFile,
-  formatReferenceId,
-} from "@/lib/transaction-receipt";
+import { formatReferenceId } from "@/lib/transaction-receipt";
+import { downloadReceiptAsImage } from "@/lib/receipt-image";
 import { formatBankAccountNumberDisplay } from "@/lib/bank-account-number";
 import type { VerificationBadgeType } from "@/lib/verification-badge";
 import { toast } from "sonner";
@@ -105,19 +102,14 @@ function MemberTransferReceiptView({
 }) {
   const { t, formatCurrency, formatDate, formatTime } = useI18n();
   const [copied, setCopied] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const captureRef = useRef<HTMLDivElement>(null);
 
   const referenceId = formatReferenceId(receipt.id);
   const dateTime = `${formatDate(receipt.createdAt, {
     month: "short",
     day: "numeric",
     year: "numeric",
-  })} · ${formatTime(receipt.createdAt)}`;
-
-  const fullDateTime = `${formatDate(receipt.createdAt, {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
   })} · ${formatTime(receipt.createdAt)}`;
 
   const handleCopy = async () => {
@@ -131,21 +123,21 @@ function MemberTransferReceiptView({
     }
   };
 
-  const handleDownload = () => {
-    const text = buildReceiptDownloadText({
-      title: t("withdrawals.memberTransfer.receipt.title"),
-      referenceId,
-      status: t("withdrawals.memberTransfer.receipt.completed"),
-      amount: formatCurrency(receipt.amount),
-      destination: formatBankAccountNumberDisplay(receipt.recipientAccountNumber),
-      destinationExtra: receipt.note,
-      paymentMethod: t("withdrawals.memberTransfer.title"),
-      dateTime: fullDateTime,
-      confirmationMessage: t("withdrawals.memberTransfer.receipt.confirmation"),
-      brandName: t("brand.name"),
-    });
-    downloadTextFile(`member-transfer-${receipt.id.slice(-8)}.txt`, text);
-    toast.success(t("withdrawals.memberTransfer.receipt.downloaded"));
+  const handleDownload = async () => {
+    if (!captureRef.current) return;
+    setDownloading(true);
+    try {
+      await downloadReceiptAsImage(
+        captureRef.current,
+        `member-transfer-${receipt.id.slice(-8)}.png`,
+        { backgroundColor: "#141416" }
+      );
+      toast.success(t("withdrawals.memberTransfer.receipt.downloaded"));
+    } catch {
+      toast.error(t("withdrawals.receipt.downloadFailed"));
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
@@ -172,12 +164,22 @@ function MemberTransferReceiptView({
         role="dialog"
         aria-modal="true"
         aria-labelledby="member-transfer-receipt-title"
-        className="tx-mt-receipt-card"
+        className="tx-mt-receipt-card tx-receipt-modal-shell"
         initial={{ opacity: 0, y: 48, scale: 0.94 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 24, scale: 0.97 }}
         transition={{ ...spring, delay: 0.04 }}
       >
+        <button
+          type="button"
+          onClick={onClose}
+          className="tx-mt-receipt-close tx-receipt-close-floating"
+          aria-label={t("common.close")}
+        >
+          <X size={18} />
+        </button>
+
+        <div ref={captureRef} className="tx-receipt-capture tx-mt-receipt-capture">
         <div className="tx-mt-receipt-glow" aria-hidden />
 
         <div className="tx-mt-receipt-header">
@@ -185,9 +187,6 @@ function MemberTransferReceiptView({
             <AppIconMark size={28} className="rounded-lg" />
             <span className="tx-mt-receipt-brand-name">{t("brand.name")}</span>
           </div>
-          <button type="button" onClick={onClose} className="tx-mt-receipt-close" aria-label={t("common.close")}>
-            <X size={18} />
-          </button>
         </div>
 
         <motion.div
@@ -303,6 +302,7 @@ function MemberTransferReceiptView({
         >
           {t("withdrawals.memberTransfer.receipt.confirmationShort")}
         </motion.p>
+        </div>
 
         <motion.div
           className="tx-mt-receipt-actions"
@@ -314,9 +314,14 @@ function MemberTransferReceiptView({
             {t("withdrawals.receipt.close")}
           </Button>
           <div className="tx-mt-secondary-actions">
-            <button type="button" className="tx-mt-secondary-btn" onClick={handleDownload}>
+            <button
+              type="button"
+              className="tx-mt-secondary-btn"
+              onClick={handleDownload}
+              disabled={downloading}
+            >
               <Download size={16} />
-              <span>{t("withdrawals.receipt.download")}</span>
+              <span>{downloading ? t("common.processing") : t("withdrawals.receipt.download")}</span>
             </button>
             <button type="button" className="tx-mt-secondary-btn" onClick={handleCopy}>
               {copied ? <Check size={16} className="text-accent-green" /> : <Copy size={16} />}

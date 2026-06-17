@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getSignedTransactionAmount } from "@/lib/transaction-amount";
 import { loadCounterpartiesForTransactions } from "@/lib/transaction-counterparty";
+import { serializeVerificationBadge } from "@/lib/verification-badge";
 import type { TransactionStatus, TransactionType, VerificationBadgeType } from "@prisma/client";
 
 export type ActivityCategory =
@@ -161,7 +162,13 @@ export async function getActivityById(userId: string, id: string) {
   if (!row) return null;
 
   const amount = getSignedTransactionAmount(row.type, row.amount, row.description);
-  const counterpartyMap = await loadCounterpartiesForTransactions([row]);
+  const [counterpartyMap, owner] = await Promise.all([
+    loadCounterpartiesForTransactions([row]),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true, verificationBadge: true },
+    }),
+  ]);
   const counterparty = counterpartyMap.get(row.id) ?? null;
 
   return {
@@ -175,6 +182,10 @@ export async function getActivityById(userId: string, id: string) {
     status: row.status,
     statusLabel: formatTransactionStatus(row.status),
     date: row.createdAt.toISOString(),
+    ownerName: owner?.name ?? null,
+    ownerVerificationBadge: owner
+      ? serializeVerificationBadge(owner.verificationBadge)
+      : null,
     counterpartyName: counterparty?.name ?? null,
     counterpartyVerificationBadge: counterparty?.verificationBadge ?? null,
     counterpartyRelation: counterparty?.relation ?? null,
