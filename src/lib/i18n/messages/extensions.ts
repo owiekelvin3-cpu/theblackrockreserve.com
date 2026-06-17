@@ -257,7 +257,7 @@ const extensions = {
     tryAgain: "Try Again",
   },
   emails: {
-    brand: "BlackrockReserve",
+    brand: "Blackrock Reserve",
     footerRights: "© {year} {brand}. All rights reserved.",
     footerAuto: "This is an automated message — please do not reply directly.",
     otpLabel: "Your verification code:",
