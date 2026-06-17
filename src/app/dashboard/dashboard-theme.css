@@ -745,6 +745,345 @@
   border-color: rgba(34, 197, 94, 0.28);
 }
 
+.dash-profit-withdraw-btn-block {
+  width: 100%;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.625rem 1rem;
+  font-size: 0.8125rem;
+  border-radius: 0.625rem;
+}
+
+@media (min-width: 640px) {
+  .dash-profit-withdraw-btn-block {
+    width: auto;
+  }
+}
+
+/* Profit withdraw sheet */
+.profit-withdraw-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  background: rgba(4, 6, 10, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+@media (min-width: 640px) {
+  .profit-withdraw-backdrop {
+    align-items: center;
+    padding: 1rem;
+  }
+}
+
+.profit-withdraw-sheet {
+  position: relative;
+  width: 100%;
+  max-width: 28rem;
+  max-height: min(92dvh, calc(100dvh - env(safe-area-inset-top, 0px) - 1rem));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: none;
+  border-radius: 1.25rem 1.25rem 0 0;
+  background: linear-gradient(180deg, #1a1a1f 0%, #121216 100%);
+  box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.45);
+  padding: 1rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 640px) {
+  .profit-withdraw-sheet {
+    border-radius: 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1.5rem;
+  }
+}
+
+[data-theme="light"] .profit-withdraw-sheet {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border-color: rgba(15, 20, 25, 0.1);
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.14);
+}
+
+.profit-withdraw-sheet-handle {
+  width: 2.5rem;
+  height: 0.25rem;
+  margin: 0 auto 1rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+@media (min-width: 640px) {
+  .profit-withdraw-sheet-handle {
+    display: none;
+  }
+}
+
+.profit-withdraw-sheet-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding-right: 2.25rem;
+  margin-bottom: 1rem;
+}
+
+.profit-withdraw-sheet-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  border-radius: 0.75rem;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.28);
+  color: var(--accent-green);
+}
+
+.profit-withdraw-sheet-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+.profit-withdraw-sheet-subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.profit-withdraw-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.625rem;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background 0.15s, color 0.15s;
+}
+
+.profit-withdraw-close:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.profit-withdraw-balance-card {
+  padding: 1rem 1.125rem;
+  margin-bottom: 1.25rem;
+  border-radius: 0.875rem;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.22);
+}
+
+.profit-withdraw-balance-label {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.profit-withdraw-balance-value {
+  margin: 0.35rem 0 0;
+  font-size: clamp(1.25rem, 5vw, 1.875rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-green);
+  word-break: break-word;
+}
+
+.profit-withdraw-balance-value.is-compact {
+  font-size: clamp(1rem, 4vw, 1.375rem);
+}
+
+.profit-withdraw-amount-wrap {
+  margin-bottom: 0.75rem;
+}
+
+.profit-withdraw-amount-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.profit-withdraw-amount-field-wrap {
+  position: relative;
+}
+
+.profit-withdraw-amount-prefix {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.profit-withdraw-amount-field {
+  width: 100%;
+  min-height: 3.5rem;
+  padding: 0.75rem 1rem 0.75rem 2rem;
+  border-radius: 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  font-size: clamp(1.125rem, 4.5vw, 1.625rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.profit-withdraw-amount-field:focus {
+  border-color: rgba(34, 197, 94, 0.45);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
+}
+
+.profit-withdraw-amount-field[data-length="9"],
+.profit-withdraw-amount-field[data-length="10"] {
+  font-size: clamp(1rem, 3.8vw, 1.375rem);
+}
+
+.profit-withdraw-amount-field[data-length="11"],
+.profit-withdraw-amount-field[data-length="12"],
+.profit-withdraw-amount-field[data-length="13"] {
+  font-size: clamp(0.9375rem, 3.4vw, 1.25rem);
+}
+
+.profit-withdraw-amount-field[data-length="14"],
+.profit-withdraw-amount-field[data-length="15"] {
+  font-size: clamp(0.875rem, 3vw, 1.125rem);
+}
+
+[data-theme="light"] .profit-withdraw-amount-field {
+  background: #ffffff;
+  border-color: rgba(15, 20, 25, 0.12);
+}
+
+.profit-withdraw-amount-preview {
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.profit-withdraw-amount-preview strong {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.profit-withdraw-chips {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 480px) {
+  .profit-withdraw-chips {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.profit-withdraw-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.5rem 0.5rem;
+  border-radius: 0.625rem;
+  font-size: clamp(0.6875rem, 2.6vw, 0.8125rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.profit-withdraw-chip:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.profit-withdraw-chip.is-active {
+  color: var(--accent-green);
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.profit-withdraw-chip-label {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profit-withdraw-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 48px;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--accent-green);
+  border: none;
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.profit-withdraw-submit:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.profit-withdraw-submit:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.profit-withdraw-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+[data-theme="light"] .profit-withdraw-chip {
+  background: #ffffff;
+  border-color: rgba(15, 20, 25, 0.1);
+}
+
 .dash-quick-actions {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

@@ -279,6 +279,8 @@ const enBase = {
     profitWithdrawInvalidAmount: "Enter a valid amount",
     profitWithdrawExceedsBalance: "Amount exceeds your profit balance",
     profitWithdrawNoBalance: "No profit available to withdraw yet",
+    profitWithdrawPreview: "You will withdraw",
+    profitWithdrawQuickAmounts: "Quick amounts",
     tradingProfit: "Trading Realized P&L",
     tradingProfitDesc: "Net profit or loss from completed sales",
     portfolioValue: "Open Holdings Value",

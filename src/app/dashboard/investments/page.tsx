@@ -76,7 +76,7 @@ export default function InvestmentsPage() {
             <p className="text-2xl font-bold text-accent-green mt-1">{fmt(profitBalance)}</p>
             <p className="text-xs text-text-muted mt-1">{t("investments.profitBalanceDesc")}</p>
             <div className="mt-3">
-              <ProfitWithdrawButton profitBalance={profitBalance} onSuccess={loadData} />
+              <ProfitWithdrawButton profitBalance={profitBalance} onSuccess={loadData} block />
             </div>
           </Card>
           <Card>

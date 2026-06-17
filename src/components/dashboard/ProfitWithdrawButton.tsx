@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowDownToLine, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import ProfitWithdrawPanel from "@/components/dashboard/ProfitWithdrawPanel";
@@ -10,16 +10,28 @@ interface ProfitWithdrawButtonProps {
   profitBalance: number;
   onSuccess: () => void;
   className?: string;
+  /** Full-width trigger on mobile (investments card) */
+  block?: boolean;
 }
 
 export default function ProfitWithdrawButton({
   profitBalance,
   onSuccess,
   className = "",
+  block = false,
 }: ProfitWithdrawButtonProps) {
-  const { t, formatCurrency } = useI18n();
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const canWithdraw = profitBalance > 0;
+
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [open]);
 
   const handleSuccess = () => {
     onSuccess();
@@ -37,7 +49,7 @@ export default function ProfitWithdrawButton({
           setOpen(true);
         }}
         disabled={!canWithdraw}
-        className={`dash-profit-withdraw-btn ${!canWithdraw ? "dash-profit-withdraw-btn-disabled" : ""} ${className}`.trim()}
+        className={`dash-profit-withdraw-btn ${block ? "dash-profit-withdraw-btn-block" : ""} ${!canWithdraw ? "dash-profit-withdraw-btn-disabled" : ""} ${className}`.trim()}
         aria-label={t("investments.profitWithdrawTitle")}
         title={!canWithdraw ? t("investments.profitWithdrawNoBalance") : undefined}
       >
@@ -47,42 +59,47 @@ export default function ProfitWithdrawButton({
 
       <AnimatePresence>
         {open && (
-          <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4">
-            <motion.div
+          <div className="profit-withdraw-backdrop">
+            <motion.button
+              type="button"
+              aria-label={t("common.close")}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/75 backdrop-blur-sm"
+              className="absolute inset-0"
               onClick={() => setOpen(false)}
             />
             <motion.div
-              initial={{ opacity: 0, y: 24, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 24, scale: 0.98 }}
-              className="relative w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl border border-white/10 bg-bg-secondary p-5 sm:p-6 shadow-2xl"
+              initial={{ opacity: 0, y: 28 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 28 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              className="profit-withdraw-sheet"
               role="dialog"
               aria-modal="true"
               aria-labelledby="profit-withdraw-title"
             >
+              <div className="profit-withdraw-sheet-handle" aria-hidden />
+
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="absolute right-4 top-4 p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-white/5"
+                className="profit-withdraw-close"
                 aria-label={t("common.close")}
               >
                 <X size={18} />
               </button>
 
-              <div className="pr-10 mb-4">
-                <p id="profit-withdraw-title" className="text-lg font-semibold text-text-primary">
-                  {t("investments.profitWithdrawTitle")}
-                </p>
-                <p className="text-sm text-text-muted mt-1">
-                  {t("investments.profitBalance")}:{" "}
-                  <span className="text-accent-green font-semibold tabular-nums">
-                    {formatCurrency(profitBalance)}
-                  </span>
-                </p>
+              <div className="profit-withdraw-sheet-header">
+                <div className="profit-withdraw-sheet-icon" aria-hidden>
+                  <ArrowDownToLine size={18} />
+                </div>
+                <div className="min-w-0">
+                  <h2 id="profit-withdraw-title" className="profit-withdraw-sheet-title">
+                    {t("investments.profitWithdrawTitle")}
+                  </h2>
+                  <p className="profit-withdraw-sheet-subtitle">{t("investments.profitWithdrawDesc")}</p>
+                </div>
               </div>
 
               <ProfitWithdrawPanel
