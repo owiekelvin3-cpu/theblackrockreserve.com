@@ -432,7 +432,9 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <InstallAppPrompt variant="inline" className="profile-install-inline" />
+              <div className="profile-card profile-install-card">
+                <InstallAppPrompt variant="card" className="profile-install-prompt" />
+              </div>
             </div>
           )}
         </motion.div>

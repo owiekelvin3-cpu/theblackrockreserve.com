@@ -201,7 +201,7 @@ export default function Footer() {
               <LogoWordmark className="footer-wordmark opacity-90" />
             </motion.div>
             <div className="mt-4 flex justify-center">
-              <InstallAppPrompt variant="inline" />
+              <InstallAppPrompt variant="button" />
             </div>
             <p className="mt-0 sm:mt-6 text-xs sm:text-sm text-text-muted text-balance">
               {t("footer.copyright", { year: new Date().getFullYear() })}

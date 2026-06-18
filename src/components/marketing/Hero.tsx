@@ -7,6 +7,7 @@ import Button from "@/components/ui/Button";
 import DashboardPreview from "@/components/marketing/DashboardPreview";
 import { stagger, fadeUp } from "@/components/ui/AnimateIn";
 import { useI18n } from "@/components/providers/I18nProvider";
+import InstallAppPrompt from "@/components/pwa/InstallAppPrompt";
 
 export default function Hero() {
   const { t } = useI18n();
@@ -76,6 +77,7 @@ export default function Hero() {
               {t("marketing.hero.speakWithAdvisor")} <ArrowRight size={18} />
             </Button>
           </Link>
+          <InstallAppPrompt variant="button" />
         </motion.div>
 
         <motion.div variants={fadeUp} className="mt-14 sm:mt-16 lg:mt-20">

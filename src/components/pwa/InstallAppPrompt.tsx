@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Download, Share } from "lucide-react";
+import { Download, Share, Smartphone } from "lucide-react";
 import Button from "@/components/ui/Button";
 import AppIconMark from "@/components/ui/AppIconMark";
 import { useI18n } from "@/components/providers/I18nProvider";
@@ -25,7 +25,7 @@ function isStandaloneMode() {
 }
 
 type InstallAppPromptProps = {
-  variant?: "card" | "inline";
+  variant?: "card" | "inline" | "sidebar" | "button";
   className?: string;
 };
 
@@ -73,6 +73,13 @@ export default function InstallAppPrompt({ variant = "card", className = "" }: I
 
   if (!showInstallButton) return null;
 
+  const iosHintBlock = iosHint ? (
+    <p className="text-xs text-text-muted mt-3 flex items-start gap-2">
+      <Share size={14} className="shrink-0 mt-0.5 text-accent-brand" />
+      {t("pwa.iosInstallHint")}
+    </p>
+  ) : null;
+
   if (variant === "inline") {
     return (
       <button
@@ -86,6 +93,45 @@ export default function InstallAppPrompt({ variant = "card", className = "" }: I
     );
   }
 
+  if (variant === "sidebar") {
+    return (
+      <div className={className}>
+        <button
+          type="button"
+          onClick={() => void handleInstall()}
+          className="dash-nav-item dash-install-nav flex w-full items-center gap-3 px-3 py-3 text-sm font-medium min-h-[44px]"
+        >
+          <Smartphone size={18} strokeWidth={1.75} />
+          <span className="flex-1 text-left">{t("pwa.installApp")}</span>
+          <Download size={15} className="text-accent-brand shrink-0 opacity-80" />
+        </button>
+        {iosHint && (
+          <p className="px-3 pt-1 pb-2 text-[11px] leading-relaxed text-text-muted flex items-start gap-1.5">
+            <Share size={12} className="shrink-0 mt-0.5 text-accent-brand" />
+            {t("pwa.iosInstallHint")}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  if (variant === "button") {
+    return (
+      <div className={className}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => void handleInstall()}
+          className="inline-flex items-center gap-2 rounded-full"
+        >
+          <Download size={16} />
+          {t("pwa.installApp")}
+        </Button>
+        {iosHintBlock}
+      </div>
+    );
+  }
+
   return (
     <div className={`rounded-2xl border border-border bg-glass-bg p-5 ${className}`}>
       <div className="flex items-start gap-3">
@@ -95,12 +141,7 @@ export default function InstallAppPrompt({ variant = "card", className = "" }: I
         <div className="min-w-0 flex-1">
           <h3 className="font-semibold text-text-primary">{t("pwa.installTitle")}</h3>
           <p className="text-sm text-text-muted mt-1 leading-relaxed">{t("pwa.installDescription")}</p>
-          {iosHint && (
-            <p className="text-xs text-text-muted mt-3 flex items-start gap-2">
-              <Share size={14} className="shrink-0 mt-0.5 text-accent-brand" />
-              {t("pwa.iosInstallHint")}
-            </p>
-          )}
+          {iosHintBlock}
           <div className="mt-4">
             <Button type="button" onClick={() => void handleInstall()} className="inline-flex items-center gap-2">
               <Download size={16} />

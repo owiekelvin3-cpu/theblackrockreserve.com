@@ -18,6 +18,7 @@ import LanguageSelector from "@/components/ui/LanguageSelector";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { useProfileImage } from "@/components/providers/ProfileImageProvider";
 import { useChat } from "@/components/providers/ChatProvider";
+import InstallAppPrompt from "@/components/pwa/InstallAppPrompt";
 
 const mainNav = [
   { href: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard, badge: null },
@@ -250,6 +251,7 @@ export default function DashboardSidebar() {
               <p className="text-xs text-text-muted truncate">{session?.user?.email}</p>
             </div>
           </div>
+          <InstallAppPrompt variant="sidebar" className="mb-2" />
           <button
             type="button"
             onClick={() => signOut({ callbackUrl: "/" })}

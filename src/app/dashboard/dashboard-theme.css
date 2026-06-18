@@ -4208,6 +4208,40 @@ html.tx-member-transfer-scroll-lock {
   border-color: rgba(255, 255, 255, 0.06) !important;
 }
 
+.profile-install-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.profile-install-prompt {
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.dash-install-nav {
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.dash-install-nav:hover {
+  color: var(--accent-brand);
+  border-color: rgba(255, 95, 5, 0.25);
+  background: rgba(255, 95, 5, 0.06);
+}
+
+[data-theme="light"] .dash-install-nav {
+  border-color: rgba(15, 20, 25, 0.08);
+  background: rgba(15, 20, 25, 0.02);
+}
+
+[data-theme="light"] .dash-install-nav:hover {
+  background: rgba(255, 95, 5, 0.06);
+}
+
 [data-theme="light"] .profile-install-inline {
   border-color: rgba(15, 20, 25, 0.08) !important;
 }
