@@ -117,8 +117,8 @@ export default function ProfitWithdrawButton({
         aria-expanded={open}
         title={!canWithdraw ? t("investments.profitWithdrawNoBalance") : undefined}
       >
-        <ArrowDownToLine size={12} strokeWidth={2.5} />
-        {t("dashboard.profitWithdraw")}
+        <ArrowDownToLine size={block ? 16 : 12} strokeWidth={2.5} />
+        {block ? t("dashboard.withdrawFunds") : t("dashboard.profitWithdraw")}
       </button>
 
       {modal}
