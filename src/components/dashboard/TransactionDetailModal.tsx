@@ -221,7 +221,7 @@ function TransactionDetailView({
         role="dialog"
         aria-modal="true"
         aria-labelledby="transaction-detail-title"
-        className="tx-receipt-modal tx-detail-modal tx-receipt-modal-shell"
+        className="tx-receipt-modal tx-detail-modal tx-detail-sheet tx-receipt-modal-shell"
         initial={{ opacity: 0, y: 32, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 24, scale: 0.98 }}
@@ -290,10 +290,10 @@ function TransactionDetailView({
 
               <div className="tx-receipt-grid tx-detail-grid">
                 <ReceiptRow label={t("dashboard.transactionDetail.reference")} value={detail.referenceId} mono />
-                <ReceiptRow
-                  label={t("dashboard.transactionDetail.dateTime")}
-                  value={`${formatDate(detail.date)} · ${formatTime(detail.date)}`}
-                />
+                  <ReceiptRow
+                    label={t("dashboard.transactionDetail.dateTime")}
+                    value={`${formatDate(detail.date, { month: "short", day: "numeric", year: "numeric" })} · ${formatTime(detail.date)}`}
+                  />
                 {isMemberTransfer && isOutgoingTransfer && detail.ownerName && (
                   <ReceiptRow
                     label={t("dashboard.transactionDetail.from")}
