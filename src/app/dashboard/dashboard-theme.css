@@ -2655,15 +2655,15 @@ html.tx-member-transfer-scroll-lock {
     margin-bottom: 0.55rem;
   }
 
-  .tx-detail-sheet .tx-detail-type-icon {
+  .tx-detail-sheet .tx-receipt-success-icon {
     width: 2.475rem;
     height: 2.475rem;
     border-radius: 0.6875rem;
   }
 
-  .tx-detail-sheet .tx-detail-type-icon svg {
-    width: 1.1rem;
-    height: 1.1rem;
+  .tx-detail-sheet .tx-receipt-success-icon svg {
+    width: 1.35rem;
+    height: 1.35rem;
   }
 
   .tx-detail-sheet .tx-receipt-eyebrow {

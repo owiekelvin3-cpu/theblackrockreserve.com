@@ -4,8 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, Copy, Check, Download, Loader2, Wallet, ArrowDownLeft, ArrowUpRight,
-  RefreshCw, Receipt, TrendingUp,
+  X, Copy, Check, Download, Loader2, CheckCircle2,
 } from "lucide-react";
 import Button from "@/components/ui/Button";
 import UserDisplayName from "@/components/ui/UserDisplayName";
@@ -39,17 +38,6 @@ type TransactionDetail = {
     currency: string;
     maskedNumber: string;
   };
-};
-
-const TYPE_ICONS: Record<string, typeof Wallet> = {
-  DEPOSIT: ArrowDownLeft,
-  WITHDRAWAL: ArrowUpRight,
-  TRANSFER: RefreshCw,
-  PAYMENT: Receipt,
-  INVESTMENT: TrendingUp,
-  SALE: ArrowUpRight,
-  PROFIT_CREDIT: ArrowDownLeft,
-  PROFIT_DEBIT: ArrowUpRight,
 };
 
 type TransactionDetailModalProps = {
@@ -190,7 +178,6 @@ function TransactionDetailView({
   };
 
   const statusKey = detail?.status.toLowerCase() ?? "";
-  const Icon = detail ? TYPE_ICONS[detail.type] ?? Wallet : Wallet;
   const isOutgoingTransfer =
     detail?.type === "TRANSFER" && detail.counterpartyRelation === "recipient";
   const isIncomingTransfer =
@@ -248,9 +235,7 @@ function TransactionDetailView({
 
             <div className="tx-receipt-capture">
               <div className="tx-receipt-header">
-                <div className="tx-detail-type-icon" aria-hidden>
-                  <Icon size={22} className="text-accent-brand" />
-                </div>
+                <TransactionReceiptSuccessIcon />
                 <div className="min-w-0 flex-1">
                   <p className="tx-receipt-eyebrow">{t("brand.name")}</p>
                   <h2 id="transaction-detail-title" className="tx-receipt-title">
@@ -264,7 +249,7 @@ function TransactionDetailView({
                 <span
                   className={cn(
                     "tx-receipt-status-dot",
-                    statusKey === "completed" && "tx-receipt-status-dot-success",
+                    "tx-receipt-status-dot-success",
                     statusKey === "failed" && "tx-receipt-status-dot-failed"
                   )}
                   aria-hidden
@@ -395,6 +380,14 @@ function TransactionDetailView({
           </>
         )}
       </motion.div>
+    </div>
+  );
+}
+
+function TransactionReceiptSuccessIcon({ size = 22 }: { size?: number }) {
+  return (
+    <div className="tx-receipt-success-icon" aria-hidden>
+      <CheckCircle2 size={size} className="text-accent-green" strokeWidth={2.25} />
     </div>
   );
 }

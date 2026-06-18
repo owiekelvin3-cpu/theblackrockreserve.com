@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef, type ReactNode } from "react";
-import AppIconMark from "@/components/ui/AppIconMark";
+import { CheckCircle2 } from "lucide-react";
 import UserDisplayName from "@/components/ui/UserDisplayName";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { transactionTypeLabel } from "@/lib/transaction-receipt";
@@ -56,7 +56,9 @@ const TransactionReceiptExport = forwardRef<HTMLDivElement, TransactionReceiptEx
     return (
       <div ref={ref} className={cn("receipt-export-document", className)}>
         <div className="receipt-export-brand">
-          <AppIconMark size={36} className="rounded-xl" />
+          <div className="tx-receipt-success-icon receipt-export-success-icon" aria-hidden>
+            <CheckCircle2 size={20} className="text-accent-green" strokeWidth={2.25} />
+          </div>
           <div>
             <p className="receipt-export-brand-name">{t("brand.name")}</p>
             <p className="receipt-export-brand-tag">{t("dashboard.transactionDetail.subtitle")}</p>
@@ -69,7 +71,7 @@ const TransactionReceiptExport = forwardRef<HTMLDivElement, TransactionReceiptEx
           <span
             className={cn(
               "receipt-export-status-dot",
-              statusKey === "completed" && "receipt-export-status-dot-success",
+              "receipt-export-status-dot-success",
               statusKey === "failed" && "receipt-export-status-dot-failed"
             )}
           />
