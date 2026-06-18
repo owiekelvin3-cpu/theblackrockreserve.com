@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowUpFromLine, AlertCircle, Check } from "lucide-react";
 import Card from "@/components/ui/Card";
@@ -10,10 +10,8 @@ import DashboardGate from "@/components/dashboard/DashboardGate";
 import EmptyState from "@/components/dashboard/EmptyState";
 import WithdrawalMethodIcon from "@/components/dashboard/WithdrawalMethodIcon";
 import WithdrawalReceiptModal, { type WithdrawalReceiptData } from "@/components/dashboard/WithdrawalReceiptModal";
-import { WithdrawalChargeNoticeModal } from "@/components/dashboard/WithdrawalChargeModals";
 import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
 import { useTransactionPin } from "@/hooks/use-transaction-pin";
-import { computeWithdrawalChargeAmount } from "@/lib/withdrawal-charge";
 import {
   WITHDRAWAL_CATEGORIES,
   WITHDRAWAL_METHODS,
@@ -91,8 +89,6 @@ export default function WithdrawalsPage() {
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [receiptData, setReceiptData] = useState<WithdrawalReceiptData | null>(null);
   const [historyExpanded, setHistoryExpanded] = useState(false);
-  const [chargeNoticeOpen, setChargeNoticeOpen] = useState(false);
-  const [pendingTransactionPin, setPendingTransactionPin] = useState<string | null>(null);
 
   const selectedMethodDef = getWithdrawalMethod(method)!;
 
@@ -142,14 +138,6 @@ export default function WithdrawalsPage() {
   const withdrawalData = data ?? emptyData;
   const selectedAccount = withdrawalData.accounts.find((a) => a.id === accountId);
 
-  const estimatedChargeAmount = useMemo(() => {
-    if (!withdrawalData.userCharge) return null;
-    const amount = Number(amountUsd);
-    if (!Number.isFinite(amount) || amount <= 0) return null;
-    const charge = computeWithdrawalChargeAmount(withdrawalData.userCharge, amount);
-    return charge > 0 ? charge : null;
-  }, [withdrawalData.userCharge, amountUsd]);
-
   const handleMethodChange = (id: WithdrawalMethodId) => {
     setMethod(id);
     setDestination("");
@@ -158,7 +146,7 @@ export default function WithdrawalsPage() {
 
   const { open: pinOpen, loading: pinLoading, error: pinError, requestPin, closePin, confirmPin } = useTransactionPin();
 
-  const buildPayload = (transactionPin: string, chargeAcknowledged = false) => ({
+  const buildPayload = (transactionPin: string) => ({
     accountId,
     method,
     amountUsd: Number(amountUsd),
@@ -166,7 +154,7 @@ export default function WithdrawalsPage() {
     destinationExtra: destinationExtra.trim() || undefined,
     note: note.trim() || undefined,
     transactionPin,
-    ...(chargeAcknowledged ? { chargeAcknowledged: true } : {}),
+    ...(withdrawalData.userCharge ? { chargeAcknowledged: true } : {}),
   });
 
   const validateWithdrawalForm = (): string | null => {
@@ -186,22 +174,16 @@ export default function WithdrawalsPage() {
     return null;
   };
 
-  const submitWithdrawal = async (transactionPin: string, chargeAcknowledged = false) => {
+  const submitWithdrawal = async (transactionPin: string) => {
     setSubmitting(true);
     try {
       const res = await fetch("/api/dashboard/withdrawals", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(buildPayload(transactionPin, chargeAcknowledged)),
+        body: JSON.stringify(buildPayload(transactionPin)),
       });
       const json = await res.json();
-
-      if (json.requiresChargeAcknowledgment) {
-        setPendingTransactionPin(transactionPin);
-        setChargeNoticeOpen(true);
-        return;
-      }
 
       if (!res.ok) throw new Error(json.error || t("withdrawals.errors.submitFailed"));
 
@@ -209,7 +191,6 @@ export default function WithdrawalsPage() {
       setDestination("");
       setDestinationExtra("");
       setNote("");
-      setPendingTransactionPin(null);
 
       if (json.requiresChargePayment && json.withdrawal?.id) {
         router.push(`/dashboard/withdrawals/${json.withdrawal.id}/pay-charge`);
@@ -237,26 +218,8 @@ export default function WithdrawalsPage() {
       return;
     }
 
-    if (withdrawalData.userCharge && Number(amountUsd) > 0) {
-      setChargeNoticeOpen(true);
-      return;
-    }
-
     requestPin(async (transactionPin) => {
       await submitWithdrawal(transactionPin);
-    });
-  };
-
-  const handleChargeNoticeContinue = () => {
-    setChargeNoticeOpen(false);
-    if (pendingTransactionPin) {
-      const pin = pendingTransactionPin;
-      setPendingTransactionPin(null);
-      void submitWithdrawal(pin, true);
-      return;
-    }
-    requestPin(async (transactionPin) => {
-      await submitWithdrawal(transactionPin, true);
     });
   };
 
@@ -472,21 +435,6 @@ export default function WithdrawalsPage() {
           setReceiptOpen(false);
           setReceiptData(null);
         }}
-      />
-
-      <WithdrawalChargeNoticeModal
-        open={chargeNoticeOpen}
-        chargeAmount={
-          estimatedChargeAmount ??
-          (withdrawalData.userCharge && Number(amountUsd) > 0
-            ? computeWithdrawalChargeAmount(withdrawalData.userCharge, Number(amountUsd))
-            : 0)
-        }
-        onCancel={() => {
-          setChargeNoticeOpen(false);
-          setPendingTransactionPin(null);
-        }}
-        onContinue={handleChargeNoticeContinue}
       />
     </DashboardGate>
   );
