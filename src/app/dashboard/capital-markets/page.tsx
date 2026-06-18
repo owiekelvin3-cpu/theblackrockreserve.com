@@ -853,7 +853,7 @@ export default function CapitalMarketsPage() {
         holding={sellHolding}
         open={!!sellHolding}
         onClose={() => setSellHolding(null)}
-        onSuccess={() => load()}
+        onSuccess={() => load(true)}
       />
     </DashboardGate>
   );

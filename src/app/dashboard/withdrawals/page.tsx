@@ -351,20 +351,6 @@ export default function WithdrawalsPage() {
                 </div>
               </div>
 
-              {withdrawalData.userCharge && estimatedChargeAmount != null && (
-                <div className="mb-5 rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm text-amber-100/90">
-                  {t("withdrawals.chargeNotice", {
-                    amount: withdrawalData.userCharge.summary,
-                  })}
-                  {Number(amountUsd) > 0 && (
-                    <p className="mt-1 text-xs text-amber-200/80">
-                      Estimated processing charge for this request:{" "}
-                      <span className="font-semibold tabular-nums">{formatCurrency(estimatedChargeAmount)}</span>
-                    </p>
-                  )}
-                </div>
-              )}
-
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm text-text-secondary mb-2">Withdraw from account</label>

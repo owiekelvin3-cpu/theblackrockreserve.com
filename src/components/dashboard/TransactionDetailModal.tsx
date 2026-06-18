@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X, Copy, Check, Download, Loader2, Wallet, ArrowDownLeft, ArrowUpRight,
@@ -9,9 +10,7 @@ import {
 import Button from "@/components/ui/Button";
 import UserDisplayName from "@/components/ui/UserDisplayName";
 import { useI18n } from "@/components/providers/I18nProvider";
-import {
-  transactionTypeLabel,
-} from "@/lib/transaction-receipt";
+import { transactionTypeLabel } from "@/lib/transaction-receipt";
 import { downloadReceiptAsImage } from "@/lib/receipt-image";
 import TransactionReceiptExport from "@/components/dashboard/TransactionReceiptExport";
 import { cn } from "@/lib/utils";
@@ -58,10 +57,76 @@ type TransactionDetailModalProps = {
   onClose: () => void;
 };
 
+function lockPageScroll() {
+  const scrollY = window.scrollY;
+  const { style } = document.body;
+  const prev = {
+    position: style.position,
+    top: style.top,
+    left: style.left,
+    right: style.right,
+    width: style.width,
+    overflow: style.overflow,
+  };
+
+  document.documentElement.classList.add("tx-member-transfer-scroll-lock");
+  style.position = "fixed";
+  style.top = `-${scrollY}px`;
+  style.left = "0";
+  style.right = "0";
+  style.width = "100%";
+  style.overflow = "hidden";
+
+  return () => {
+    document.documentElement.classList.remove("tx-member-transfer-scroll-lock");
+    style.position = prev.position;
+    style.top = prev.top;
+    style.left = prev.left;
+    style.right = prev.right;
+    style.width = prev.width;
+    style.overflow = prev.overflow;
+    window.scrollTo(0, scrollY);
+  };
+}
+
 export default function TransactionDetailModal({
   transactionId,
   onClose,
 }: TransactionDetailModalProps) {
+  const [mounted, setMounted] = useState(false);
+  const open = !!transactionId;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    return lockPageScroll();
+  }, [open]);
+
+  if (!mounted) return null;
+
+  return createPortal(
+    <AnimatePresence>
+      {open ? (
+        <TransactionDetailView
+          transactionId={transactionId!}
+          onClose={onClose}
+        />
+      ) : null}
+    </AnimatePresence>,
+    document.body
+  );
+}
+
+function TransactionDetailView({
+  transactionId,
+  onClose,
+}: {
+  transactionId: string;
+  onClose: () => void;
+}) {
   const { t, formatCurrency, formatDate, formatTime } = useI18n();
   const [detail, setDetail] = useState<TransactionDetail | null>(null);
   const [loading, setLoading] = useState(false);
@@ -69,16 +134,11 @@ export default function TransactionDetailModal({
   const [downloading, setDownloading] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
 
-  const open = !!transactionId;
-
   useEffect(() => {
-    if (!transactionId) {
-      setDetail(null);
-      return;
-    }
-
     let cancelled = false;
     setLoading(true);
+    setDetail(null);
+
     fetch(`/api/dashboard/activities/${transactionId}`)
       .then(async (res) => {
         const json = await res.json();
@@ -147,204 +207,195 @@ export default function TransactionDetailModal({
   );
 
   return (
-    <AnimatePresence>
-      {open && (
-        <div className="tx-receipt-backdrop">
-          <motion.button
-            type="button"
-            aria-label={t("common.close")}
-            className="absolute inset-0"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-          />
-          <motion.div
-            role="dialog"
-            aria-labelledby="transaction-detail-title"
-            className="tx-receipt-modal tx-detail-modal tx-receipt-modal-shell"
-            initial={{ opacity: 0, y: 32, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 24, scale: 0.98 }}
-            transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <button
-              type="button"
-              onClick={onClose}
-              className="tx-receipt-close tx-receipt-close-floating"
-              aria-label={t("common.close")}
-            >
-              <X size={18} />
-            </button>
+    <div className="tx-receipt-backdrop">
+      <motion.button
+        type="button"
+        aria-label={t("common.close")}
+        className="tx-receipt-backdrop-dismiss"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+      />
+      <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="transaction-detail-title"
+        className="tx-receipt-modal tx-detail-modal tx-receipt-modal-shell"
+        initial={{ opacity: 0, y: 32, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 24, scale: 0.98 }}
+        transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          className="tx-receipt-close tx-receipt-close-floating"
+          aria-label={t("common.close")}
+        >
+          <X size={18} />
+        </button>
 
-            {loading || !detail ? (
-              <div className="tx-detail-loading">
-                <Loader2 size={24} className="animate-spin text-accent-brand" />
+        {loading || !detail ? (
+          <div className="tx-detail-loading">
+            <Loader2 size={24} className="animate-spin text-accent-brand" />
+          </div>
+        ) : (
+          <>
+            <div className="receipt-export-host" aria-hidden="true">
+              <TransactionReceiptExport ref={exportRef} detail={detail} />
+            </div>
+
+            <div className="tx-receipt-capture">
+              <div className="tx-receipt-header">
+                <div className="tx-detail-type-icon" aria-hidden>
+                  <Icon size={22} className="text-accent-brand" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="tx-receipt-eyebrow">{t("brand.name")}</p>
+                  <h2 id="transaction-detail-title" className="tx-receipt-title">
+                    {t("dashboard.transactionDetail.title")}
+                  </h2>
+                  <p className="tx-receipt-subtitle">{t("dashboard.transactionDetail.subtitle")}</p>
+                </div>
               </div>
-            ) : (
-              <>
-                {detail && (
-                  <div className="receipt-export-host" aria-hidden="true">
-                    <TransactionReceiptExport ref={exportRef} detail={detail} />
-                  </div>
+
+              <div className="tx-receipt-status-banner">
+                <span
+                  className={cn(
+                    "tx-receipt-status-dot",
+                    statusKey === "completed" && "tx-receipt-status-dot-success",
+                    statusKey === "failed" && "tx-receipt-status-dot-failed"
+                  )}
+                  aria-hidden
+                />
+                <div>
+                  <p className="tx-receipt-status-label">{transactionTypeLabel(detail.type)}</p>
+                  <p className="tx-receipt-status-hint">{detail.statusLabel}</p>
+                </div>
+              </div>
+
+              <div className="tx-receipt-amount-block">
+                <p className="tx-receipt-amount-label">{t("dashboard.transactionDetail.amount")}</p>
+                <p
+                  className={cn(
+                    "tx-receipt-amount",
+                    detail.amount >= 0 ? "text-accent-green" : "text-text-primary"
+                  )}
+                >
+                  {detail.amount >= 0 ? "+" : ""}
+                  {formatCurrency(detail.amount)}
+                </p>
+              </div>
+
+              <div className="tx-receipt-grid tx-detail-grid">
+                <ReceiptRow label={t("dashboard.transactionDetail.reference")} value={detail.referenceId} mono />
+                <ReceiptRow
+                  label={t("dashboard.transactionDetail.dateTime")}
+                  value={`${formatDate(detail.date)} · ${formatTime(detail.date)}`}
+                />
+                {isMemberTransfer && isOutgoingTransfer && detail.ownerName && (
+                  <ReceiptRow
+                    label={t("dashboard.transactionDetail.from")}
+                    value={partyDisplay(detail.ownerName, detail.ownerVerificationBadge)}
+                    full
+                  />
                 )}
-
-                <div className="tx-detail-formal-receipt">
-                  <TransactionReceiptExport detail={detail} />
-                </div>
-
-                <div className="tx-receipt-capture tx-detail-screen-receipt">
-                  <div className="tx-receipt-header">
-                    <div className="tx-detail-type-icon" aria-hidden>
-                      <Icon size={22} className="text-accent-brand" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="tx-receipt-eyebrow">{t("brand.name")}</p>
-                      <h2 id="transaction-detail-title" className="tx-receipt-title">
-                        {t("dashboard.transactionDetail.title")}
-                      </h2>
-                      <p className="tx-receipt-subtitle">{t("dashboard.transactionDetail.subtitle")}</p>
-                    </div>
-                  </div>
-
-                <div className="tx-receipt-status-banner">
-                  <span
-                    className={cn(
-                      "tx-receipt-status-dot",
-                      statusKey === "completed" && "tx-receipt-status-dot-success",
-                      statusKey === "failed" && "tx-receipt-status-dot-failed"
+                {isMemberTransfer && isIncomingTransfer && detail.counterpartyName && (
+                  <ReceiptRow
+                    label={t("dashboard.transactionDetail.from")}
+                    value={partyDisplay(
+                      detail.counterpartyName,
+                      detail.counterpartyVerificationBadge
                     )}
-                    aria-hidden
+                    full
                   />
-                  <div>
-                    <p className="tx-receipt-status-label">{transactionTypeLabel(detail.type)}</p>
-                    <p className="tx-receipt-status-hint">{detail.statusLabel}</p>
-                  </div>
-                </div>
-
-                <div className="tx-receipt-amount-block">
-                  <p className="tx-receipt-amount-label">{t("dashboard.transactionDetail.amount")}</p>
-                  <p
-                    className={cn(
-                      "tx-receipt-amount",
-                      detail.amount >= 0 ? "text-accent-green" : "text-text-primary"
+                )}
+                {isMemberTransfer && isOutgoingTransfer && detail.counterpartyName && (
+                  <ReceiptRow
+                    label={t("dashboard.transactionDetail.to")}
+                    value={partyDisplay(
+                      detail.counterpartyName,
+                      detail.counterpartyVerificationBadge
                     )}
-                  >
-                    {detail.amount >= 0 ? "+" : ""}
-                    {formatCurrency(detail.amount)}
-                  </p>
-                </div>
-
-                <div className="tx-receipt-grid tx-detail-grid">
-                  <ReceiptRow label={t("dashboard.transactionDetail.reference")} value={detail.referenceId} mono />
-                  <ReceiptRow
-                    label={t("dashboard.transactionDetail.dateTime")}
-                    value={`${formatDate(detail.date)} · ${formatTime(detail.date)}`}
+                    full
                   />
-                  {isMemberTransfer && isOutgoingTransfer && detail.ownerName && (
-                    <ReceiptRow
-                      label={t("dashboard.transactionDetail.from")}
-                      value={partyDisplay(detail.ownerName, detail.ownerVerificationBadge)}
-                      full
-                    />
-                  )}
-                  {isMemberTransfer && isIncomingTransfer && detail.counterpartyName && (
-                    <ReceiptRow
-                      label={t("dashboard.transactionDetail.from")}
-                      value={partyDisplay(
-                        detail.counterpartyName,
-                        detail.counterpartyVerificationBadge
-                      )}
-                      full
-                    />
-                  )}
-                  {isMemberTransfer && isOutgoingTransfer && detail.counterpartyName && (
-                    <ReceiptRow
-                      label={t("dashboard.transactionDetail.to")}
-                      value={partyDisplay(
-                        detail.counterpartyName,
-                        detail.counterpartyVerificationBadge
-                      )}
-                      full
-                    />
-                  )}
-                  {isMemberTransfer && isIncomingTransfer && detail.ownerName && (
-                    <ReceiptRow
-                      label={t("dashboard.transactionDetail.to")}
-                      value={partyDisplay(detail.ownerName, detail.ownerVerificationBadge)}
-                      full
-                    />
-                  )}
-                  {!isMemberTransfer && detail.counterpartyName && detail.counterpartyRelation === "sender" && (
-                    <ReceiptRow
-                      label={t("dashboard.transactionDetail.from")}
-                      value={partyDisplay(
-                        detail.counterpartyName,
-                        detail.counterpartyVerificationBadge
-                      )}
-                      full
-                    />
-                  )}
-                  {!isMemberTransfer && detail.counterpartyName && detail.counterpartyRelation === "recipient" && (
-                    <ReceiptRow
-                      label={t("dashboard.transactionDetail.to")}
-                      value={partyDisplay(
-                        detail.counterpartyName,
-                        detail.counterpartyVerificationBadge
-                      )}
-                      full
-                    />
-                  )}
+                )}
+                {isMemberTransfer && isIncomingTransfer && detail.ownerName && (
                   <ReceiptRow
-                    label={t("dashboard.transactionDetail.account")}
-                    value={`${detail.account.name} · ${detail.account.currency}`}
+                    label={t("dashboard.transactionDetail.to")}
+                    value={partyDisplay(detail.ownerName, detail.ownerVerificationBadge)}
+                    full
                   />
+                )}
+                {!isMemberTransfer && detail.counterpartyName && detail.counterpartyRelation === "sender" && (
                   <ReceiptRow
-                    label={t("dashboard.transactionDetail.accountNumber")}
-                    value={detail.account.maskedNumber}
-                    mono
+                    label={t("dashboard.transactionDetail.from")}
+                    value={partyDisplay(
+                      detail.counterpartyName,
+                      detail.counterpartyVerificationBadge
+                    )}
+                    full
                   />
-                  <ReceiptRow label={t("dashboard.transactionDetail.description")} value={detail.description} full />
-                </div>
-                </div>
+                )}
+                {!isMemberTransfer && detail.counterpartyName && detail.counterpartyRelation === "recipient" && (
+                  <ReceiptRow
+                    label={t("dashboard.transactionDetail.to")}
+                    value={partyDisplay(
+                      detail.counterpartyName,
+                      detail.counterpartyVerificationBadge
+                    )}
+                    full
+                  />
+                )}
+                <ReceiptRow
+                  label={t("dashboard.transactionDetail.account")}
+                  value={`${detail.account.name} · ${detail.account.currency}`}
+                />
+                <ReceiptRow
+                  label={t("dashboard.transactionDetail.accountNumber")}
+                  value={detail.account.maskedNumber}
+                  mono
+                />
+                <ReceiptRow label={t("dashboard.transactionDetail.description")} value={detail.description} full />
+              </div>
+            </div>
 
-                <div className="tx-receipt-footer-actions">
-                  <div className="tx-receipt-actions">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full min-h-[44px] sm:flex-1"
-                      onClick={handleDownload}
-                      disabled={downloading}
-                    >
-                      <Download size={16} className="shrink-0" />
-                      {downloading ? t("common.processing") : t("withdrawals.receipt.download")}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full min-h-[44px] sm:flex-1"
-                      onClick={handleCopy}
-                    >
-                      {copied ? (
-                        <Check size={16} className="shrink-0 text-accent-green" />
-                      ) : (
-                        <Copy size={16} className="shrink-0" />
-                      )}
-                      {t("withdrawals.receipt.copyId")}
-                    </Button>
-                  </div>
+            <div className="tx-receipt-footer-actions">
+              <div className="tx-receipt-actions">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full min-h-[44px] sm:flex-1"
+                  onClick={handleDownload}
+                  disabled={downloading}
+                >
+                  <Download size={16} className="shrink-0" />
+                  {downloading ? t("common.processing") : t("withdrawals.receipt.download")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full min-h-[44px] sm:flex-1"
+                  onClick={handleCopy}
+                >
+                  {copied ? (
+                    <Check size={16} className="shrink-0 text-accent-green" />
+                  ) : (
+                    <Copy size={16} className="shrink-0" />
+                  )}
+                  {t("withdrawals.receipt.copyId")}
+                </Button>
+              </div>
 
-                  <Button type="button" className="w-full min-h-[44px]" onClick={onClose}>
-                    {t("withdrawals.receipt.close")}
-                  </Button>
-                </div>
-              </>
-            )}
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
+              <Button type="button" className="w-full min-h-[44px]" onClick={onClose}>
+                {t("withdrawals.receipt.close")}
+              </Button>
+            </div>
+          </>
+        )}
+      </motion.div>
+    </div>
   );
 }
 

@@ -231,7 +231,7 @@ const extensions = {
       title: "Position Closed",
       subtitle: "Sale confirmation receipt",
       statusLabel: "Successfully Sold",
-      statusHint: "Settlement credited instantly to your wallet",
+      statusHint: "Proceeds credited instantly to your wallet",
       amount: "Net Proceeds",
       reference: "Reference",
       dateTime: "Date & Time",

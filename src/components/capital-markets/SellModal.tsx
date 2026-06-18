@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, TrendingUp, TrendingDown, ArrowRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -43,6 +44,7 @@ const QUICK_PERCENTAGES = [25, 50, 75, 100];
 
 export default function SellModal({ holding, open, onClose, onSuccess }: SellModalProps) {
   const { t, formatCurrency } = useI18n();
+  const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<Step>("amount");
   const [mode, setMode] = useState<SellMode>("usd");
   const [amount, setAmount] = useState("");
@@ -51,6 +53,10 @@ export default function SellModal({ holding, open, onClose, onSuccess }: SellMod
   const [result, setResult] = useState<SellReceiptData | null>(null);
   const { open: pinOpen, loading: pinLoading, error: pinError, requestPin, closePin, confirmPin } =
     useTransactionPin();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!open) {
@@ -162,7 +168,6 @@ export default function SellModal({ holding, open, onClose, onSuccess }: SellMod
           createdAt: json.sale.createdAt,
         });
         setStep("success");
-        onSuccess();
       } catch (e) {
         throw e instanceof Error ? e : new Error(t("sell.failed"));
       } finally {
@@ -171,20 +176,64 @@ export default function SellModal({ holding, open, onClose, onSuccess }: SellMod
     });
   };
 
+  const handleDismiss = () => {
+    const completed = step === "success";
+    onClose();
+    if (completed) onSuccess();
+  };
+
   if (!holding) return null;
 
   const positivePnl = realizedPnl >= 0;
 
+  const successReceipt =
+    mounted && open && step === "success" && result
+      ? createPortal(
+          <AnimatePresence>
+            <div className="tx-receipt-backdrop">
+              <motion.button
+                type="button"
+                aria-label={t("sell.close")}
+                className="tx-receipt-backdrop-dismiss"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={handleDismiss}
+              />
+              <motion.div
+                role="dialog"
+                aria-modal="true"
+                className="tx-receipt-modal cm-sell-receipt-modal tx-receipt-modal-shell"
+                initial={{ opacity: 0, y: 32, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 24, scale: 0.98 }}
+                transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <SellReceiptView
+                  receipt={result}
+                  logoDomain={holding.logoDomain}
+                  logoUrl={holding.logoUrl}
+                  onClose={handleDismiss}
+                />
+              </motion.div>
+            </div>
+          </AnimatePresence>,
+          document.body
+        )
+      : null;
+
   return (
-    <AnimatePresence>
-      {open && (
+    <>
+      {successReceipt}
+      <AnimatePresence>
+      {open && step !== "success" && (
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={onClose}
+            onClick={handleDismiss}
           />
           <motion.div
             initial={{ opacity: 0, y: 24, scale: 0.98 }}
@@ -196,17 +245,7 @@ export default function SellModal({ holding, open, onClose, onSuccess }: SellMod
             aria-modal="true"
             aria-labelledby="sell-modal-title"
           >
-            {step === "success" && result ? (
-              <div className="p-3 sm:p-4">
-                <SellReceiptView
-                  receipt={result}
-                  logoDomain={holding.logoDomain}
-                  logoUrl={holding.logoUrl}
-                  onClose={onClose}
-                />
-              </div>
-            ) : (
-              <>
+            <>
             <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b border-[var(--border-subtle)] bg-[var(--surface-elevated)]">
               <div className="flex items-center gap-3 min-w-0">
                 <StockIcon
@@ -225,7 +264,7 @@ export default function SellModal({ holding, open, onClose, onSuccess }: SellMod
               </div>
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleDismiss}
                 className="p-2 rounded-full hover:bg-white/10 text-[var(--text-muted)] transition-colors"
                 aria-label={t("sell.close")}
               >
@@ -390,8 +429,7 @@ export default function SellModal({ holding, open, onClose, onSuccess }: SellMod
                 </div>
               )}
             </div>
-              </>
-            )}
+            </>
           </motion.div>
         </div>
       )}
@@ -403,5 +441,6 @@ export default function SellModal({ holding, open, onClose, onSuccess }: SellMod
         error={pinError}
       />
     </AnimatePresence>
+    </>
   );
 }
