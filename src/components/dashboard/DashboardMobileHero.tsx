@@ -114,25 +114,23 @@ export default function DashboardMobileHero({
       </motion.div>
 
       <div className="dash-mobile-metrics">
-        <Link href="/dashboard/capital-markets" className="dash-mobile-metric dash-mobile-metric-invested">
+        <Link href="/dashboard/capital-markets" className="dash-mobile-metric">
           <span className="dash-mobile-metric-label">{t("dashboard.investedBalance")}</span>
           <span className="dash-mobile-metric-value">
             {balanceVisible ? formatCurrency(investedBalance) : "••••••"}
           </span>
         </Link>
-        <div className="dash-mobile-profit-card">
-          <Link href="/dashboard/investments" className="dash-mobile-profit-card-body">
-            <span className="dash-mobile-profit-label">{t("dashboard.profitBalance")}</span>
-            <p className="dash-mobile-profit-amount">
+        <div className="dash-mobile-metric dash-mobile-metric-profit">
+          <Link href="/dashboard/investments" className="dash-mobile-metric-profit-link">
+            <span className="dash-mobile-metric-label">{t("dashboard.profitBalance")}</span>
+            <span className="dash-mobile-metric-value dash-mobile-metric-value-profit">
               {balanceVisible ? formatCurrency(profitBalance) : "••••••"}
-            </p>
+            </span>
           </Link>
           {onProfitWithdraw && (
             <ProfitWithdrawButton
               profitBalance={profitBalance}
               onSuccess={onProfitWithdraw}
-              block
-              className="dash-mobile-profit-withdraw"
             />
           )}
         </div>
