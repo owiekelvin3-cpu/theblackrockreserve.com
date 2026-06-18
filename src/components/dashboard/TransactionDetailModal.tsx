@@ -4,8 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, Copy, Check, Download, Loader2, Wallet, ArrowDownLeft, ArrowUpRight,
-  RefreshCw, Receipt, TrendingUp,
+  X, Copy, Check, Download, Loader2, CheckCircle2,
 } from "lucide-react";
 import Button from "@/components/ui/Button";
 import UserDisplayName from "@/components/ui/UserDisplayName";
@@ -39,17 +38,6 @@ type TransactionDetail = {
     currency: string;
     maskedNumber: string;
   };
-};
-
-const TYPE_ICONS: Record<string, typeof Wallet> = {
-  DEPOSIT: ArrowDownLeft,
-  WITHDRAWAL: ArrowUpRight,
-  TRANSFER: RefreshCw,
-  PAYMENT: Receipt,
-  INVESTMENT: TrendingUp,
-  SALE: ArrowUpRight,
-  PROFIT_CREDIT: ArrowDownLeft,
-  PROFIT_DEBIT: ArrowUpRight,
 };
 
 type TransactionDetailModalProps = {
@@ -189,8 +177,6 @@ function TransactionDetailView({
     }
   };
 
-  const statusKey = detail?.status.toLowerCase() ?? "";
-  const Icon = detail ? TYPE_ICONS[detail.type] ?? Wallet : Wallet;
   const isOutgoingTransfer =
     detail?.type === "TRANSFER" && detail.counterpartyRelation === "recipient";
   const isIncomingTransfer =
@@ -247,35 +233,28 @@ function TransactionDetailView({
             </div>
 
             <div className="tx-receipt-capture">
-              <div className="tx-receipt-header">
-                <div className="tx-detail-type-icon" aria-hidden>
-                  <Icon size={22} className="text-accent-brand" />
+              <div className="tx-detail-success-hero">
+                <div className="tx-detail-success-ring" aria-hidden>
+                  <div className="tx-detail-success-check">
+                    <Check size={20} strokeWidth={3} />
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="tx-receipt-eyebrow">{t("brand.name")}</p>
-                  <h2 id="transaction-detail-title" className="tx-receipt-title">
-                    {t("dashboard.transactionDetail.title")}
-                  </h2>
-                  <p className="tx-receipt-subtitle">{t("dashboard.transactionDetail.subtitle")}</p>
-                </div>
-              </div>
-
-              <div className="tx-receipt-status-banner">
-                <span
-                  className={cn(
-                    "tx-receipt-status-dot",
-                    statusKey === "completed" && "tx-receipt-status-dot-success",
-                    statusKey === "failed" && "tx-receipt-status-dot-failed"
-                  )}
-                  aria-hidden
-                />
-                <div>
-                  <p className="tx-receipt-status-label">{transactionTypeLabel(detail.type)}</p>
-                  <p className="tx-receipt-status-hint">{detail.statusLabel}</p>
+                <p className="tx-receipt-eyebrow">{t("brand.name")}</p>
+                <h2 id="transaction-detail-title" className="tx-detail-success-title">
+                  {t("dashboard.transactionDetail.title")}
+                </h2>
+                <p className="tx-receipt-subtitle tx-detail-success-subtitle">
+                  {t("dashboard.transactionDetail.subtitle")}
+                </p>
+                <div className="tx-detail-success-meta">
+                  <CheckCircle2 size={14} className="shrink-0" aria-hidden />
+                  <span>{transactionTypeLabel(detail.type)}</span>
+                  <span className="tx-detail-success-meta-dot" aria-hidden />
+                  <span>{detail.statusLabel}</span>
                 </div>
               </div>
 
-              <div className="tx-receipt-amount-block">
+              <div className="tx-receipt-amount-block tx-detail-amount-block">
                 <p className="tx-receipt-amount-label">{t("dashboard.transactionDetail.amount")}</p>
                 <p
                   className={cn(
