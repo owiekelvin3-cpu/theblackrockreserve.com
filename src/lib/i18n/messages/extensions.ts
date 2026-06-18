@@ -312,9 +312,15 @@ const extensions = {
   pwa: {
     installTitle: "Install BlackrockReserve",
     installDescription:
-      "Add the app to your home screen for faster access, standalone mode, and an app-like experience on any device.",
+      "Add the app to your home screen or Dock for faster access, standalone mode, and an app-like experience on any device.",
     installApp: "Install App",
     iosInstallHint: "Tap Share, then Add to Home Screen to install on iPhone or iPad.",
+    macSafariInstallHint:
+      "In Safari, open the Share menu in the toolbar, then choose Add to Dock.",
+    macChromeInstallHint:
+      "In Chrome, click the install icon in the address bar, or open the menu (⋮) and choose Install BlackrockReserve.",
+    macInstallHint:
+      "Use your browser menu to install this app or add it to your Dock for quick access.",
     verifiedAccount: "Verified account",
     verifiedAccountDesc: "Your verification badge is shown beside your name across the platform.",
   },

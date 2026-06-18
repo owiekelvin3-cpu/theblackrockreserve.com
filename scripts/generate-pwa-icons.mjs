@@ -8,7 +8,6 @@ const publicDir = path.join(root, "public");
 const iconsDir = path.join(publicDir, "icons");
 const appDir = path.join(root, "src", "app");
 const svgPath = path.join(publicDir, "favicon.svg");
-const sourcePath = path.join(publicDir, "brand", "app-icon-source.png");
 
 const SIZES = [48, 72, 96, 128, 144, 152, 167, 180, 192, 256, 384, 512];
 
@@ -16,16 +15,11 @@ fs.mkdirSync(iconsDir, { recursive: true });
 fs.mkdirSync(appDir, { recursive: true });
 
 async function loadIconBuffer(sharp) {
-  if (fs.existsSync(svgPath)) {
-    return sharp(fs.readFileSync(svgPath)).resize(1024, 1024, { fit: "fill" }).png().toBuffer();
+  if (!fs.existsSync(svgPath)) {
+    throw new Error("Missing public/favicon.svg — the site icon is the single source for PWA icons");
   }
 
-  if (fs.existsSync(sourcePath)) {
-    const trimmed = await sharp(sourcePath).trim({ threshold: 18 }).png().toBuffer();
-    return sharp(trimmed).resize(1024, 1024, { fit: "contain", background: "#FF6B1A" }).png().toBuffer();
-  }
-
-  throw new Error("No icon source found (public/favicon.svg or public/brand/app-icon-source.png)");
+  return sharp(fs.readFileSync(svgPath)).resize(1024, 1024, { fit: "fill" }).png().toBuffer();
 }
 
 async function generateWithSharp() {
@@ -65,11 +59,7 @@ async function generateWithSharp() {
       .toFile(path.join(iconsDir, `icon-maskable-${size}.png`));
   }
 
-  console.log(
-    fs.existsSync(svgPath)
-      ? "PWA icons generated from public/favicon.svg (full-bleed)"
-      : "PWA icons generated from public/brand/app-icon-source.png"
-  );
+  console.log("PWA icons generated from public/favicon.svg (site icon)");
   console.log("Wrote src/app/icon.png and src/app/apple-icon.png for home-screen install");
 }
 

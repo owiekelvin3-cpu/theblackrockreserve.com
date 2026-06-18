@@ -125,7 +125,7 @@ export default async function RootLayout({
         <div id="app-splash" suppressHydrationWarning aria-hidden="true">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/icons/icon-192.png"
+            src="/favicon.svg"
             alt=""
             width={88}
             height={88}
