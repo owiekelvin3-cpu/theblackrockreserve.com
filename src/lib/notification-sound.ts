@@ -93,7 +93,7 @@ export function showBrowserNotification(title: string, body: string, tag?: strin
   if (document.visibilityState === "visible") return;
 
   try {
-    new Notification(title, { body, tag, icon: "/apple-icon.png" });
+    new Notification(title, { body, tag, icon: "/apple-icon.png?v=6" });
   } catch {
     /* ignore unsupported environments */
   }

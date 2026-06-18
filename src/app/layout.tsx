@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Providers from "@/components/providers/Providers";
 import { getSiteUrl } from "@/lib/site-url";
 import { getLocaleDir, getServerLocale } from "@/lib/i18n/server";
+import { pwaIconUrl } from "@/lib/pwa-icon-version";
 import "./globals.css";
 
 const siteUrl = getSiteUrl();
@@ -80,9 +81,9 @@ export const metadata: Metadata = {
   },
   manifest: "/manifest.webmanifest",
   icons: {
-    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
-    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
-    shortcut: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+    icon: [{ url: pwaIconUrl("/favicon.svg"), type: "image/svg+xml" }],
+    apple: [{ url: pwaIconUrl("/apple-icon.png"), sizes: "180x180", type: "image/png" }],
+    shortcut: [{ url: pwaIconUrl("/apple-icon.png"), sizes: "180x180", type: "image/png" }],
   },
 };
 
@@ -109,13 +110,13 @@ export default async function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <script dangerouslySetInnerHTML={{ __html: splashDismissScript }} />
-        <link rel="apple-touch-icon" href="/apple-icon.png" sizes="180x180" />
+        <link rel="apple-touch-icon" href={pwaIconUrl("/apple-icon.png")} sizes="180x180" />
       </head>
       <body className="antialiased bg-bg-primary font-sans">
         <div id="app-splash" suppressHydrationWarning aria-hidden="true">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/favicon.svg"
+            src={pwaIconUrl("/favicon.svg")}
             alt=""
             width={88}
             height={88}

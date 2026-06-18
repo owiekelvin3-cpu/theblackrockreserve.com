@@ -1,5 +1,6 @@
 /* BlackrockReserve service worker — static precache + safe runtime caching */
-const CACHE_VERSION = "br-pwa-v5";
+const CACHE_VERSION = "br-pwa-v6";
+const ICON_QUERY = "?v=6";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const OFFLINE_URL = "/offline";
@@ -7,13 +8,13 @@ const OFFLINE_URL = "/offline";
 const PRECACHE_URLS = [
   "/",
   "/offline",
-  "/favicon.svg",
-  "/apple-icon.png",
-  "/apple-touch-icon.png",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
-  "/icons/icon-maskable-192.png",
-  "/icons/icon-maskable-512.png",
+  `/favicon.svg${ICON_QUERY}`,
+  `/apple-icon.png${ICON_QUERY}`,
+  `/apple-touch-icon.png${ICON_QUERY}`,
+  `/icons/icon-192.png${ICON_QUERY}`,
+  `/icons/icon-512.png${ICON_QUERY}`,
+  `/icons/icon-maskable-192.png${ICON_QUERY}`,
+  `/icons/icon-maskable-512.png${ICON_QUERY}`,
   "/manifest.webmanifest",
 ];
 
@@ -135,8 +136,8 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(payload.title, {
       body: payload.body,
-      icon: "/apple-icon.png",
-      badge: "/apple-icon.png",
+      icon: `/apple-icon.png?v=6`,
+      badge: `/apple-icon.png?v=6`,
       data: payload.data ?? {},
     })
   );

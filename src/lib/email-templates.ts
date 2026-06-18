@@ -1,6 +1,7 @@
 import { DEFAULT_LOCALE, getLocaleDefinition, type LocaleCode } from "@/lib/i18n/locales";
 import { createServerTranslator } from "@/lib/i18n/server";
 import { getSiteUrl } from "@/lib/site-url";
+import { pwaIconUrl } from "@/lib/pwa-icon-version";
 
 const BRAND = "Blackrock Reserve";
 const ACCENT = "#E85D04";
@@ -15,7 +16,7 @@ const DANGER_BG = "#FEF2F2";
 const DANGER_BORDER = "#FECACA";
 
 function brandLogoUrl(): string {
-  return `${getSiteUrl()}/apple-icon.png`;
+  return `${getSiteUrl()}${pwaIconUrl("/apple-icon.png")}`;
 }
 
 function escapeHtml(value: string): string {
