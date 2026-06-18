@@ -1,5 +1,5 @@
 /* BlackrockReserve service worker — static precache + safe runtime caching */
-const CACHE_VERSION = "br-pwa-v4";
+const CACHE_VERSION = "br-pwa-v5";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const OFFLINE_URL = "/offline";
@@ -135,8 +135,8 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(payload.title, {
       body: payload.body,
-      icon: "/icons/icon-192.png",
-      badge: "/icons/icon-192.png",
+      icon: "/apple-icon.png",
+      badge: "/apple-icon.png",
       data: payload.data ?? {},
     })
   );

@@ -15,7 +15,7 @@ const DANGER_BG = "#FEF2F2";
 const DANGER_BORDER = "#FECACA";
 
 function brandLogoUrl(): string {
-  return `${getSiteUrl()}/apple-touch-icon.png`;
+  return `${getSiteUrl()}/apple-icon.png`;
 }
 
 function escapeHtml(value: string): string {

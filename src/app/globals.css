@@ -846,7 +846,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 1.25rem;
-  background: #000000;
+  background: linear-gradient(165deg, #ff8c42 0%, #ff5f05 48%, #ff4500 100%);
   transition: opacity 0.38s ease, visibility 0.38s ease;
 }
 
@@ -861,9 +861,8 @@ html.app-ready #app-splash {
   height: 5.5rem;
   border-radius: 1.375rem;
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.08),
-    0 24px 64px rgba(255, 95, 5, 0.28),
-    0 8px 24px rgba(0, 0, 0, 0.45);
+    0 0 0 1px rgba(255, 255, 255, 0.22),
+    0 16px 40px rgba(0, 0, 0, 0.18);
   animation: app-splash-breathe 1.4s ease-in-out infinite;
 }
 
@@ -907,7 +906,7 @@ html.app-ready #app-splash {
   font-size: 0.9375rem;
   font-weight: 600;
   letter-spacing: -0.02em;
-  color: rgba(255, 255, 255, 0.88);
+  color: rgba(255, 255, 255, 0.96);
 }
 
 @keyframes app-splash-breathe {
