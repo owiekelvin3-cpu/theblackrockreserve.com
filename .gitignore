@@ -29,6 +29,9 @@ yarn-error.log*
 .env
 .env*.local
 
+# Cursor MCP (may contain Supabase tokens)
+.cursor/mcp.json
+
 # vercel
 .vercel
 

@@ -327,11 +327,8 @@ export default function AdminUserDetailPage() {
             </div>
           </div>
           <div className="mt-4 flex gap-2">
-            <Link href="/admin/frozen-accounts" className="admin-btn-ghost text-xs">
-              View all frozen accounts
-            </Link>
             <Link href={`/admin/frozen-accounts?userId=${user.id}`} className="admin-btn-ghost text-xs">
-              Freeze history & audit
+              Open freeze console
             </Link>
           </div>
         </div>
