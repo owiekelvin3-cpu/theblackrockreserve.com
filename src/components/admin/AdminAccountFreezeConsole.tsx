@@ -373,8 +373,8 @@ export default function AdminAccountFreezeConsole() {
   return (
     <AdminPage>
       <AdminPageHeader
-        title="Account Freeze Management"
-        description="Manage frozen accounts, review fund release requests, and freeze customers — all in one place."
+        title="Account Controls"
+        description="Review restrictions, process release requests, and apply account holds."
         action={<AdminRefreshButton onClick={refreshAll} />}
       />
 

@@ -28,7 +28,7 @@ const navGroups: { titleKey: string; items: NavItem[] }[] = [
     items: [
       { href: "/admin", labelKey: "admin.dashboard", icon: LayoutDashboard, exact: true, countKey: null },
       { href: "/admin/users", labelKey: "admin.users", icon: Users, countKey: null },
-      { href: "/admin/frozen-accounts", labelKey: "admin.accountFreezeHub", icon: Snowflake, countKey: "pendingFundReleaseRequests" },
+      { href: "/admin/frozen-accounts", labelKey: "admin.accountControls", icon: Snowflake, countKey: "pendingFundReleaseRequests" },
       { href: "/admin/verification-badges", labelKey: "admin.verificationBadges", icon: BadgeCheck, countKey: null },
     ],
   },
