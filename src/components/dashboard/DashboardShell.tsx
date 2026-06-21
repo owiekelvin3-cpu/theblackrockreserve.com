@@ -7,6 +7,8 @@ import DashboardTopBar from "@/components/dashboard/DashboardTopBar";
 import DashboardMobileNav from "@/components/dashboard/DashboardMobileNav";
 import { DashboardLayoutProvider } from "@/components/dashboard/DashboardLayoutContext";
 import { ProfileImageProvider } from "@/components/providers/ProfileImageProvider";
+import { FrozenAccountProvider } from "@/components/dashboard/FrozenAccountProvider";
+import FrozenAccountBanner from "@/components/dashboard/FrozenAccountBanner";
 
 export default function DashboardShell({
   session,
@@ -19,16 +21,19 @@ export default function DashboardShell({
     <SessionProvider session={session} refetchOnWindowFocus={false} refetchInterval={0}>
       <DashboardLayoutProvider>
         <ProfileImageProvider>
+        <FrozenAccountProvider>
         <div className="dash-layout min-h-[100dvh] overflow-x-hidden">
           <DashboardSidebar />
           <div className="lg:ml-[260px] min-h-[100dvh] flex flex-col">
             <main className="flex-1 px-4 pt-1 pb-4 sm:p-6 lg:p-8 lg:pt-8 max-w-[1500px] w-full mx-auto dash-main-pad">
               <DashboardTopBar />
+              <FrozenAccountBanner />
               {children}
             </main>
             <DashboardMobileNav />
           </div>
         </div>
+        </FrozenAccountProvider>
         </ProfileImageProvider>
       </DashboardLayoutProvider>
     </SessionProvider>

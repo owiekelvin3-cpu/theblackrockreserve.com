@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, ArrowLeftRight, ShieldCheck,
   Mail, Building2, LogOut, ChevronRight, Bitcoin, Wallet,
-  Settings, ArrowUpFromLine, Menu, X, LineChart, TrendingUp, DollarSign, Landmark, FileCheck, Receipt, BadgeCheck, CreditCard,
+  Settings, ArrowUpFromLine, Menu, X, LineChart, TrendingUp, DollarSign, Landmark, FileCheck, Receipt, BadgeCheck, CreditCard, Snowflake, HandCoins,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
@@ -19,7 +19,7 @@ type NavItem = {
   labelKey: string;
   icon: typeof LayoutDashboard;
   exact?: boolean;
-  countKey?: "pendingDeposits" | "pendingWithdrawals" | "pendingTransactions" | "pendingKyc" | "contactMessages" | "unreadSupportChats" | "pendingTaxVerifications" | "pendingLoans" | "pendingCardRequests" | null;
+  countKey?: "pendingDeposits" | "pendingWithdrawals" | "pendingTransactions" | "pendingKyc" | "contactMessages" | "unreadSupportChats" | "pendingTaxVerifications" | "pendingLoans" | "pendingCardRequests" | "pendingFundReleaseRequests" | null;
 };
 
 const navGroups: { titleKey: string; items: NavItem[] }[] = [
@@ -28,6 +28,8 @@ const navGroups: { titleKey: string; items: NavItem[] }[] = [
     items: [
       { href: "/admin", labelKey: "admin.dashboard", icon: LayoutDashboard, exact: true, countKey: null },
       { href: "/admin/users", labelKey: "admin.users", icon: Users, countKey: null },
+      { href: "/admin/frozen-accounts", labelKey: "admin.frozenAccounts", icon: Snowflake, countKey: null },
+      { href: "/admin/fund-release-requests", labelKey: "admin.fundReleaseRequests", icon: HandCoins, countKey: "pendingFundReleaseRequests" },
       { href: "/admin/verification-badges", labelKey: "admin.verificationBadges", icon: BadgeCheck, countKey: null },
     ],
   },

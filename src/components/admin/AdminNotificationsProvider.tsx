@@ -8,6 +8,7 @@ export type AdminNotificationData = {
   pendingTaxVerifications: number;
   pendingLoans: number;
   pendingCardRequests: number;
+  pendingFundReleaseRequests: number;
   pendingWithdrawals: number;
   pendingKyc: number;
   contactMessages: number;
@@ -86,6 +87,7 @@ export type AdminSidebarCounts = {
   pendingTaxVerifications: number;
   pendingLoans: number;
   pendingCardRequests: number;
+  pendingFundReleaseRequests: number;
   pendingWithdrawals: number;
   pendingKyc: number;
   contactMessages: number;

@@ -511,3 +511,18 @@ export const loanApplicationReviewSchema = z
     { message: "Approved amount, interest rate, and repayment duration are required for approval", path: ["approvedAmount"] }
   );
 
+export const accountFreezeSchema = z.object({
+  freezeType: z.enum(["FULL", "WITHDRAWAL_ONLY"]),
+  reason: z.string().min(3, "Freeze reason must be at least 3 characters").max(2000),
+  internalNotes: z.string().max(5000).optional(),
+});
+
+export const accountFreezeUpdateSchema = z.object({
+  reason: z.string().min(3, "Freeze reason must be at least 3 characters").max(2000),
+  internalNotes: z.string().max(5000).optional(),
+});
+
+export const fundReleaseReviewSchema = z.object({
+  action: z.enum(["APPROVE", "REJECT"]),
+  adminNotes: z.string().max(5000).optional(),
+});

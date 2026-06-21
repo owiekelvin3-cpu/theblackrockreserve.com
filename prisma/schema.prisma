@@ -87,6 +87,13 @@ model User {
   bankCards                BankCard[]
   cardRequests             CardRequest[]
   cardRequestEvents        CardRequestEvent[] @relation("CardRequestEventAdmin")
+  accountFreezes           AccountFreeze[]              @relation("UserAccountFreezes")
+  freezesPerformed         AccountFreeze[]              @relation("FreezeAdmin")
+  unfreezesPerformed       AccountFreeze[]              @relation("UnfreezeAdmin")
+  fundReleaseRequests      FundReleaseRequest[]
+  fundReleaseReviews       FundReleaseRequest[]         @relation("FundReleaseReviewer")
+  accountFreezeLogs        AccountFreezeLog[]           @relation("FreezeLogUser")
+  accountFreezeLogActions  AccountFreezeLog[]           @relation("FreezeLogAdmin")
 }
 
 model Session {
@@ -910,4 +917,78 @@ model CardRequestEvent {
   admin       User?       @relation("CardRequestEventAdmin", fields: [adminId], references: [id], onDelete: SetNull)
 
   @@index([cardRequestId, createdAt])
+}
+
+model AccountFreeze {
+  id            String              @id @default(cuid())
+  userId        String
+  freezeType    AccountFreezeType
+  reason        String              @db.Text
+  internalNotes String?             @db.Text
+  status        AccountFreezeStatus @default(ACTIVE)
+  frozenById    String
+  frozenAt      DateTime            @default(now())
+  unfrozenById  String?
+  unfrozenAt    DateTime?
+  updatedAt     DateTime            @updatedAt
+
+  user               User                 @relation("UserAccountFreezes", fields: [userId], references: [id], onDelete: Cascade)
+  frozenBy           User                 @relation("FreezeAdmin", fields: [frozenById], references: [id])
+  unfrozenBy         User?                @relation("UnfreezeAdmin", fields: [unfrozenById], references: [id])
+  fundReleaseRequests FundReleaseRequest[]
+
+  @@index([userId, status])
+  @@index([status, frozenAt])
+}
+
+model FundReleaseRequest {
+  id              String                   @id @default(cuid())
+  userId          String
+  accountFreezeId String
+  status          FundReleaseRequestStatus @default(PENDING)
+  userMessage     String?                  @db.Text
+  adminNotes      String?                  @db.Text
+  reviewedById    String?
+  reviewedAt      DateTime?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountFreeze AccountFreeze @relation(fields: [accountFreezeId], references: [id], onDelete: Cascade)
+  reviewedBy    User?         @relation("FundReleaseReviewer", fields: [reviewedById], references: [id])
+
+  @@index([status, createdAt])
+  @@index([userId, status])
+}
+
+model AccountFreezeLog {
+  id        String   @id @default(cuid())
+  userId    String
+  adminId   String?
+  action    String
+  details   String   @db.Text
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  user  User  @relation("FreezeLogUser", fields: [userId], references: [id], onDelete: Cascade)
+  admin User? @relation("FreezeLogAdmin", fields: [adminId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+}
+
+enum AccountFreezeType {
+  FULL
+  WITHDRAWAL_ONLY
+}
+
+enum AccountFreezeStatus {
+  ACTIVE
+  RELEASED
+}
+
+enum FundReleaseRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }

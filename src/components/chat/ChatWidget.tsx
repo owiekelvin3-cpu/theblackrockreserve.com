@@ -69,6 +69,7 @@ export default function ChatWidget() {
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [isFrozen, setIsFrozen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -79,14 +80,31 @@ export default function ChatWidget() {
   });
 
   openChatRef.current = () => {
+    if (isDashboard && isFrozen) {
+      setChatMode("human");
+      saveChatMode("human");
+    }
+    setOpen(true);
+  };
+
+  const openHumanRef = useRef(() => {
+    setChatMode("human");
+    if (isDashboard) saveChatMode("human");
+    setOpen(true);
+  });
+
+  openHumanRef.current = () => {
+    setChatMode("human");
+    if (isDashboard) saveChatMode("human");
     setOpen(true);
   };
 
   useEffect(() => {
     registerChat({
       open: () => openChatRef.current(),
+      openHuman: () => openHumanRef.current(),
     });
-  }, [registerChat]);
+  }, [registerChat, isFrozen, isDashboard]);
 
   const prevPathRef = useRef(pathname);
   useEffect(() => {
@@ -97,6 +115,16 @@ export default function ChatWidget() {
   }, [pathname]);
 
   useEffect(() => {
+    if (!isDashboard) return;
+    fetch("/api/dashboard/account-freeze", { credentials: "include", cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        setIsFrozen(!!data?.isFrozen);
+      })
+      .catch(() => {});
+  }, [isDashboard, pathname]);
+
+  useEffect(() => {
     const stored = loadMessages();
     if (stored.length > 0) {
       setMessages(stored);
@@ -105,9 +133,18 @@ export default function ChatWidget() {
       setMessages([{ id: "welcome", role: "bot", content: w.message }]);
       setSuggestions(w.suggestions ?? []);
     }
-    if (isDashboard) setChatMode(loadChatMode());
+    if (isDashboard) {
+      setChatMode(isFrozen ? "human" : loadChatMode());
+    }
     setInitialized(true);
-  }, [t, isDashboard]);
+  }, [t, isDashboard, isFrozen]);
+
+  useEffect(() => {
+    if (isDashboard && isFrozen && chatMode !== "human") {
+      setChatMode("human");
+      saveChatMode("human");
+    }
+  }, [isDashboard, isFrozen, chatMode]);
 
   useEffect(() => {
     if (initialized && chatMode === "bot") saveMessages(messages);
@@ -159,11 +196,12 @@ export default function ChatWidget() {
 
   const switchMode = useCallback(
     (mode: ChatMode) => {
+      if (isFrozen && mode === "bot") return;
       setChatMode(mode);
       if (isDashboard) saveChatMode(mode);
       setSuggestions(mode === "bot" ? getLocalizedWelcome(t).suggestions ?? [] : []);
     },
-    [isDashboard, t]
+    [isDashboard, isFrozen, t]
   );
 
   const sendHumanMessage = useCallback(
@@ -398,7 +436,7 @@ export default function ChatWidget() {
               )}
             </div>
 
-            {isDashboard && (
+            {isDashboard && !isFrozen && (
               <div className="px-4 sm:px-6 py-3 border-b border-white/10 bg-white/[0.03] shrink-0">
                 <div className="flex rounded-xl bg-white/10 p-1 max-w-3xl mx-auto">
                   <button

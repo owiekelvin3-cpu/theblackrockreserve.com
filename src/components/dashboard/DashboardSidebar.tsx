@@ -18,6 +18,7 @@ import LanguageSelector from "@/components/ui/LanguageSelector";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { useProfileImage } from "@/components/providers/ProfileImageProvider";
 import { useChat } from "@/components/providers/ChatProvider";
+import { useFrozenAccount } from "@/components/dashboard/FrozenAccountProvider";
 import InstallAppPrompt from "@/components/pwa/InstallAppPrompt";
 
 const mainNav = [
@@ -46,7 +47,8 @@ export default function DashboardSidebar() {
   const { sidebarOpen, closeSidebar, openSidebar } = useDashboardLayout();
   const { t } = useI18n();
   const { image: profileImage, verificationBadge } = useProfileImage();
-  const { openChat } = useChat();
+  const { openChat, openHumanSupport } = useChat();
+  const { isFrozen } = useFrozenAccount();
   const [query, setQuery] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -208,7 +210,8 @@ export default function DashboardSidebar() {
                         onClick={() => {
                           setQuery("");
                           closeSidebar();
-                          openChat();
+                          if (isFrozen) openHumanSupport();
+                          else openChat();
                         }}
                         className="dash-nav-item flex w-full items-center gap-3 px-3 py-3 text-sm font-medium min-h-[44px]"
                       >

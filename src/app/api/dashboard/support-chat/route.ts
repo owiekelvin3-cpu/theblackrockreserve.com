@@ -7,6 +7,7 @@ import {
   markSupportRepliesRead,
   sendUserSupportMessage,
 } from "@/lib/support-chat";
+import { recordUserContactedSupport } from "@/lib/account-freeze";
 
 const sendSchema = z.object({
   content: z.string().min(1, "Message is required").max(2000),
@@ -43,6 +44,7 @@ export async function POST(req: Request) {
     }
 
     const conversation = await sendUserSupportMessage(userId, parsed.data.content);
+    await recordUserContactedSupport(userId, parsed.data.content);
     invalidateAdminCaches();
     return NextResponse.json({ conversation });
   } catch (error) {

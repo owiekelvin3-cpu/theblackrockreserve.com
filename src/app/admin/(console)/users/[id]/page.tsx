@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Trash2, Ban, CheckCircle, Copy, Eye, EyeOff, MapPin } from "lucide-react";
+import { ArrowLeft, Trash2, Ban, CheckCircle, Copy, Eye, EyeOff, MapPin, Snowflake, Unlock } from "lucide-react";
+import AdminFreezeModal from "@/components/admin/AdminFreezeModal";
 import { toast } from "sonner";
 import { AdminPageHeader, AdminKycBadge, AdminStatusBadge } from "@/components/admin/AdminUi";
 import AdminFetchState from "@/components/admin/AdminFetchState";
@@ -45,6 +46,15 @@ interface UserDetail {
     id: string; type: string; amount: number; reason: string;
     balanceBefore: number; balanceAfter: number; createdAt: string; adminName: string;
   }[];
+  accountFreeze: {
+    id: string;
+    freezeType: string;
+    freezeTypeLabel: string;
+    reason: string;
+    internalNotes: string | null;
+    frozenAt: string;
+    frozenBy: { id: string; name: string; email: string };
+  } | null;
 }
 
 function PasswordCredentialRow({ password }: { password: string | null }) {
@@ -116,6 +126,7 @@ export default function AdminUserDetailPage() {
   const { data: user, error, loading, refresh, lastUpdated } = useAdminFetch<UserDetail>(`/api/admin/users/${id}`);
   const [saving, setSaving] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [showFreezeModal, setShowFreezeModal] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", accountType: "PERSONAL" });
@@ -181,6 +192,27 @@ export default function AdminUserDetailPage() {
     patchUser({ status: next }, next === "SUSPENDED" ? "Account suspended" : "Account activated");
   };
 
+  const unfreezeAccount = async () => {
+    if (!confirm("Unfreeze this account? Withdrawals will be restored.")) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/users/${id}/unfreeze`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Unfreeze failed");
+      toast.success("Account unfrozen");
+      refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const deleteUser = async () => {
     if (!confirm("Permanently delete this user and all their data?")) return;
     const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE", credentials: "include" });
@@ -227,6 +259,25 @@ export default function AdminUserDetailPage() {
             <button onClick={toggleStatus} disabled={saving} className="admin-btn-ghost flex items-center gap-1.5 text-xs">
               {user.status === "ACTIVE" ? <><Ban size={14} /> Suspend</> : <><CheckCircle size={14} /> Activate</>}
             </button>
+            {user.accountFreeze ? (
+              <button
+                type="button"
+                onClick={unfreezeAccount}
+                disabled={saving}
+                className="admin-btn-ghost flex items-center gap-1.5 text-xs text-emerald-400 border-emerald-500/30"
+              >
+                <Unlock size={14} /> Unfreeze Account
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowFreezeModal(true)}
+                disabled={saving}
+                className="admin-btn-ghost flex items-center gap-1.5 text-xs text-amber-400 border-amber-500/30"
+              >
+                <Snowflake size={14} /> Freeze Account
+              </button>
+            )}
             <button onClick={deleteUser} className="admin-btn-ghost flex items-center gap-1.5 text-xs text-red-400 border-red-500/30">
               <Trash2 size={14} /> Delete
             </button>
@@ -239,7 +290,52 @@ export default function AdminUserDetailPage() {
         <AdminKycBadge status={user.kycStatus} />
         <span className="admin-pill">{user.accountType}</span>
         <span className="admin-pill">{user.emailVerified ? "Email verified" : "Email unverified"}</span>
+        {user.accountFreeze && (
+          <span className="admin-badge admin-badge-rejected text-[10px] flex items-center gap-1">
+            <Snowflake size={10} /> Frozen · {user.accountFreeze.freezeTypeLabel}
+          </span>
+        )}
       </div>
+
+      {user.accountFreeze && (
+        <div className="admin-card p-5 border border-amber-500/25 bg-amber-500/5">
+          <h2 className="font-semibold text-amber-300 mb-3 flex items-center gap-2">
+            <Snowflake size={18} /> Active Account Freeze
+          </h2>
+          <div className="grid sm:grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-[10px] uppercase text-[var(--admin-muted)]">Type</p>
+              <p className="text-white">{user.accountFreeze.freezeTypeLabel}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase text-[var(--admin-muted)]">Frozen</p>
+              <p className="text-white">{new Date(user.accountFreeze.frozenAt).toLocaleString()}</p>
+            </div>
+            <div className="sm:col-span-2">
+              <p className="text-[10px] uppercase text-[var(--admin-muted)]">Reason (customer-visible)</p>
+              <p className="text-white">{user.accountFreeze.reason}</p>
+            </div>
+            {user.accountFreeze.internalNotes && (
+              <div className="sm:col-span-2">
+                <p className="text-[10px] uppercase text-[var(--admin-muted)]">Internal notes</p>
+                <p className="text-[var(--admin-muted)]">{user.accountFreeze.internalNotes}</p>
+              </div>
+            )}
+            <div>
+              <p className="text-[10px] uppercase text-[var(--admin-muted)]">Frozen by</p>
+              <p className="text-white">{user.accountFreeze.frozenBy.name}</p>
+            </div>
+          </div>
+          <div className="mt-4 flex gap-2">
+            <Link href="/admin/frozen-accounts" className="admin-btn-ghost text-xs">
+              View all frozen accounts
+            </Link>
+            <Link href={`/admin/frozen-accounts?userId=${user.id}`} className="admin-btn-ghost text-xs">
+              Freeze history & audit
+            </Link>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="admin-card p-4">
@@ -519,6 +615,14 @@ export default function AdminUserDetailPage() {
           </div>
         </div>
       )}
+
+      <AdminFreezeModal
+        open={showFreezeModal}
+        userName={user.name}
+        userId={user.id}
+        onClose={() => setShowFreezeModal(false)}
+        onSuccess={refresh}
+      />
     </div>
   );
 }

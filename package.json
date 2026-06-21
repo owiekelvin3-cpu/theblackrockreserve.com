@@ -6,7 +6,7 @@
     "dev": "node scripts/dev-start.mjs",
     "dev:clean": "npm run clean && node scripts/dev-start.mjs",
     "build": "npx prisma@5.22.0 generate && node scripts/generate-pwa-icons.mjs && next build",
-    "db:migrate": "node scripts/apply-support-chat-schema.mjs && node scripts/apply-verification-badge-schema.mjs && node scripts/apply-deposit-proof-image.mjs && node scripts/apply-physical-cards-schema.mjs && node scripts/apply-notification-actor.mjs",
+    "db:migrate": "node scripts/apply-support-chat-schema.mjs && node scripts/apply-verification-badge-schema.mjs && node scripts/apply-deposit-proof-image.mjs && node scripts/apply-physical-cards-schema.mjs && node scripts/apply-notification-actor.mjs && node scripts/apply-account-freeze-schema.mjs",
     "start": "next start",
     "lint": "next lint",
     "clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\"",

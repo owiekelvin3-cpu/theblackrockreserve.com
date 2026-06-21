@@ -16,10 +16,12 @@ const ChatWidget = dynamic(() => import("@/components/chat/ChatWidget"), { ssr: 
 
 type ChatActions = {
   open: () => void;
+  openHuman: () => void;
 };
 
 type ChatContextValue = {
   openChat: () => void;
+  openHumanSupport: () => void;
   registerChat: (actions: ChatActions) => void;
 };
 
@@ -29,7 +31,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isDashboard = pathname.startsWith("/dashboard");
   const actionsRef = useRef<ChatActions | null>(null);
-  const pendingOpenRef = useRef(false);
+  const pendingOpenRef = useRef<"default" | "human" | null>(null);
   const [showWidget, setShowWidget] = useState(false);
 
   useEffect(() => {
@@ -40,8 +42,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   const registerChat = useCallback((actions: ChatActions) => {
     actionsRef.current = actions;
-    if (pendingOpenRef.current) {
-      pendingOpenRef.current = false;
+    if (pendingOpenRef.current === "human") {
+      pendingOpenRef.current = null;
+      actions.openHuman();
+    } else if (pendingOpenRef.current === "default") {
+      pendingOpenRef.current = null;
       actions.open();
     }
   }, []);
@@ -51,12 +56,21 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     if (actionsRef.current) {
       actionsRef.current.open();
     } else {
-      pendingOpenRef.current = true;
+      pendingOpenRef.current = "default";
+    }
+  }, []);
+
+  const openHumanSupport = useCallback(() => {
+    setShowWidget(true);
+    if (actionsRef.current) {
+      actionsRef.current.openHuman();
+    } else {
+      pendingOpenRef.current = "human";
     }
   }, []);
 
   return (
-    <ChatContext.Provider value={{ openChat, registerChat }}>
+    <ChatContext.Provider value={{ openChat, openHumanSupport, registerChat }}>
       {children}
       {showWidget && <ChatWidget />}
     </ChatContext.Provider>
@@ -67,6 +81,7 @@ export function useChat() {
   const ctx = useContext(ChatContext);
   return {
     openChat: ctx?.openChat ?? (() => {}),
+    openHumanSupport: ctx?.openHumanSupport ?? (() => {}),
     registerChat: ctx?.registerChat ?? (() => {}),
   };
 }

@@ -15,6 +15,11 @@ import { requireTransactionPin } from "@/lib/transaction-pin";
 import { createUserNotification, sendUserNotificationEmail } from "@/lib/user-notifications";
 import { formatCurrency } from "@/lib/utils";
 import { prisma, runInteractiveTransaction } from "@/lib/prisma";
+import {
+  getActiveAccountFreeze,
+  isWithdrawalBlocked,
+  FREEZE_TYPE_LABELS,
+} from "@/lib/account-freeze";
 import QRCode from "qrcode";
 
 export async function GET() {
@@ -63,6 +68,18 @@ export async function GET() {
     ]);
 
     const availableMap = await getAvailableBalancesMap(userId, accounts);
+
+    const activeFreeze = await getActiveAccountFreeze(userId);
+    const accountFreeze = activeFreeze
+      ? {
+          isFrozen: true,
+          reason: activeFreeze.reason,
+          freezeType: activeFreeze.freezeType,
+          freezeTypeLabel: FREEZE_TYPE_LABELS[activeFreeze.freezeType],
+          frozenAt: activeFreeze.frozenAt.toISOString(),
+          withdrawalsBlocked: isWithdrawalBlocked(activeFreeze.freezeType),
+        }
+      : null;
 
     let chargeQrCodeDataUrl = "";
     if (depositSettings.bitcoinWalletAddress) {
@@ -130,6 +147,7 @@ export async function GET() {
       })),
       confirmationMessage:
         "Your withdrawal request has been submitted. Our team will review and process it according to your selected payout method.",
+      accountFreeze,
     });
   } catch (error) {
     console.error("Withdrawals GET error:", error);
@@ -150,6 +168,20 @@ export async function POST(req: NextRequest) {
 
     const pinError = await requireTransactionPin(userId, parsed.data.transactionPin);
     if (pinError) return pinError;
+
+    const activeFreeze = await getActiveAccountFreeze(userId);
+    if (activeFreeze && isWithdrawalBlocked(activeFreeze.freezeType)) {
+      return NextResponse.json(
+        {
+          error: "Account frozen",
+          accountFrozen: true,
+          reason: activeFreeze.reason,
+          freezeType: activeFreeze.freezeType,
+          frozenAt: activeFreeze.frozenAt.toISOString(),
+        },
+        { status: 403 }
+      );
+    }
 
     const account = await prisma.bankAccount.findFirst({
       where: { id: parsed.data.accountId, userId },

@@ -6,6 +6,7 @@ import { requireTransactionPin } from "@/lib/transaction-pin";
 import { getAvailableBalancesMap } from "@/lib/withdrawal-balance";
 import { prisma } from "@/lib/prisma";
 import { ensureUserPrimaryAccountNumber } from "@/lib/bank-account-number";
+import { getActiveAccountFreeze, isTransferBlocked } from "@/lib/account-freeze";
 import { getDbSchemaCapabilities } from "@/lib/db-schema-capabilities";
 
 export async function GET() {
@@ -57,6 +58,18 @@ export async function POST(request: Request) {
 
     const pinError = await requireTransactionPin(userId, parsed.data.transactionPin);
     if (pinError) return pinError;
+
+    const activeFreeze = await getActiveAccountFreeze(userId);
+    if (activeFreeze && isTransferBlocked(activeFreeze.freezeType)) {
+      return NextResponse.json(
+        {
+          error: "Account frozen — transfers are temporarily disabled",
+          accountFrozen: true,
+          reason: activeFreeze.reason,
+        },
+        { status: 403 }
+      );
+    }
 
     const transfer = await transferToMember(userId, parsed.data);
     return NextResponse.json({ ok: true, ...transfer });

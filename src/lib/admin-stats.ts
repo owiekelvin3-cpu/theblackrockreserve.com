@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getPendingFundReleaseCount } from "@/lib/account-freeze";
 
 /** SQL fragment — registered customers with verified email (excludes admin & incomplete signups) */
 const VC = `role = 'USER' AND "emailVerified" IS NOT NULL`;
@@ -38,6 +39,7 @@ export type AdminAlertCounts = {
   pendingTaxVerifications: number;
   pendingLoans: number;
   pendingCardRequests: number;
+  pendingFundReleaseRequests: number;
 };
 
 /** One round-trip for all admin dashboard counters */
@@ -85,5 +87,9 @@ export async function getAdminAlertCounts(): Promise<AdminAlertCounts> {
       (SELECT COUNT(*)::int FROM "LoanApplication" la INNER JOIN "User" u ON la."userId" = u.id WHERE la.status IN ('SUBMITTED', 'UNDER_REVIEW', 'APPROVED') AND u.${VC}) AS "pendingLoans",
       (SELECT COUNT(*)::int FROM "CardRequest" cr INNER JOIN "User" u ON cr."userId" = u.id WHERE cr.status IN ('PENDING_REVIEW', 'UNDER_VERIFICATION') AND u.${VC}) AS "pendingCardRequests"
   `);
-  return { ...row, unreadSupportChats: await countUnreadSupportChats() };
+  return {
+    ...row,
+    unreadSupportChats: await countUnreadSupportChats(),
+    pendingFundReleaseRequests: await getPendingFundReleaseCount(),
+  };
 }

@@ -5,6 +5,7 @@ import { getWithdrawalMethodLabel } from "@/lib/withdrawal-methods";
 import { prisma } from "@/lib/prisma";
 import { verifiedCustomerWhere, registeredCustomerWhere } from "@/lib/customer-auth";
 import { getAdminStatsCounts, getAdminAlertCounts } from "@/lib/admin-stats";
+import { getActiveAccountFreeze, FREEZE_TYPE_LABELS } from "@/lib/account-freeze";
 
 export const ADMIN_OVERVIEW_TAG = "admin-overview";
 export const ADMIN_NOTIFICATIONS_TAG = "admin-notifications";
@@ -31,6 +32,7 @@ async function loadAdminNotificationCounts() {
       pendingTaxVerifications,
       pendingLoans,
       pendingCardRequests = 0,
+      pendingFundReleaseRequests = 0,
     } = counts;
 
     return {
@@ -43,6 +45,7 @@ async function loadAdminNotificationCounts() {
       pendingTaxVerifications,
       pendingLoans,
       pendingCardRequests,
+      pendingFundReleaseRequests,
       totalAlerts:
         pendingDeposits +
         pendingWithdrawals +
@@ -51,6 +54,7 @@ async function loadAdminNotificationCounts() {
         pendingTaxVerifications +
         pendingLoans +
         pendingCardRequests +
+        pendingFundReleaseRequests +
         unreadSupportChats,
       recentDepositAlerts: recentDepositAlerts.map((d) => ({
         id: d.id,
@@ -76,6 +80,8 @@ async function loadAdminNotificationCounts() {
       pendingTransactions: 0,
       pendingTaxVerifications: 0,
       pendingLoans: 0,
+      pendingCardRequests: 0,
+      pendingFundReleaseRequests: 0,
       totalAlerts: 0,
       recentDepositAlerts: [],
     };
@@ -273,7 +279,10 @@ export async function getAdminUser(id: string) {
 
   if (!user || user.role === "ADMIN") return null;
 
-  const investedBalance = await getInvestedBalance(user.id);
+  const [investedBalance, activeFreeze] = await Promise.all([
+    getInvestedBalance(user.id),
+    getActiveAccountFreeze(user.id),
+  ]);
 
   return {
     id: user.id,
@@ -346,6 +355,17 @@ export async function getAdminUser(id: string) {
       adminName: a.admin.name,
       accountName: a.account.name,
     })),
+    accountFreeze: activeFreeze
+      ? {
+          id: activeFreeze.id,
+          freezeType: activeFreeze.freezeType,
+          freezeTypeLabel: FREEZE_TYPE_LABELS[activeFreeze.freezeType],
+          reason: activeFreeze.reason,
+          internalNotes: activeFreeze.internalNotes,
+          frozenAt: activeFreeze.frozenAt.toISOString(),
+          frozenBy: activeFreeze.frozenBy,
+        }
+      : null,
   };
 }
 

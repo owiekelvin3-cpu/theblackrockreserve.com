@@ -11,6 +11,8 @@ import EmptyState from "@/components/dashboard/EmptyState";
 import WithdrawalMethodIcon from "@/components/dashboard/WithdrawalMethodIcon";
 import WithdrawalReceiptModal, { type WithdrawalReceiptData } from "@/components/dashboard/WithdrawalReceiptModal";
 import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
+import FrozenAccountModal from "@/components/dashboard/FrozenAccountModal";
+import { useFrozenAccount } from "@/components/dashboard/FrozenAccountProvider";
 import { useTransactionPin } from "@/hooks/use-transaction-pin";
 import {
   WITHDRAWAL_CATEGORIES,
@@ -61,6 +63,14 @@ interface WithdrawalData {
     chargePayment: ChargePayment | null;
   }[];
   confirmationMessage: string;
+  accountFreeze?: {
+    isFrozen: boolean;
+    reason: string;
+    freezeType: string;
+    freezeTypeLabel: string;
+    frozenAt: string;
+    withdrawalsBlocked: boolean;
+  } | null;
 }
 
 const WITHDRAWAL_HISTORY_PREVIEW = 2;
@@ -89,6 +99,8 @@ export default function WithdrawalsPage() {
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [receiptData, setReceiptData] = useState<WithdrawalReceiptData | null>(null);
   const [historyExpanded, setHistoryExpanded] = useState(false);
+  const [frozenModalOpen, setFrozenModalOpen] = useState(false);
+  const { isFrozen, freeze } = useFrozenAccount();
 
   const selectedMethodDef = getWithdrawalMethod(method)!;
 
@@ -159,6 +171,10 @@ export default function WithdrawalsPage() {
 
   const validateWithdrawalForm = (): string | null => {
     const amount = Number(amountUsd);
+    if (withdrawalData.accountFreeze?.withdrawalsBlocked || isFrozen) {
+      setFrozenModalOpen(true);
+      return t("withdrawals.errors.accountFrozen");
+    }
     if (!accountId) return t("withdrawals.errors.noAccount");
     if (!Number.isFinite(amount) || amount <= 0) return t("withdrawals.errors.invalidAmount");
     if (!destination.trim()) return t("withdrawals.errors.destinationRequired");
@@ -185,7 +201,13 @@ export default function WithdrawalsPage() {
       });
       const json = await res.json();
 
-      if (!res.ok) throw new Error(json.error || t("withdrawals.errors.submitFailed"));
+      if (!res.ok) {
+        if (json.accountFrozen) {
+          setFrozenModalOpen(true);
+          throw new Error(json.error || t("withdrawals.errors.accountFrozen"));
+        }
+        throw new Error(json.error || t("withdrawals.errors.submitFailed"));
+      }
 
       setAmountUsd("");
       setDestination("");
@@ -435,6 +457,16 @@ export default function WithdrawalsPage() {
           setReceiptOpen(false);
           setReceiptData(null);
         }}
+      />
+
+      <FrozenAccountModal
+        open={frozenModalOpen}
+        reason={
+          withdrawalData.accountFreeze?.reason ??
+          freeze?.reason ??
+          "Your account is currently under review."
+        }
+        onClose={() => setFrozenModalOpen(false)}
       />
     </DashboardGate>
   );
