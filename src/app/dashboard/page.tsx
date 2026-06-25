@@ -56,7 +56,6 @@ export default function DashboardPage() {
             investedBalance={data.investedBalance}
             profitBalance={data.profitBalance}
             savingsBalance={data.savings.savingsBalance}
-            savingsCurrency={data.savings.savings.currency}
             savingsApy={data.savings.apyAnnualPercent}
             onProfitWithdraw={loadData}
           />

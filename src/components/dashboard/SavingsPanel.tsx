@@ -5,6 +5,7 @@ import { PiggyBank, ArrowRightLeft } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/components/providers/I18nProvider";
+import { currencyFlag } from "@/lib/currency-flags";
 import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
 import SavingsApyBadge from "@/components/dashboard/SavingsApyBadge";
 import { useTransactionPin } from "@/hooks/use-transaction-pin";
@@ -38,7 +39,7 @@ interface SavingsPanelProps {
 }
 
 export default function SavingsPanel({ data, onUpdated }: SavingsPanelProps) {
-  const { t, formatCurrency, currencySymbol } = useI18n();
+  const { t, formatCurrency, currencySymbol, preferredCurrency } = useI18n();
   const [amount, setAmount] = useState("");
   const [direction, setDirection] = useState<"to-savings" | "to-checking">("to-savings");
   const [loading, setLoading] = useState(false);
@@ -121,18 +122,18 @@ export default function SavingsPanel({ data, onUpdated }: SavingsPanelProps) {
 
       <div className="dash-wallet-tile dash-savings-wallet p-4 mb-4">
         <div className="flex items-start justify-between gap-3 mb-3">
-          <span className="text-2xl leading-none">{data.savings.flag}</span>
+          <span className="text-2xl leading-none">{currencyFlag(preferredCurrency)}</span>
           <SavingsApyBadge rate={data.apyAnnualPercent} />
         </div>
-        <p className="text-xs text-text-muted font-medium uppercase tracking-wide">{data.savings.currency}</p>
+        <p className="text-xs text-text-muted font-medium uppercase tracking-wide">{preferredCurrency}</p>
         <p className="text-2xl sm:text-3xl font-bold text-text-primary mt-0.5 tracking-tight">
-          {formatCurrency(data.savings.balance, data.savings.currency)}
+          {formatCurrency(data.savings.balance)}
         </p>
         <p className="text-[10px] text-text-muted mt-2 truncate">{data.savings.name}</p>
         {data.savings.balance > 0 && (
           <p className="dash-savings-yield-estimate mt-3">
             {t("dashboard.savingsProjectedYield", {
-              amount: formatCurrency(data.projectedAnnualYield, data.savings.currency),
+              amount: formatCurrency(data.projectedAnnualYield),
             })}
           </p>
         )}

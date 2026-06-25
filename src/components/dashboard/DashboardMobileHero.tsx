@@ -19,7 +19,6 @@ type DashboardMobileHeroProps = {
   investedBalance: number;
   profitBalance: number;
   savingsBalance: number;
-  savingsCurrency?: string;
   savingsApy?: number;
   onProfitWithdraw?: () => void;
 };
@@ -33,7 +32,6 @@ export default function DashboardMobileHero({
   investedBalance,
   profitBalance,
   savingsBalance,
-  savingsCurrency,
   savingsApy = 20,
   onProfitWithdraw,
 }: DashboardMobileHeroProps) {
@@ -45,7 +43,7 @@ export default function DashboardMobileHero({
   const firstName = useMemo(() => getFirstName(session?.user?.name), [session?.user?.name]);
   const { clock, ready } = useLiveClock(firstName, locale, t);
   const formattedTotal = formatCurrency(totalBalance);
-  const formattedSavings = formatCurrency(savingsBalance, savingsCurrency);
+  const formattedSavings = formatCurrency(savingsBalance);
 
   return (
     <section className="dash-mobile-hero" aria-label={t("dashboard.myBalance")}>
