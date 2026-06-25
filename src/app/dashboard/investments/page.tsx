@@ -7,9 +7,9 @@ import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import DashboardGate from "@/components/dashboard/DashboardGate";
 import ProfitWithdrawButton from "@/components/dashboard/ProfitWithdrawButton";
-import { formatCurrency, cn } from "@/lib/utils";
-import { fetchJson } from "@/lib/fetch-json";
+import { cn } from "@/lib/utils";
 import { useI18n } from "@/components/providers/I18nProvider";
+import { fetchJson } from "@/lib/fetch-json";
 import { TrendingUp, TrendingDown, ArrowUpRight } from "lucide-react";
 
 interface Holding {
@@ -22,7 +22,7 @@ interface Holding {
 }
 
 export default function InvestmentsPage() {
-  const { t, formatCurrency: fmt } = useI18n();
+  const { t, formatCurrency } = useI18n();
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [investedBalance, setInvestedBalance] = useState(0);
   const [profitBalance, setProfitBalance] = useState(0);
@@ -73,7 +73,7 @@ export default function InvestmentsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
           <Card className="border border-accent-brand/15 bg-accent-brand/5">
             <p className="text-sm text-text-secondary">{t("investments.profitBalance")}</p>
-            <p className="text-2xl font-bold text-accent-green mt-1">{fmt(profitBalance)}</p>
+            <p className="text-2xl font-bold text-accent-green mt-1">{formatCurrency(profitBalance)}</p>
             <p className="text-xs text-text-muted mt-1">{t("investments.profitBalanceDesc")}</p>
             <div className="mt-3">
               <ProfitWithdrawButton profitBalance={profitBalance} onSuccess={loadData} block />
@@ -89,18 +89,18 @@ export default function InvestmentsPage() {
             >
               {tradingRealizedProfit >= 0 ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
               {tradingRealizedProfit >= 0 ? "+" : ""}
-              {fmt(tradingRealizedProfit)}
+              {formatCurrency(tradingRealizedProfit)}
             </p>
             <p className="text-xs text-text-muted mt-1">{t("investments.tradingProfitDesc")}</p>
           </Card>
           <Card>
             <p className="text-sm text-text-secondary">{t("investments.portfolioValue")}</p>
-            <p className="text-2xl font-bold text-white mt-1">{fmt(portfolioValue)}</p>
+            <p className="text-2xl font-bold text-white mt-1">{formatCurrency(portfolioValue)}</p>
             <p className="text-xs text-text-muted mt-1">{t("investments.portfolioValueDesc")}</p>
           </Card>
           <Card>
             <p className="text-sm text-text-secondary">{t("investments.investedBalance")}</p>
-            <p className="text-2xl font-bold text-white mt-1">{fmt(investedBalance)}</p>
+            <p className="text-2xl font-bold text-white mt-1">{formatCurrency(investedBalance)}</p>
             <p className="text-xs text-text-muted mt-1">{t("investments.investedBalanceDesc")}</p>
           </Card>
         </div>

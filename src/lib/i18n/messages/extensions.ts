@@ -9,6 +9,7 @@ const extensions = {
     fullNameRequired: "Full name is required",
     phoneInvalid: "Please enter a valid phone number",
     dobRequired: "Date of birth is required",
+    currencyRequired: "Please select your preferred currency",
     nameRequired: "Name is required",
     subjectRequired: "Subject is required",
     messageMin: "Message must be at least 10 characters",

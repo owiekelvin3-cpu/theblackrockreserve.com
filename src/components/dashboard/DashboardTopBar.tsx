@@ -7,6 +7,7 @@ import { HelpCircle } from "lucide-react";
 import DashboardNotifications from "@/components/dashboard/DashboardNotifications";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import LanguageSelector from "@/components/ui/LanguageSelector";
+import CurrencySelector from "@/components/ui/CurrencySelector";
 import ProfileAvatar from "@/components/ui/ProfileAvatar";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { useProfileImage } from "@/components/providers/ProfileImageProvider";
@@ -64,6 +65,7 @@ export default function DashboardTopBar() {
         )}
 
         <div className="flex items-center gap-0.5 sm:gap-1.5 shrink-0">
+          <CurrencySelector className="hidden md:block" />
           <LanguageSelector className="hidden sm:block" />
           <ThemeToggle size="sm" />
           <Link

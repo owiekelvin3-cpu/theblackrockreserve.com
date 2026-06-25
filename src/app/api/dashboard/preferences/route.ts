@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getSessionUserId, unauthorizedResponse } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { LOCALE_CODES } from "@/lib/i18n/locales";
+import { SUPPORTED_CURRENCIES } from "@/lib/currency";
 import { parseNotificationPrefs, type NotificationPrefs } from "@/lib/notification-prefs";
 import { ensureUserPrimaryAccountNumber } from "@/lib/bank-account-number";
 import {
@@ -21,6 +22,10 @@ const patchSchema = z.object({
   preferredLocale: z
     .string()
     .refine((v) => (LOCALE_CODES as readonly string[]).includes(v))
+    .optional(),
+  preferredCurrency: z
+    .string()
+    .refine((v) => (SUPPORTED_CURRENCIES as readonly string[]).includes(v))
     .optional(),
   name: z.string().min(2, "Name is required").max(120).optional(),
   phone: z.string().max(30).optional().nullable(),
@@ -45,6 +50,7 @@ export async function GET() {
       where: { id: userId },
       select: {
         preferredLocale: true,
+        preferredCurrency: true,
         profileImage: true,
         name: true,
         phone: true,
@@ -70,6 +76,7 @@ export async function GET() {
 
     return NextResponse.json({
       preferredLocale: user?.preferredLocale ?? "en",
+      preferredCurrency: user?.preferredCurrency ?? "USD",
       profileImage: user?.profileImage ?? null,
       name: user?.name ?? null,
       phone: user?.phone ?? null,
@@ -84,6 +91,7 @@ export async function GET() {
     return NextResponse.json(
       {
         preferredLocale: "en",
+        preferredCurrency: "USD",
         profileImage: null,
         name: null,
         phone: null,
@@ -111,12 +119,14 @@ export async function PATCH(request: Request) {
 
     const data: {
       preferredLocale?: string;
+      preferredCurrency?: string;
       name?: string;
       phone?: string | null;
       notificationPrefs?: NotificationPrefs;
     } = {};
 
     if (parsed.data.preferredLocale) data.preferredLocale = parsed.data.preferredLocale;
+    if (parsed.data.preferredCurrency) data.preferredCurrency = parsed.data.preferredCurrency;
     if (parsed.data.name !== undefined) data.name = parsed.data.name.trim();
     if (parsed.data.phone !== undefined) {
       const trimmed = parsed.data.phone?.trim();
@@ -129,6 +139,7 @@ export async function PATCH(request: Request) {
       data,
       select: {
         preferredLocale: true,
+        preferredCurrency: true,
         name: true,
         phone: true,
         notificationPrefs: true,
@@ -137,6 +148,7 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({
       preferredLocale: user.preferredLocale,
+      preferredCurrency: user.preferredCurrency,
       name: user.name,
       phone: user.phone,
       notificationPrefs: parseNotificationPrefs(user.notificationPrefs),

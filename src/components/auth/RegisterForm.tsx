@@ -12,6 +12,7 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import type { RegisterStep1Input, RegisterStep2Input } from "@/lib/validations";
 import { useI18n } from "@/components/providers/I18nProvider";
+import { CURRENCY_OPTIONS } from "@/lib/currency";
 import { useValidationSchemas } from "@/lib/i18n/use-validation-schemas";
 
 type Step1Data = RegisterStep1Input;
@@ -29,7 +30,7 @@ export default function RegisterForm() {
   const step1Form = useForm<Step1Data>({ resolver: zodResolver(schemas.registerStep1Schema) });
   const step2Form = useForm<Step2Data>({
     resolver: zodResolver(schemas.registerStep2Schema),
-    defaultValues: { accountType: "PERSONAL" },
+    defaultValues: { accountType: "PERSONAL", preferredCurrency: "USD" },
   });
 
   const handleStep1 = (data: Step1Data) => {
@@ -142,6 +143,26 @@ export default function RegisterForm() {
                 </button>
               ))}
             </div>
+          </div>
+          <div>
+            <label htmlFor="preferredCurrency" className="block text-sm font-medium text-text-secondary mb-2">
+              {t("auth.preferredCurrency")}
+            </label>
+            <select
+              id="preferredCurrency"
+              {...step2Form.register("preferredCurrency")}
+              className="w-full rounded-xl border border-border bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-gold/40"
+            >
+              {CURRENCY_OPTIONS.map((option) => (
+                <option key={option.code} value={option.code}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1.5 text-xs text-text-muted">{t("auth.preferredCurrencyDesc")}</p>
+            {step2Form.formState.errors.preferredCurrency?.message && (
+              <p className="mt-1 text-xs text-accent-red">{step2Form.formState.errors.preferredCurrency.message}</p>
+            )}
           </div>
           <div className="flex gap-3">
             <Button type="button" variant="ghost" onClick={() => setStep(1)} className="flex-1">{t("auth.back")}</Button>

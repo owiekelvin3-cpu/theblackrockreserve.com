@@ -34,6 +34,7 @@ model User {
   lastSeenAt       DateTime?
   profileImage     String?
   preferredLocale     String    @default("en")
+  preferredCurrency   String    @default("USD")
   notificationPrefs   Json?
   transactionPinHash        String?
   transactionPinSetAt       DateTime?

@@ -12,9 +12,8 @@ import {
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Card from "@/components/ui/Card";
-import { formatCurrency } from "@/lib/utils";
-import { toast } from "sonner";
 import { useI18n } from "@/components/providers/I18nProvider";
+import { toast } from "sonner";
 import { WithdrawalChargeIllustration } from "@/components/dashboard/WithdrawalChargeIllustration";
 import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
 import { useTransactionPin } from "@/hooks/use-transaction-pin";
@@ -69,7 +68,7 @@ export default function WithdrawalChargePayPanel({
   onRefresh: () => void;
 }) {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, formatCurrency } = useI18n();
   const [flowStep, setFlowStep] = useState<1 | 2>(1);
   const [txHash, setTxHash] = useState("");
   const [proofNote, setProofNote] = useState("");

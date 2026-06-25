@@ -10,7 +10,7 @@ import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import CountUp from "@/components/ui/CountUp";
 import ChartContainer from "@/components/ui/ChartContainer";
-import { formatCurrency } from "@/lib/utils";
+import { useI18n } from "@/components/providers/I18nProvider";
 import { marketingImages } from "@/lib/marketing-images";
 
 const assetClasses = [
@@ -34,6 +34,7 @@ const durations = [
 ];
 
 export default function InvestmentsPage() {
+  const { formatCurrency, currencySymbol } = useI18n();
   const [amount, setAmount] = useState(10000);
   const [years, setYears] = useState(5);
   const [risk, setRisk] = useState<typeof riskProfiles[number]["id"]>("moderate");
@@ -157,7 +158,7 @@ export default function InvestmentsPage() {
                 <div className="text-center mb-6">
                   <p className="text-sm text-text-secondary">Projected Value</p>
                   <p className="font-mono text-4xl font-bold gold-gradient-text mt-2">
-                    <CountUp end={projectedValue} prefix="$" decimals={0} />
+                    <CountUp end={projectedValue} prefix={currencySymbol} decimals={0} />
                   </p>
                   <p className="text-sm text-accent-green mt-1">
                     +{formatCurrency(projectedValue - amount)} ({((projectedValue / amount - 1) * 100).toFixed(1)}%)
@@ -173,7 +174,7 @@ export default function InvestmentsPage() {
                         </linearGradient>
                       </defs>
                       <XAxis dataKey="year" stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#475569" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+                      <YAxis stroke="#475569" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => formatCurrency(Number(v)).replace(/\.\d+$/, "")} />
                       <Tooltip
                         contentStyle={{ background: "#111", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", color: "#FFF" }}
                         formatter={(value) => [formatCurrency(Number(value ?? 0)), "Value"]}

@@ -5,6 +5,8 @@ const CURRENCY_FLAGS: Record<string, string> = {
   AUD: "🇦🇺",
   CAD: "🇨🇦",
   JPY: "🇯🇵",
+  CNY: "🇨🇳",
+  AED: "🇦🇪",
 };
 
 export function currencyFlag(currency: string) {

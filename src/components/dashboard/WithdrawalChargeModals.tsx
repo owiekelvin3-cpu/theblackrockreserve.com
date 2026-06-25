@@ -10,9 +10,8 @@ import {
 } from "lucide-react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
-import { formatCurrency } from "@/lib/utils";
-import { toast } from "sonner";
 import { useI18n } from "@/components/providers/I18nProvider";
+import { toast } from "sonner";
 import { WithdrawalChargeIllustration } from "@/components/dashboard/WithdrawalChargeIllustration";
 import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
 import { useTransactionPin } from "@/hooks/use-transaction-pin";
@@ -54,7 +53,7 @@ export function WithdrawalChargeNoticeModal({
   onCancel: () => void;
   onContinue: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, formatCurrency } = useI18n();
 
   const steps = [
     t("withdrawals.chargeModal.step1"),
@@ -186,7 +185,7 @@ export function PayWithdrawalChargeModal({
   qrCodeDataUrl?: string;
   onPaid: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, formatCurrency } = useI18n();
   const [txHash, setTxHash] = useState("");
   const [proofNote, setProofNote] = useState("");
   const [submitting, setSubmitting] = useState(false);

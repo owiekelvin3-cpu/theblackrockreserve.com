@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { TrendingUp, TrendingDown, Shield, Clock, Pin, Star } from "lucide-react";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import StockIcon from "@/components/capital-markets/StockIcon";
@@ -60,7 +60,7 @@ export default function MarketAssetCard({
   holding,
   index = 0,
 }: MarketAssetCardProps) {
-  const { t } = useI18n();
+  const { t, formatCurrency } = useI18n();
   const positive = asset.changePercent >= 0;
   const periodReturn = getReturnForPeriod(asset, returnPeriod);
   const periodPositive = periodReturn >= 0;

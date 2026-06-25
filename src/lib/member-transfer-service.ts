@@ -8,6 +8,7 @@ import {
   getUserAccountNumber,
   resolveActiveMemberByAccountNumber,
 } from "@/lib/bank-account-number";
+import { formatMoneyForUser } from "@/lib/exchange-rates";
 import { serializeVerificationBadge } from "@/lib/verification-badge";
 
 function roundMoney(n: number) {
@@ -63,7 +64,7 @@ export async function transferToMember(
 
   const sender = await prisma.user.findUnique({
     where: { id: senderId },
-    select: { id: true, name: true, status: true, verificationBadge: true },
+    select: { id: true, name: true, status: true, verificationBadge: true, preferredCurrency: true },
   });
   if (!sender || sender.status !== "ACTIVE") {
     throw new Error("Your account cannot send transfers right now");
@@ -96,6 +97,14 @@ export async function transferToMember(
   const recipientLabel = memo
     ? `Transfer from ${sender.name} — ${memo}`
     : `Transfer from ${sender.name}`;
+
+  const recipientUser = await prisma.user.findUnique({
+    where: { id: recipient.id },
+    select: { preferredCurrency: true },
+  });
+
+  const recipientAmountLabel = await formatMoneyForUser(amount, recipientUser?.preferredCurrency);
+  const senderAmountLabel = await formatMoneyForUser(amount, sender.preferredCurrency);
 
   const result = await runInteractiveTransaction(async (tx) => {
     const fromAccount = await tx.bankAccount.findFirst({
@@ -147,7 +156,7 @@ export async function transferToMember(
         userId: recipient.id,
         type: "MEMBER_TRANSFER",
         title: "Funds received",
-        message: `${sender.name} sent you $${amount.toFixed(2)}.${memo ? ` Note: ${memo}` : ""}`,
+        message: `${sender.name} sent you ${recipientAmountLabel}.${memo ? ` Note: ${memo}` : ""}`,
         actorUserId: senderId,
       },
       tx
@@ -163,7 +172,7 @@ export async function transferToMember(
     recipientAccountNumber: accountNumber,
     recipientName: recipient.name,
     referenceId: result.id,
-    message: `Successfully sent $${amount.toFixed(2)} to ${recipient.name}`,
+    message: `Successfully sent ${senderAmountLabel} to ${recipient.name}`,
     receipt: {
       id: result.id,
       amount,

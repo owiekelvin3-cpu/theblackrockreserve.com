@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { z } from "zod";
 import { useI18n } from "@/components/providers/I18nProvider";
+import { preferredCurrencySchema } from "@/lib/validations";
 
 export function useValidationSchemas() {
   const { t } = useI18n();
@@ -32,6 +33,7 @@ export function useValidationSchemas() {
           password,
           confirmPassword: z.string(),
           accountType: z.enum(["PERSONAL", "BUSINESS"]),
+          preferredCurrency: preferredCurrencySchema,
         })
         .refine((data) => data.password === data.confirmPassword, {
           message: t("validation.passwordsMismatch"),

@@ -5,12 +5,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+import { formatMoneyDisplay } from "@/lib/currency/format";
+import { parseCurrencyCode } from "@/lib/currency/constants";
+
 export function formatCurrency(amount: number, currency = "USD"): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-  }).format(amount);
+  return formatMoneyDisplay(amount, parseCurrencyCode(currency));
 }
 
 export function formatNumber(num: number): string {

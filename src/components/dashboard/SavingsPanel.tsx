@@ -38,7 +38,7 @@ interface SavingsPanelProps {
 }
 
 export default function SavingsPanel({ data, onUpdated }: SavingsPanelProps) {
-  const { t, formatCurrency } = useI18n();
+  const { t, formatCurrency, currencySymbol } = useI18n();
   const [amount, setAmount] = useState("");
   const [direction, setDirection] = useState<"to-savings" | "to-checking">("to-savings");
   const [loading, setLoading] = useState(false);
@@ -159,7 +159,7 @@ export default function SavingsPanel({ data, onUpdated }: SavingsPanelProps) {
             Amount to {direction === "to-savings" ? "save" : "withdraw"}
           </label>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm">$</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm">{currencySymbol}</span>
             <input
               id="savings-amount"
               type="number"
@@ -184,7 +184,7 @@ export default function SavingsPanel({ data, onUpdated }: SavingsPanelProps) {
                 onClick={() => setAmount(String(v))}
                 className="dash-control-btn text-xs py-1.5"
               >
-                ${v.toLocaleString()}
+                {formatCurrency(v)}
               </button>
             ))}
             <button

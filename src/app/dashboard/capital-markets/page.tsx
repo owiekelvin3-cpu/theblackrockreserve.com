@@ -18,14 +18,14 @@ import MarketAssetCard, { type MarketAssetCardData } from "@/components/capital-
 import InvestModal from "@/components/capital-markets/InvestModal";
 import SellModal, { type SellHoldingData } from "@/components/capital-markets/SellModal";
 import StockIcon from "@/components/capital-markets/StockIcon";
-import { formatCurrency, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { useI18n } from "@/components/providers/I18nProvider";
 import { fetchDashboardJson } from "@/lib/fetch-json";
 import { CHART_BRAND, CHART_COLORS } from "@/lib/chart-theme";
 import { useChartTheme } from "@/hooks/use-chart-theme";
 import { SECTOR_FILTERS } from "@/lib/market-assets";
 import { getReturnForPeriod, type ReturnPeriodKey } from "@/lib/market-asset-mapper";
 import { toast } from "sonner";
-import { useI18n } from "@/components/providers/I18nProvider";
 
 interface Holding {
   id: string;
@@ -153,6 +153,7 @@ function sortAssetList(
 }
 
 function ChangeBadge({ value, percent }: { value?: number; percent: number }) {
+  const { formatCurrency } = useI18n();
   const positive = percent >= 0;
   return (
     <span
@@ -170,7 +171,7 @@ function ChangeBadge({ value, percent }: { value?: number; percent: number }) {
 }
 
 export default function CapitalMarketsPage() {
-  const { t } = useI18n();
+  const { t, formatCurrency } = useI18n();
   const chartTheme = useChartTheme();
 
   const SECTOR_LABEL_KEYS: Record<string, string> = {

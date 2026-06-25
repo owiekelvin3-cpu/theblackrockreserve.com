@@ -20,6 +20,7 @@ import AccountNumberDisplay from "@/components/dashboard/AccountNumberDisplay";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import LanguageSelector from "@/components/ui/LanguageSelector";
+import CurrencySelector from "@/components/ui/CurrencySelector";
 import ProfileImageUpload from "@/components/dashboard/ProfileImageUpload";
 import InstallAppPrompt from "@/components/pwa/InstallAppPrompt";
 import TransactionPinSettings from "@/components/dashboard/TransactionPinSettings";
@@ -396,6 +397,16 @@ export default function ProfilePage() {
 
           {activeTab === "preferences" && (
             <div className="profile-prefs-grid">
+              <div className="profile-card profile-card-dropdown">
+                <div className="profile-card-head">
+                  <h3 className="profile-card-title">{t("settings.currencyPreference")}</h3>
+                  <p className="profile-card-subtitle">{t("settings.currencyPreferenceDesc")}</p>
+                </div>
+                <div className="profile-card-body">
+                  <CurrencySelector variant="full" />
+                </div>
+              </div>
+
               <div className="profile-card profile-card-dropdown">
                 <div className="profile-card-head">
                   <h3 className="profile-card-title">{t("settings.languagePreference")}</h3>

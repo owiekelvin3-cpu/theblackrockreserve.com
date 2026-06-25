@@ -1,4 +1,5 @@
 import { getLocaleDefinition, type LocaleCode } from "@/lib/i18n/locales";
+import { parseCurrencyCode, CURRENCY_META } from "@/lib/currency/constants";
 
 export function formatCurrencyLocale(
   amount: number,
@@ -6,11 +7,13 @@ export function formatCurrencyLocale(
   currency = "USD"
 ): string {
   const { bcp47 } = getLocaleDefinition(locale);
+  const code = parseCurrencyCode(currency);
+  const meta = CURRENCY_META[code];
   return new Intl.NumberFormat(bcp47, {
     style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    currency: code,
+    minimumFractionDigits: meta.decimals,
+    maximumFractionDigits: meta.decimals,
   }).format(amount);
 }
 

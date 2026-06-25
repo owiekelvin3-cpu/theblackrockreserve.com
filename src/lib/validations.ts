@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { SUPPORTED_CURRENCIES } from "@/lib/currency";
+
+export const preferredCurrencySchema = z.enum(SUPPORTED_CURRENCIES);
 
 export const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -21,6 +24,7 @@ export const registerStep2Schema = z.object({
     .regex(/[0-9]/, "Must contain a number"),
   confirmPassword: z.string(),
   accountType: z.enum(["PERSONAL", "BUSINESS"]),
+  preferredCurrency: preferredCurrencySchema,
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -95,6 +99,7 @@ export const registerApiSchema = z.object({
     .regex(/[A-Z]/, "Must contain an uppercase letter")
     .regex(/[0-9]/, "Must contain a number"),
   accountType: z.enum(["PERSONAL", "BUSINESS"]),
+  preferredCurrency: preferredCurrencySchema,
   kycIdFront: z.string().optional(),
   kycIdBack: z.string().optional(),
 });

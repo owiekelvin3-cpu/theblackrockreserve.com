@@ -43,7 +43,7 @@ interface SellModalProps {
 const QUICK_PERCENTAGES = [25, 50, 75, 100];
 
 export default function SellModal({ holding, open, onClose, onSuccess }: SellModalProps) {
-  const { t, formatCurrency } = useI18n();
+  const { t, formatCurrency, currencySymbol } = useI18n();
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<Step>("amount");
   const [mode, setMode] = useState<SellMode>("usd");
@@ -331,7 +331,7 @@ export default function SellModal({ holding, open, onClose, onSuccess }: SellMod
                     </label>
                     <div className="relative">
                       {mode === "usd" && (
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] font-mono">$</span>
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] font-mono">{currencySymbol}</span>
                       )}
                       <input
                         id="sell-amount"

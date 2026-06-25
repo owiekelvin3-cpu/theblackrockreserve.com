@@ -13,7 +13,8 @@ import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import DashboardGate from "@/components/dashboard/DashboardGate";
 import StockIcon from "@/components/capital-markets/StockIcon";
-import { formatCurrency, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { useI18n } from "@/components/providers/I18nProvider";
 import { fetchDashboardJson } from "@/lib/fetch-json";
 import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
 import { useTransactionPin } from "@/hooks/use-transaction-pin";
@@ -39,6 +40,7 @@ interface JointDetail {
 }
 
 export default function JointAccountDetailPage() {
+  const { formatCurrency } = useI18n();
   const params = useParams();
   const id = params.id as string;
   const [data, setData] = useState<JointDetail | null>(null);

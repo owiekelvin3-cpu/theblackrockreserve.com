@@ -34,7 +34,7 @@ export default function InvestModal({
   onSuccess,
   onClosePosition,
 }: InvestModalProps) {
-  const { t, formatCurrency, formatDate } = useI18n();
+  const { t, formatCurrency, formatDate, currencySymbol } = useI18n();
   const [step, setStep] = useState<Step>("amount");
   const [amount, setAmount] = useState("");
   const [error, setError] = useState("");
@@ -195,7 +195,7 @@ export default function InvestModal({
                       {t("invest.amountLabel")}
                     </label>
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] font-mono">$</span>
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] font-mono">{currencySymbol}</span>
                       <input
                         id="invest-amount"
                         type="number"

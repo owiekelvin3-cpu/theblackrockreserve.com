@@ -7,7 +7,7 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import DashboardGate from "@/components/dashboard/DashboardGate";
 import { fetchDashboardJson } from "@/lib/fetch-json";
-import { formatCurrency, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { dispatchNotificationsRefresh } from "@/hooks/use-push-notifications";
 import { useI18n } from "@/components/providers/I18nProvider";
@@ -44,7 +44,7 @@ interface SuccessState {
 const DEPOSIT_HISTORY_PREVIEW = 2;
 
 export default function DepositPage() {
-  const { t } = useI18n();
+  const { t, formatCurrency } = useI18n();
   const [data, setData] = useState<DepositData | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);

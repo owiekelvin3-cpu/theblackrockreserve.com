@@ -5,6 +5,7 @@ import { registerApiSchema } from "@/lib/validations";
 import { sendEmail } from "@/lib/email";
 import { welcomeEmail } from "@/lib/email-templates";
 import { parseLocaleCode } from "@/lib/i18n/locales";
+import { parseCurrencyCode } from "@/lib/currency";
 import { getServerLocale } from "@/lib/i18n/server";
 import { getClientIp } from "@/lib/admin-audit";
 import { captureUserLocationAsync } from "@/lib/user-location";
@@ -36,11 +37,12 @@ export async function POST(req: Request) {
       );
     }
 
-    const { fullName, email, phone, dateOfBirth, password, accountType, kycIdFront, kycIdBack } =
+    const { fullName, email, phone, dateOfBirth, password, accountType, preferredCurrency, kycIdFront, kycIdBack } =
       parsed.data;
 
     const hashedPassword = await bcrypt.hash(password, 12);
     const preferredLocale = await getServerLocale();
+    const userCurrency = parseCurrencyCode(preferredCurrency);
     const verifiedAt = new Date();
 
     const existing = await prisma.user.findUnique({
@@ -71,6 +73,7 @@ export async function POST(req: Request) {
           otpCode: null,
           otpExpires: null,
           preferredLocale,
+          preferredCurrency: userCurrency,
         },
       });
       userId = updated.id;
@@ -104,6 +107,7 @@ export async function POST(req: Request) {
             kycStatus: kycIdFront ? "SUBMITTED" : "PENDING",
             emailVerified: verifiedAt,
             preferredLocale,
+            preferredCurrency: userCurrency,
           },
         });
 
