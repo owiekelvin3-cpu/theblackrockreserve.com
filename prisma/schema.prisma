@@ -95,6 +95,11 @@ model User {
   fundReleaseReviews       FundReleaseRequest[]         @relation("FundReleaseReviewer")
   accountFreezeLogs        AccountFreezeLog[]           @relation("FreezeLogUser")
   accountFreezeLogActions  AccountFreezeLog[]           @relation("FreezeLogAdmin")
+  emailTemplatesCreated    EmailTemplate[]              @relation("EmailTemplatesCreated")
+  emailDrafts              EmailDraft[]
+  emailBroadcasts          EmailBroadcast[]
+  emailsSent               EmailLog[]                   @relation("EmailLogSentBy")
+  emailsReceived           EmailLog[]                   @relation("EmailLogRecipient")
 }
 
 model Session {
@@ -992,4 +997,122 @@ enum FundReleaseRequestStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum EmailDeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+  SCHEDULED
+}
+
+enum EmailSendType {
+  INDIVIDUAL
+  BROADCAST
+}
+
+enum EmailBroadcastStatus {
+  DRAFT
+  SCHEDULED
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum EmailRecipientFilter {
+  ALL
+  ACTIVE
+  SELECTED
+  VERIFIED
+  WITH_INVESTMENTS
+  PENDING_KYC
+}
+
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  subject     String
+  htmlBody    String   @db.Text
+  textBody    String?  @db.Text
+  isDefault   Boolean  @default(false)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy User?      @relation("EmailTemplatesCreated", fields: [createdById], references: [id], onDelete: SetNull)
+  logs      EmailLog[]
+}
+
+model EmailDraft {
+  id              String                @id @default(cuid())
+  adminId         String
+  name            String                @default("Untitled draft")
+  subject         String                @default("")
+  htmlBody        String                @db.Text @default("")
+  recipientFilter EmailRecipientFilter?
+  recipientIds    Json?
+  scheduledAt     DateTime?
+  isBroadcast     Boolean               @default(false)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  admin User @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId, updatedAt])
+}
+
+model EmailBroadcast {
+  id              String               @id @default(cuid())
+  adminId         String
+  subject         String
+  htmlBody        String               @db.Text
+  recipientFilter EmailRecipientFilter
+  recipientIds    Json?
+  status          EmailBroadcastStatus @default(DRAFT)
+  scheduledAt     DateTime?
+  totalRecipients Int                  @default(0)
+  sentCount       Int                  @default(0)
+  failedCount     Int                  @default(0)
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  admin User       @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  logs  EmailLog[]
+
+  @@index([status, scheduledAt])
+  @@index([adminId, createdAt])
+}
+
+model EmailLog {
+  id              String              @id @default(cuid())
+  to              String
+  recipientUserId String?
+  subject         String
+  htmlBody        String              @db.Text
+  textBody        String?             @db.Text
+  status          EmailDeliveryStatus @default(PENDING)
+  failureReason   String?             @db.Text
+  sendType        EmailSendType
+  sentById        String
+  templateId      String?
+  broadcastId     String?
+  scheduledAt     DateTime?
+  sentAt          DateTime?
+  createdAt       DateTime            @default(now())
+
+  recipientUser User?          @relation("EmailLogRecipient", fields: [recipientUserId], references: [id], onDelete: SetNull)
+  sentBy        User           @relation("EmailLogSentBy", fields: [sentById], references: [id])
+  template      EmailTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  broadcast     EmailBroadcast? @relation(fields: [broadcastId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([sentById, createdAt])
+  @@index([recipientUserId, createdAt])
+  @@index([broadcastId])
+  @@index([scheduledAt])
+  @@index([to])
 }

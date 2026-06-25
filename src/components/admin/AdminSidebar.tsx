@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, ArrowLeftRight, ShieldCheck,
   Mail, Building2, LogOut, ChevronRight, Bitcoin, Wallet,
-  Settings, ArrowUpFromLine, Menu, X, LineChart, TrendingUp, DollarSign, Landmark, FileCheck, Receipt, BadgeCheck, CreditCard, Snowflake,
+  Settings, ArrowUpFromLine, Menu, X, LineChart, TrendingUp, DollarSign, Landmark, FileCheck, Receipt, BadgeCheck, CreditCard, Snowflake, Send,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
@@ -28,6 +28,7 @@ const navGroups: { titleKey: string; items: NavItem[] }[] = [
     items: [
       { href: "/admin", labelKey: "admin.dashboard", icon: LayoutDashboard, exact: true, countKey: null },
       { href: "/admin/users", labelKey: "admin.users", icon: Users, countKey: null },
+      { href: "/admin/email-center", labelKey: "admin.emailCenter", icon: Send, countKey: null },
       { href: "/admin/frozen-accounts", labelKey: "admin.accountControls", icon: Snowflake, countKey: "pendingFundReleaseRequests" },
       { href: "/admin/verification-badges", labelKey: "admin.verificationBadges", icon: BadgeCheck, countKey: null },
     ],

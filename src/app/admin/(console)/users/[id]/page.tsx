@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Trash2, Ban, CheckCircle, Copy, Eye, EyeOff, MapPin, Snowflake, Unlock } from "lucide-react";
+import { ArrowLeft, Trash2, Ban, CheckCircle, Copy, Eye, EyeOff, MapPin, Snowflake, Unlock, Send } from "lucide-react";
 import AdminFreezeModal from "@/components/admin/AdminFreezeModal";
 import { toast } from "sonner";
 import { AdminPageHeader, AdminKycBadge, AdminStatusBadge } from "@/components/admin/AdminUi";
@@ -246,6 +246,12 @@ export default function AdminUserDetailPage() {
         action={
           <div className="flex gap-2 flex-wrap">
             <button type="button" onClick={refresh} className="admin-btn-ghost text-xs px-3 py-1.5">Refresh</button>
+            <Link
+              href={`/admin/email-center?userId=${id}`}
+              className="admin-btn-ghost flex items-center gap-1.5 text-xs text-sky-400 border-sky-500/30"
+            >
+              <Send size={14} /> Send Email
+            </Link>
             {!user.emailVerified && (
               <button
                 type="button"

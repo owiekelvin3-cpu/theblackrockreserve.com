@@ -472,3 +472,44 @@ export function userNotificationEmail(data: {
     text: `Dear ${data.name},\n\n${data.title}\n\n${data.message}\n\nView your account: ${data.siteUrl}/dashboard`,
   };
 }
+
+function stripHtml(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/** Admin Email Center — wraps composed HTML in branded layout */
+export function adminComposedEmail(data: {
+  recipientName: string;
+  subject: string;
+  bodyHtml: string;
+  preheader?: string;
+}) {
+  const safeName = escapeHtml(data.recipientName || "Valued Client");
+  const html = layout(
+    `
+      ${emailHeading(escapeHtml(data.subject))}
+      ${emailGreeting(safeName)}
+      <div style="color:${TEXT_SECONDARY};font-size:15px;line-height:1.65;">
+        ${data.bodyHtml}
+      </div>
+      ${emailButton(`${getSiteUrl()}/dashboard`, "Open Dashboard")}
+    `,
+    data.preheader ?? data.subject
+  );
+  const text = `Dear ${data.recipientName || "Valued Client"},\n\n${stripHtml(data.bodyHtml)}\n\nView your account: ${getSiteUrl()}/dashboard`;
+  return {
+    subject: `${BRAND} — ${data.subject}`,
+    html,
+    text,
+  };
+}
