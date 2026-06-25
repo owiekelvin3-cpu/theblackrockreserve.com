@@ -112,12 +112,18 @@ export default function DashboardMobileHero({
       </motion.div>
 
       <div className="dash-mobile-metrics">
-        <Link href="/dashboard/capital-markets" className="dash-mobile-metric">
-          <span className="dash-mobile-metric-label">{t("dashboard.investedBalance")}</span>
-          <span className="dash-mobile-metric-value">
-            {balanceVisible ? formatCurrency(investedBalance) : "••••••"}
-          </span>
-        </Link>
+        <div className="dash-mobile-metric dash-mobile-metric-invested">
+          <div className="dash-mobile-metric-invested-body">
+            <span className="dash-mobile-metric-label">{t("dashboard.investedBalance")}</span>
+            <span className="dash-mobile-metric-value">
+              {balanceVisible ? formatCurrency(investedBalance) : "••••••"}
+            </span>
+          </div>
+          <Link href="/dashboard/capital-markets" className="dash-mobile-metric-view-btn">
+            {t("dashboard.viewPortfolio")}
+            <ArrowUpRight size={12} />
+          </Link>
+        </div>
         <div className="dash-mobile-metric dash-mobile-metric-profit">
           <Link href="/dashboard/investments" className="dash-mobile-metric-profit-link">
             <span className="dash-mobile-metric-label">{t("dashboard.profitBalance")}</span>
