@@ -356,6 +356,8 @@ const extensions = {
     loanManagement: "Loan Management",
     loansShort: "Loans",
     messages: "Messages",
+    emailCenter: "Email Center",
+    accountControls: "Account Controls",
     settings: "Settings",
     loading: "Loading admin console…",
     accessDenied: "Access denied. Admin account required.",

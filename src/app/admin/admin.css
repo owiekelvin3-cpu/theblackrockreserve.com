@@ -2588,9 +2588,18 @@
 }
 
 /* ── Email Center recipient picker ── */
+.admin-form-panel:has(.admin-recipient-picker) .admin-form-panel-body {
+  overflow: visible;
+}
+
 .admin-recipient-picker {
   position: relative;
 }
+
+.admin-recipient-picker .admin-recipient-dropdown {
+  z-index: 50;
+}
+
 
 .admin-recipient-selected {
   padding: 1rem 1.1rem;

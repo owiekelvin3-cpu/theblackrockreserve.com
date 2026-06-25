@@ -35,6 +35,7 @@ import AdminFetchState from "@/components/admin/AdminFetchState";
 import AdminRichTextEditor, { EmailPreviewFrame } from "@/components/admin/AdminRichTextEditor";
 import AdminEmailRecipientPicker, { type EmailRecipientUser } from "@/components/admin/AdminEmailRecipientPicker";
 import { useAdminFetch } from "@/hooks/use-admin-fetch";
+import { useI18n } from "@/components/providers/I18nProvider";
 import { cn } from "@/lib/utils";
 
 type Tab = "dashboard" | "compose" | "broadcast" | "templates" | "logs";
@@ -126,6 +127,7 @@ function StatCard({ label, value, icon: Icon, tone }: { label: string; value: nu
 }
 
 export default function AdminEmailCenter() {
+  const { t } = useI18n();
   const searchParams = useSearchParams();
   const initialUserId = searchParams.get("userId");
 
@@ -349,7 +351,7 @@ export default function AdminEmailCenter() {
   return (
     <AdminPage>
       <AdminPageHeader
-        title="Email Center"
+        title={t("admin.emailCenter")}
         description="Professional communication hub — send individual messages, broadcasts, and manage templates."
         action={<AdminRefreshButton onClick={refresh} />}
       />
@@ -362,20 +364,20 @@ export default function AdminEmailCenter() {
       )}
 
       <div className="flex flex-wrap gap-2 mb-6">
-        {tabs.map((t) => (
+        {tabs.map((tabItem) => (
           <button
-            key={t.id}
+            key={tabItem.id}
             type="button"
-            onClick={() => setTab(t.id)}
+            onClick={() => setTab(tabItem.id)}
             className={cn(
               "inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors border",
-              tab === t.id
+              tab === tabItem.id
                 ? "bg-accent-brand/15 border-accent-brand/40 text-white"
                 : "border-[var(--admin-border)] text-[var(--admin-muted)] hover:text-white hover:bg-white/5"
             )}
           >
-            <t.icon size={16} />
-            {t.label}
+            <tabItem.icon size={16} />
+            {tabItem.label}
           </button>
         ))}
       </div>
