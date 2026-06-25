@@ -274,7 +274,7 @@ export async function POST(req: NextRequest) {
         title,
         message,
       });
-      await sendUserNotificationEmail({ userId, title, message });
+      await sendUserNotificationEmail({ userId, title, message, category: "transactions" });
     } catch (notifyError) {
       console.error("Withdrawal notification error:", notifyError);
     }

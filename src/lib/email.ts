@@ -28,13 +28,13 @@ export function getFromAddress(): string {
   if (process.env.EMAIL_FROM?.trim()) return process.env.EMAIL_FROM.trim();
 
   if (getEmailProvider() === "resend") {
-    return "Blackrock Reserve <noreply@blackrockreserve.site>";
+    return "BlackrockReserve <noreply@theblackrockreserve.com>";
   }
 
   const gmail = process.env.GMAIL_USER?.trim();
   if (gmail) return `"Blackrock Reserve" <${gmail}>`;
 
-  return "Blackrock Reserve <noreply@blackrockreserve.site>";
+  return "BlackrockReserve <noreply@theblackrockreserve.com>";
 }
 
 function getGmailTransporter() {

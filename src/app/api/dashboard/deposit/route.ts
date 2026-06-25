@@ -153,11 +153,16 @@ export async function POST(req: NextRequest) {
       return row;
     });
 
-    await sendUserNotificationEmail({
-      userId,
-      title: depositTitle,
-      message: depositMessage,
-    });
+    try {
+      await sendUserNotificationEmail({
+        userId,
+        title: depositTitle,
+        message: depositMessage,
+        category: "transactions",
+      });
+    } catch (emailError) {
+      console.error("Deposit confirmation email failed:", emailError);
+    }
 
     return NextResponse.json({
       success: true,

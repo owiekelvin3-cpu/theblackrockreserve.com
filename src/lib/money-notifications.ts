@@ -4,12 +4,16 @@ import {
   depositApprovedEmail,
   depositRejectedEmail,
   investmentConfirmationEmail,
-  userNotificationEmail,
 } from "@/lib/email-templates";
 import { createUserNotification, sendUserNotificationEmail } from "@/lib/user-notifications";
 import { getSiteUrl } from "@/lib/site-url";
+import {
+  isEmailEnabledForCategory,
+  parseNotificationPrefs,
+  type NotificationEmailCategory,
+} from "@/lib/notification-prefs";
 
-/** In-app notification + Gmail for any money-related customer event */
+/** In-app notification + email for any money-related customer event */
 export async function notifyMoneyEvent(params: {
   userId: string;
   type: string;
@@ -17,6 +21,7 @@ export async function notifyMoneyEvent(params: {
   message: string;
   depositId?: string;
   jointAccountId?: string;
+  category?: NotificationEmailCategory;
 }) {
   await createUserNotification({
     userId: params.userId,
@@ -30,6 +35,7 @@ export async function notifyMoneyEvent(params: {
     userId: params.userId,
     title: params.title,
     message: params.message,
+    category: params.category ?? "transactions",
   });
 }
 
@@ -45,9 +51,20 @@ export async function sendInvestmentConfirmationEmail(params: {
 }) {
   const user = await prisma.user.findUnique({
     where: { id: params.userId },
-    select: { email: true, name: true },
+    select: { email: true, name: true, notificationPrefs: true },
   });
   if (!user?.email) return;
+
+  const prefs = parseNotificationPrefs(user.notificationPrefs);
+  if (!isEmailEnabledForCategory(prefs, "investments")) {
+    await createUserNotification({
+      userId: params.userId,
+      type: "INVESTMENT",
+      title: "Investment confirmed",
+      message: `Your investment in ${params.symbol} has been executed.`,
+    });
+    return;
+  }
 
   const fmt = (n: number) =>
     n.toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -79,7 +96,12 @@ export async function sendInvestmentConfirmationEmail(params: {
     await sendEmail({ to: user.email, ...mail });
   } catch (error) {
     console.error("Investment confirmation email failed:", error);
-    await sendUserNotificationEmail({ userId: params.userId, title, message });
+    await sendUserNotificationEmail({
+      userId: params.userId,
+      title,
+      message,
+      category: "investments",
+    });
   }
 }
 
@@ -91,46 +113,57 @@ export async function sendDepositDecisionEmail(params: {
 }) {
   const user = await prisma.user.findUnique({
     where: { id: params.userId },
-    select: { email: true, name: true },
+    select: { email: true, name: true, notificationPrefs: true },
   });
   if (!user?.email) return;
 
+  const prefs = parseNotificationPrefs(user.notificationPrefs);
+  if (!isEmailEnabledForCategory(prefs, "transactions")) return;
+
   const siteUrl = getSiteUrl();
 
-  if (params.approved) {
-    const mail = depositApprovedEmail({
+  try {
+    if (params.approved) {
+      const mail = depositApprovedEmail({
+        name: user.name,
+        amount: params.amountLabel,
+        siteUrl,
+      });
+      await sendEmail({ to: user.email, ...mail });
+      return;
+    }
+
+    const mail = depositRejectedEmail({
       name: user.name,
-      amount: params.amountLabel,
+      reason: params.reason ?? "Please contact support for assistance.",
       siteUrl,
     });
     await sendEmail({ to: user.email, ...mail });
-    return;
+  } catch (error) {
+    console.error("Deposit decision email failed:", error);
+    const title = params.approved ? "Deposit approved" : "Deposit could not be processed";
+    const message = params.approved
+      ? `Your deposit of ${params.amountLabel} has been credited to your account.`
+      : `We were unable to confirm your recent deposit. ${params.reason ?? "Please contact support."}`;
+    await sendUserNotificationEmail({
+      userId: params.userId,
+      title,
+      message,
+      category: "transactions",
+    });
   }
-
-  const mail = depositRejectedEmail({
-    name: user.name,
-    reason: params.reason ?? "Please contact support for assistance.",
-    siteUrl,
-  });
-  await sendEmail({ to: user.email, ...mail });
 }
 
 export async function sendBrandedMoneyEmail(params: {
   userId: string;
   title: string;
   message: string;
+  category?: NotificationEmailCategory;
 }) {
-  const user = await prisma.user.findUnique({
-    where: { id: params.userId },
-    select: { email: true, name: true },
-  });
-  if (!user?.email) return;
-
-  const mail = userNotificationEmail({
-    name: user.name,
+  await sendUserNotificationEmail({
+    userId: params.userId,
     title: params.title,
     message: params.message,
-    siteUrl: getSiteUrl(),
+    category: params.category ?? "transactions",
   });
-  await sendEmail({ to: user.email, ...mail });
 }

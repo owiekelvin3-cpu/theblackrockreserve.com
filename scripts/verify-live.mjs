@@ -81,7 +81,7 @@ async function main() {
     const client = new Resend(key);
     return client.emails
       .send({
-        from: process.env.EMAIL_FROM ?? "BlackrockReserve <noreply@blackrockreserve.site>",
+        from: process.env.EMAIL_FROM ?? "BlackrockReserve <noreply@theblackrockreserve.com>",
         to: ["delivered@resend.dev"],
         subject: "Local Resend check",
         html: "<p>OK</p>",

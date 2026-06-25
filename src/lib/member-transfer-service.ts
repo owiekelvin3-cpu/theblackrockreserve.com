@@ -10,6 +10,7 @@ import {
 } from "@/lib/bank-account-number";
 import { formatMoneyForUser } from "@/lib/exchange-rates";
 import { serializeVerificationBadge } from "@/lib/verification-badge";
+import { sendUserNotificationEmail } from "@/lib/user-notifications";
 
 function roundMoney(n: number) {
   return Math.round(n * 100) / 100;
@@ -164,6 +165,25 @@ export async function transferToMember(
 
     return debitTx;
   });
+
+  const recipientTitle = "Funds received";
+  const recipientMessage = `${sender.name} sent you ${recipientAmountLabel}.${memo ? ` Note: ${memo}` : ""}`;
+  const senderTitle = "Transfer sent";
+  const senderMessage = `You sent ${senderAmountLabel} to ${recipient.name}.`;
+
+  void sendUserNotificationEmail({
+    userId: recipient.id,
+    title: recipientTitle,
+    message: recipientMessage,
+    category: "transactions",
+  }).catch((err) => console.error("Transfer recipient email failed:", err));
+
+  void sendUserNotificationEmail({
+    userId: senderId,
+    title: senderTitle,
+    message: senderMessage,
+    category: "transactions",
+  }).catch((err) => console.error("Transfer sender email failed:", err));
 
   const senderAccountNumber = await getUserAccountNumber(senderId);
 

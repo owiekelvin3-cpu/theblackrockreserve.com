@@ -5,6 +5,10 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/admin-audit";
 import { sellSubmitSchema } from "@/lib/validations";
 import { requireTransactionPin } from "@/lib/transaction-pin";
+import {
+  createUserNotification,
+  sendUserNotificationEmail,
+} from "@/lib/user-notifications";
 
 export async function POST(req: NextRequest) {
   const userId = await getSessionUserId();
@@ -48,6 +52,25 @@ export async function POST(req: NextRequest) {
         : undefined,
       accountId: parsed.data.accountId,
     });
+
+    const fmt = (n: number) =>
+      n.toLocaleString("en-US", { style: "currency", currency: "USD" });
+    const title = "Sale confirmed";
+    const message = `Your sale of ${result.sharesSold.toFixed(4)} shares of ${result.symbol} (${result.assetName}) settled for ${fmt(result.netProceeds)}.`;
+
+    void createUserNotification({
+      userId,
+      type: "INVESTMENT_SALE",
+      title,
+      message,
+    }).catch((err) => console.error("Sale notification error:", err));
+
+    void sendUserNotificationEmail({
+      userId,
+      title,
+      message,
+      category: "investments",
+    }).catch((err) => console.error("Sale email error:", err));
 
     return NextResponse.json({ success: true, sale: result });
   } catch (error) {

@@ -147,6 +147,7 @@ export async function freezeUserAccount(params: {
       userId: params.userId,
       title: "Account Status: Frozen",
       message: `Your account has been frozen. Reason: ${params.reason.trim()}. Please contact support for assistance with fund release.`,
+      category: "security",
     });
   } catch (err) {
     console.error("Freeze notification error:", err);
@@ -195,6 +196,7 @@ export async function unfreezeUserAccount(params: {
       userId: params.userId,
       title: "Account Restored",
       message: "Your account has been unfrozen. Withdrawals and transfers are available again.",
+      category: "security",
     });
   } catch (err) {
     console.error("Unfreeze notification error:", err);
@@ -519,6 +521,7 @@ export async function reviewFundReleaseRequest(params: {
         title: "Fund Release Approved",
         message:
           "Your fund release request has been approved. Your account is now active and withdrawals are available again.",
+        category: "security",
       });
     } catch (err) {
       console.error("Fund release approval notification error:", err);
@@ -561,6 +564,7 @@ export async function reviewFundReleaseRequest(params: {
         message:
           params.adminNotes?.trim() ||
           "Your fund release request was not approved at this time. Please contact support for more information.",
+        category: "security",
       });
     } catch (err) {
       console.error("Fund release rejection notification error:", err);

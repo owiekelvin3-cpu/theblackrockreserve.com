@@ -5,8 +5,15 @@ import { userNotificationEmail } from "@/lib/email-templates";
 import { getSiteUrl } from "@/lib/site-url";
 import { parseMemberTransferSenderName } from "@/lib/transaction-counterparty";
 import { serializeVerificationBadge } from "@/lib/verification-badge";
+import {
+  isEmailEnabledForCategory,
+  parseNotificationPrefs,
+  type NotificationEmailCategory,
+} from "@/lib/notification-prefs";
 
 type Tx = Prisma.TransactionClient;
+
+export type { NotificationEmailCategory };
 
 export async function createUserNotification(
   params: {
@@ -42,18 +49,29 @@ export async function createUserNotification(
   });
 }
 
-/** Sends the same notification copy to the user's registered Gmail */
+/** Sends the same notification copy to the user's registered email when prefs allow. */
 export async function sendUserNotificationEmail(params: {
   userId: string;
   title: string;
   message: string;
+  category?: NotificationEmailCategory;
 }) {
   const user = await prisma.user.findUnique({
     where: { id: params.userId },
-    select: { email: true, name: true },
+    select: { email: true, name: true, notificationPrefs: true },
   });
 
-  if (!user?.email) return { sent: false as const, reason: "no_email" as const };
+  if (!user?.email) {
+    console.warn(`[email] skipped — no address for user ${params.userId}`);
+    return { sent: false as const, reason: "no_email" as const };
+  }
+
+  const prefs = parseNotificationPrefs(user.notificationPrefs);
+  const category = params.category ?? "transactions";
+  if (!isEmailEnabledForCategory(prefs, category)) {
+    console.info(`[email] skipped — ${category} disabled for user ${params.userId}`);
+    return { sent: false as const, reason: "prefs_disabled" as const };
+  }
 
   try {
     const mail = userNotificationEmail({
@@ -62,9 +80,13 @@ export async function sendUserNotificationEmail(params: {
       message: params.message,
       siteUrl: getSiteUrl(),
     });
-    return await sendEmail({ to: user.email, ...mail });
+    const result = await sendEmail({ to: user.email, ...mail });
+    console.info(
+      `[email] sent to ${user.email} (${category}) via ${result.provider ?? "unknown"}`
+    );
+    return result;
   } catch (error) {
-    console.error("User notification email failed:", error);
+    console.error(`[email] failed for ${user.email} (${category}):`, error);
     return { sent: false as const, reason: "send_failed" as const };
   }
 }

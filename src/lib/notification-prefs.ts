@@ -24,3 +24,12 @@ export function parseNotificationPrefs(value: unknown): NotificationPrefs {
     marketing: record.marketing === true,
   };
 }
+
+export type NotificationEmailCategory = keyof NotificationPrefs;
+
+export function isEmailEnabledForCategory(
+  prefs: NotificationPrefs,
+  category: NotificationEmailCategory
+): boolean {
+  return prefs[category];
+}
