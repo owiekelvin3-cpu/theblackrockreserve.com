@@ -2586,3 +2586,63 @@
 .admin-modal-lg:has(.admin-card-manage-modal) {
   max-height: min(92vh, 44rem);
 }
+
+/* ── Email Center recipient picker ── */
+.admin-recipient-picker {
+  position: relative;
+}
+
+.admin-recipient-selected {
+  padding: 1rem 1.1rem;
+  border-radius: 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--admin-brand, #ff5f05) 35%, var(--admin-border));
+  background: color-mix(in srgb, var(--admin-brand, #ff5f05) 6%, transparent);
+}
+
+.admin-recipient-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #ff8c42 0%, #e85d04 100%);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.admin-recipient-avatar-sm {
+  width: 2.25rem;
+  height: 2.25rem;
+  font-size: 0.6875rem;
+  border-radius: 0.65rem;
+}
+
+.admin-recipient-dropdown {
+  position: absolute;
+  z-index: 40;
+  left: 0;
+  right: 0;
+  border-radius: 0.85rem;
+  border: 1px solid var(--admin-border);
+  background: var(--admin-card, #12151c);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.admin-recipient-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.admin-recipient-option:hover,
+.admin-recipient-option-active {
+  background: rgba(255, 255, 255, 0.06);
+}
+

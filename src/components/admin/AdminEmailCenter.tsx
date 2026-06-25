@@ -33,6 +33,7 @@ import {
 } from "@/components/admin/AdminUi";
 import AdminFetchState from "@/components/admin/AdminFetchState";
 import AdminRichTextEditor, { EmailPreviewFrame } from "@/components/admin/AdminRichTextEditor";
+import AdminEmailRecipientPicker, { type EmailRecipientUser } from "@/components/admin/AdminEmailRecipientPicker";
 import { useAdminFetch } from "@/hooks/use-admin-fetch";
 import { cn } from "@/lib/utils";
 
@@ -60,7 +61,7 @@ type OverviewData = {
   permissions: { canSendIndividual: boolean; canSendBroadcast: boolean };
 };
 
-type UserRow = { id: string; name: string; email: string; status: string };
+type UserRow = EmailRecipientUser;
 type TemplateRow = {
   id: string;
   name: string;
@@ -134,9 +135,9 @@ export default function AdminEmailCenter() {
   });
 
   // Compose state
-  const [userQuery, setUserQuery] = useState("");
-  const [userResults, setUserResults] = useState<UserRow[]>([]);
-  const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
+  const [composeRecipient, setComposeRecipient] = useState<EmailRecipientUser | null>(null);
+  const [broadcastUserQuery, setBroadcastUserQuery] = useState("");
+  const [broadcastUserResults, setBroadcastUserResults] = useState<UserRow[]>([]);
   const [subject, setSubject] = useState("");
   const [bodyHtml, setBodyHtml] = useState("");
   const [showPreview, setShowPreview] = useState(true);
@@ -167,7 +168,7 @@ export default function AdminEmailCenter() {
     const res = await fetch(`/api/admin/email-center/users?userId=${userId}`);
     const json = await res.json();
     if (json.users?.[0]) {
-      setSelectedUser(json.users[0]);
+      setComposeRecipient(json.users[0]);
       setTab("compose");
     }
   }, []);
@@ -176,15 +177,15 @@ export default function AdminEmailCenter() {
     if (initialUserId) void loadUser(initialUserId);
   }, [initialUserId, loadUser]);
 
-  const searchUsers = useCallback(async (q: string) => {
-    setUserQuery(q);
-    if (q.length < 2) {
-      setUserResults([]);
+  const searchBroadcastUsers = useCallback(async (q: string) => {
+    setBroadcastUserQuery(q);
+    if (q.length < 1) {
+      setBroadcastUserResults([]);
       return;
     }
     const res = await fetch(`/api/admin/email-center/users?q=${encodeURIComponent(q)}`);
     const json = await res.json();
-    setUserResults(json.users ?? []);
+    setBroadcastUserResults(json.users ?? []);
   }, []);
 
   const loadTemplates = useCallback(async () => {
@@ -250,7 +251,7 @@ export default function AdminEmailCenter() {
   };
 
   const sendIndividual = async () => {
-    if (!selectedUser) {
+    if (!composeRecipient) {
       toast.error("Select a recipient");
       return;
     }
@@ -263,7 +264,7 @@ export default function AdminEmailCenter() {
       const res = await fetch("/api/admin/email-center/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: selectedUser.id, subject, bodyHtml }),
+        body: JSON.stringify({ userId: composeRecipient.id, subject, bodyHtml }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Send failed");
@@ -439,42 +440,11 @@ export default function AdminEmailCenter() {
         <div className="grid lg:grid-cols-2 gap-6">
           <AdminFormPanel title="Compose Email">
             <div className="space-y-4">
-              <div>
-                <label className="admin-label">Search user</label>
-                <AdminSearchField
-                  value={userQuery}
-                  onChange={(v) => void searchUsers(v)}
-                  placeholder="Search by name or email…"
-                />
-                {userResults.length > 0 && (
-                  <div className="mt-2 rounded-xl border border-[var(--admin-border)] overflow-hidden max-h-40 overflow-y-auto">
-                    {userResults.map((u) => (
-                      <button
-                        key={u.id}
-                        type="button"
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-white/5 border-b border-[var(--admin-border)] last:border-0"
-                        onClick={() => {
-                          setSelectedUser(u);
-                          setUserResults([]);
-                          setUserQuery("");
-                        }}
-                      >
-                        <span className="text-white font-medium">{u.name}</span>
-                        <span className="text-[var(--admin-muted)] ml-2">{u.email}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div>
-                <label className="admin-label">Recipient</label>
-                <input
-                  className="admin-input w-full"
-                  readOnly
-                  value={selectedUser ? `${selectedUser.name} <${selectedUser.email}>` : ""}
-                  placeholder="Select a user above"
-                />
-              </div>
+              <AdminEmailRecipientPicker
+                selected={composeRecipient}
+                onSelect={setComposeRecipient}
+                onClear={() => setComposeRecipient(null)}
+              />
               <div>
                 <label className="admin-label">Subject</label>
                 <input className="admin-input w-full" value={subject} onChange={(e) => setSubject(e.target.value)} />
@@ -502,7 +472,7 @@ export default function AdminEmailCenter() {
             </div>
           </AdminFormPanel>
           {showPreview && (
-            <EmailPreviewFrame subject={subject} bodyHtml={bodyHtml} recipientName={selectedUser?.name} />
+            <EmailPreviewFrame subject={subject} bodyHtml={bodyHtml} recipientName={composeRecipient?.name} />
           )}
         </div>
       )}
@@ -533,18 +503,18 @@ export default function AdminEmailCenter() {
                     <div>
                       <label className="admin-label">Search &amp; add users</label>
                       <AdminSearchField
-                        value={userQuery}
-                        onChange={(v) => void searchUsers(v)}
+                        value={broadcastUserQuery}
+                        onChange={(v) => void searchBroadcastUsers(v)}
                         placeholder="Search users to add…"
                       />
-                      {userResults.map((u) => (
+                      {broadcastUserResults.map((u) => (
                         <button
                           key={u.id}
                           type="button"
                           className="block w-full text-left px-2 py-1 text-xs hover:bg-white/5"
                           onClick={() => {
                             setSelectedUserIds((ids) => (ids.includes(u.id) ? ids : [...ids, u.id]));
-                            setUserResults([]);
+                            setBroadcastUserResults([]);
                           }}
                         >
                           + {u.name} ({u.email})
