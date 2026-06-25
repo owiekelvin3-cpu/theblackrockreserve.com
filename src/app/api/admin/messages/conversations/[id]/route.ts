@@ -68,6 +68,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
           userId: conversation.user.id,
           title,
           message,
+          category: "security",
         });
       } catch (notifyError) {
         console.error("Support reply notification failed:", notifyError);

@@ -6,7 +6,7 @@ const REQUIRED_IN_PRODUCTION = [
   "NEXT_PUBLIC_SITE_URL",
 ] as const;
 
-const RECOMMENDED_IN_PRODUCTION = ["RESEND_API_KEY", "EMAIL_FROM"] as const;
+const RECOMMENDED_IN_PRODUCTION = ["GMAIL_USER", "GMAIL_APP_PASSWORD", "EMAIL_FROM"] as const;
 
 export function validateProductionEnv() {
   if (process.env.NODE_ENV !== "production") return;

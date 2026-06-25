@@ -30,36 +30,27 @@ After the domain works, set these in Vercel **Production** environment:
 
 Redeploy after changing env vars (**Deployments → … → Redeploy**).
 
-## 4. Resend email (your domain)
+## 4. Gmail SMTP email
 
-All transactional email uses [Resend](https://resend.com): sign-up verification, password reset, deposit/withdrawal alerts, and contact notifications.
+All transactional email uses **Gmail SMTP**: welcome, verification, password reset, deposit/withdrawal alerts, account freeze notices, and support replies.
 
-### Add your domain in Resend
+### Google App Password
 
-1. Sign in at [resend.com](https://resend.com) → **Domains** → **Add Domain**.
-2. Enter `theblackrockreserve.com`.
-3. Resend will show DNS records (typically **DKIM**, **SPF**, and sometimes **MX**). Add them at the same place you manage DNS for the site (registrar or Cloudflare).
-4. Wait until Resend shows the domain as **Verified** (often 5–30 minutes).
-
-### Create API key & Vercel env vars
-
-1. **API Keys** → **Create API Key** → copy the key (starts with `re_`).
-2. In Vercel **Environment Variables** (Production + Preview), add:
+1. Enable **2-Step Verification** on the Gmail account that will send mail.
+2. Go to [Google App Passwords](https://myaccount.google.com/apppasswords) → create a password for **Mail**.
+3. In Vercel **Environment Variables** (Production + Preview), add:
 
 | Variable | Value |
 |----------|--------|
-| `RESEND_API_KEY` | Your `re_...` key |
-| `EMAIL_FROM` | `BlackrockReserve <noreply@theblackrockreserve.com>` |
+| `GMAIL_USER` | Your Gmail address (e.g. `notifications@gmail.com`) |
+| `GMAIL_APP_PASSWORD` | 16-character app password (spaces are fine) |
+| `EMAIL_FROM` | `BlackrockReserve <your-gmail@gmail.com>` |
 | `NOTIFY_EMAIL` | `admin@theblackrockreserve.com` (contact form alerts) |
 
-3. Redeploy.
+4. **Delete `RESEND_API_KEY`** from Vercel if present — it is no longer used.
+5. Redeploy.
 
-**Sender addresses you can use** (after domain is verified):
-
-- `noreply@theblackrockreserve.com` — verification & password emails
-- `notifications@theblackrockreserve.com` — transaction alerts (set in `EMAIL_FROM` if you prefer)
-
-Resend takes priority over Gmail when `RESEND_API_KEY` is set. Gmail vars are optional fallback for local dev.
+Emails covered: Welcome, Email Verification, Password Reset, Deposit Confirmation, Withdrawal Request, Withdrawal Approval/Rejection, Account Frozen/Unfrozen, Support Reply.
 
 ## 5. Database & admin setup
 
@@ -88,7 +79,7 @@ Configure **Admin → Settings** before customers go live:
 - [ ] Contact form saves messages
 - [ ] Admin can credit balance and customer gets notification
 - [ ] `NEXTAUTH_URL` and `NEXT_PUBLIC_SITE_URL` use `https://` (not `http://`)
-- [ ] Resend domain verified and `RESEND_API_KEY` set in Vercel
+- [ ] `GMAIL_USER` and `GMAIL_APP_PASSWORD` set in Vercel; `RESEND_API_KEY` removed
 - [ ] Test register → verification email arrives from your domain
 - [ ] Supabase project is **not paused**
 - [ ] `ADMIN_PASSWORDLESS` is **not** set to `true` in production

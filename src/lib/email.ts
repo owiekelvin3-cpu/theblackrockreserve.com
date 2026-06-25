@@ -1,6 +1,5 @@
 import nodemailer from "nodemailer";
 import type SMTPTransport from "nodemailer/lib/smtp-transport";
-import { Resend } from "resend";
 
 export type SendEmailOptions = {
   to: string;
@@ -9,15 +8,29 @@ export type SendEmailOptions = {
   text: string;
 };
 
-let gmailTransporter: nodemailer.Transporter<SMTPTransport.SentMessageInfo> | null = null;
-let resendClient: Resend | null = null;
+export type EmailProvider = "smtp" | "none";
 
-export type EmailProvider = "resend" | "gmail" | "none";
+let smtpTransporter: nodemailer.Transporter<SMTPTransport.SentMessageInfo> | null = null;
+
+/** Google app passwords are often copied with spaces — strip them. */
+export function normalizeSmtpPassword(raw: string | undefined): string {
+  return (raw ?? "").replace(/\s+/g, "");
+}
+
+export function getSmtpUser(): string | null {
+  const user = process.env.GMAIL_USER?.trim() || process.env.SMTP_USER?.trim();
+  return user || null;
+}
+
+export function getSmtpPassword(): string | null {
+  const pass = normalizeSmtpPassword(
+    process.env.GMAIL_APP_PASSWORD ?? process.env.SMTP_PASSWORD
+  );
+  return pass || null;
+}
 
 export function getEmailProvider(): EmailProvider {
-  if (process.env.RESEND_API_KEY?.trim()) return "resend";
-  if (process.env.GMAIL_USER?.trim() && process.env.GMAIL_APP_PASSWORD?.trim()) return "gmail";
-  return "none";
+  return getSmtpUser() && getSmtpPassword() ? "smtp" : "none";
 }
 
 export function isEmailConfigured(): boolean {
@@ -27,64 +40,45 @@ export function isEmailConfigured(): boolean {
 export function getFromAddress(): string {
   if (process.env.EMAIL_FROM?.trim()) return process.env.EMAIL_FROM.trim();
 
-  if (getEmailProvider() === "resend") {
-    return "BlackrockReserve <noreply@theblackrockreserve.com>";
-  }
-
-  const gmail = process.env.GMAIL_USER?.trim();
-  if (gmail) return `"Blackrock Reserve" <${gmail}>`;
+  const user = getSmtpUser();
+  if (user) return `"BlackrockReserve" <${user}>`;
 
   return "BlackrockReserve <noreply@theblackrockreserve.com>";
 }
 
-function getGmailTransporter() {
-  if (gmailTransporter) return gmailTransporter;
+function getSmtpTransporter() {
+  if (smtpTransporter) return smtpTransporter;
 
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
-    throw new Error("Gmail not configured. Set GMAIL_USER and GMAIL_APP_PASSWORD.");
+  const user = getSmtpUser();
+  const pass = getSmtpPassword();
+
+  if (!user || !pass) {
+    throw new Error(
+      "SMTP not configured. Set GMAIL_USER and GMAIL_APP_PASSWORD (or SMTP_USER and SMTP_PASSWORD)."
+    );
   }
 
-  gmailTransporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_APP_PASSWORD,
-    },
-  });
-
-  return gmailTransporter;
-}
-
-function getResendClient() {
-  if (resendClient) return resendClient;
-
-  const apiKey = process.env.RESEND_API_KEY?.trim();
-  if (!apiKey) {
-    throw new Error("Resend not configured. Set RESEND_API_KEY.");
+  const host = process.env.SMTP_HOST?.trim();
+  if (host) {
+    const port = Number(process.env.SMTP_PORT ?? 587);
+    smtpTransporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: process.env.SMTP_SECURE === "true" || port === 465,
+      auth: { user, pass },
+    });
+  } else {
+    smtpTransporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user, pass },
+    });
   }
 
-  resendClient = new Resend(apiKey);
-  return resendClient;
+  return smtpTransporter;
 }
 
-async function sendViaResend(options: SendEmailOptions) {
-  const { data, error } = await getResendClient().emails.send({
-    from: getFromAddress(),
-    to: [options.to],
-    subject: options.subject,
-    html: options.html,
-    text: options.text,
-  });
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data;
-}
-
-async function sendViaGmail(options: SendEmailOptions) {
-  await getGmailTransporter().sendMail({
+async function sendViaSmtp(options: SendEmailOptions) {
+  await getSmtpTransporter().sendMail({
     from: getFromAddress(),
     to: options.to,
     subject: options.subject,
@@ -93,7 +87,9 @@ async function sendViaGmail(options: SendEmailOptions) {
   });
 }
 
-export async function sendEmail(options: SendEmailOptions): Promise<{ sent: boolean; dev?: boolean; provider?: EmailProvider }> {
+export async function sendEmail(
+  options: SendEmailOptions
+): Promise<{ sent: boolean; dev?: boolean; provider?: EmailProvider }> {
   const provider = getEmailProvider();
 
   if (provider === "none") {
@@ -101,16 +97,13 @@ export async function sendEmail(options: SendEmailOptions): Promise<{ sent: bool
       console.log(`\n[DEV EMAIL]\nTo: ${options.to}\nSubject: ${options.subject}\n${options.text}\n`);
       return { sent: true, dev: true, provider: "none" };
     }
-    throw new Error("Email service is not configured. Set RESEND_API_KEY or Gmail credentials.");
+    throw new Error(
+      "Email service is not configured. Set GMAIL_USER and GMAIL_APP_PASSWORD in environment variables."
+    );
   }
 
-  if (provider === "resend") {
-    await sendViaResend(options);
-  } else {
-    await sendViaGmail(options);
-  }
-
-  return { sent: true, provider };
+  await sendViaSmtp(options);
+  return { sent: true, provider: "smtp" };
 }
 
 export function generateOtp(): string {

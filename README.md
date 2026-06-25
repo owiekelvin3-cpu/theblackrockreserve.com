@@ -4,22 +4,24 @@ Premium digital banking platform built with Next.js 14, TypeScript, Tailwind CSS
 
 > **This GitHub repository contains the public customer-facing frontend** (marketing site, auth, and user dashboard UI) plus the user API routes required for login, deposits, withdrawals, and notifications. Admin console code and server scripts are kept out of this repo for security. Configure secrets only in `.env` / Vercel — never commit `.env`.
 
-## Email (Resend + your domain)
+## Email (Gmail SMTP)
 
-Sign-up verification, password reset, transaction alerts, and contact notifications are sent via **[Resend](https://resend.com)** from `@theblackrockreserve.com`.
+All transactional email is sent via **Gmail SMTP**: welcome, verification, password reset, deposits, withdrawals, account freeze notices, and support replies.
 
-1. Add domain `theblackrockreserve.com` in Resend → copy DNS records to your registrar
-2. Create an API key and add to `.env` / Vercel:
+1. Enable **2-Step Verification** on your Google account
+2. Create an **App Password** at [Google App Passwords](https://myaccount.google.com/apppasswords)
+3. Add to `.env` / Vercel:
 
 | Variable | Description |
 |----------|-------------|
-| `RESEND_API_KEY` | Resend API key (`re_...`) |
-| `EMAIL_FROM` | e.g. `BlackrockReserve <noreply@theblackrockreserve.com>` |
+| `GMAIL_USER` | Gmail address used to send mail |
+| `GMAIL_APP_PASSWORD` | 16-character Google app password (spaces OK) |
+| `EMAIL_FROM` | Display name, e.g. `BlackrockReserve <you@gmail.com>` |
 | `NOTIFY_EMAIL` | Inbox for contact-form alerts |
 
-Gmail (`GMAIL_USER` / `GMAIL_APP_PASSWORD`) is optional fallback for local dev. See `DEPLOYMENT.md` for full DNS setup.
+**Remove `RESEND_API_KEY` from Vercel** if it is still set — it is no longer used.
 
-In development without email configured, OTP codes are printed to the server console.
+In development without SMTP configured, OTP codes are printed to the server console.
 
 ## Deploy to Vercel
 
@@ -28,8 +30,9 @@ In development without email configured, OTP codes are printed to the server con
 
 | Variable | Description |
 |----------|-------------|
-| `RESEND_API_KEY` | Resend API key for transactional email |
-| `EMAIL_FROM` | Verified sender, e.g. `BlackrockReserve <noreply@theblackrockreserve.com>` |
+| `GMAIL_USER` | Gmail address for SMTP |
+| `GMAIL_APP_PASSWORD` | Google app password |
+| `EMAIL_FROM` | e.g. `BlackrockReserve <you@gmail.com>` |
 | `NOTIFY_EMAIL` | Optional — contact form notification inbox |
 | `DATABASE_URL` | Supabase pooled connection (`aws-1-[region].pooler.supabase.com:6543?pgbouncer=true&sslmode=require`) |
 | `DIRECT_URL` | Supabase **direct** host (`db.[PROJECT_REF].supabase.co:5432?sslmode=require`) |

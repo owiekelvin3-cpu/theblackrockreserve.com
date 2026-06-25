@@ -32,7 +32,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
 
     const amount = Number(withdrawal.amountUsd);
-    let emailPayload: { userId: string; title: string; message: string } | null = null;
 
     if (parsed.data.status === "APPROVED") {
       try {
@@ -53,6 +52,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
           { status: 400 }
         );
       }
+
+      const title = "Withdrawal processed";
+      const message = `Your ${getWithdrawalMethodLabel(withdrawal.method)} withdrawal of ${formatCurrency(amount)} has been approved and sent.`;
 
       await runInteractiveTransaction(async (tx) => {
         const account = await tx.bankAccount.findFirst({
@@ -88,8 +90,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
           },
         });
 
-        const title = "Withdrawal processed";
-        const message = `Your ${getWithdrawalMethodLabel(withdrawal.method)} withdrawal of ${formatCurrency(amount)} has been approved and sent.`;
         await createUserNotification(
           {
             userId: withdrawal.userId,
@@ -99,9 +99,18 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
           },
           tx
         );
-        emailPayload = { userId: withdrawal.userId, title, message };
+      });
+
+      await sendUserNotificationEmail({
+        userId: withdrawal.userId,
+        title,
+        message,
+        category: "transactions",
       });
     } else {
+      const title = "Withdrawal not approved";
+      const message = `Your withdrawal request of ${formatCurrency(amount)} was not approved.${parsed.data.reviewNote ? ` Reason: ${parsed.data.reviewNote}` : ""}`;
+
       await runInteractiveTransaction(async (tx) => {
         await tx.withdrawalRequest.update({
           where: { id: params.id },
@@ -112,8 +121,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
           },
         });
 
-        const title = "Withdrawal not approved";
-        const message = `Your withdrawal request of ${formatCurrency(amount)} was not approved.${parsed.data.reviewNote ? ` Reason: ${parsed.data.reviewNote}` : ""}`;
         await createUserNotification(
           {
             userId: withdrawal.userId,
@@ -123,12 +130,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
           },
           tx
         );
-        emailPayload = { userId: withdrawal.userId, title, message };
       });
-    }
 
-    if (emailPayload) {
-      await sendUserNotificationEmail(emailPayload);
+      await sendUserNotificationEmail({
+        userId: withdrawal.userId,
+        title,
+        message,
+        category: "transactions",
+      });
     }
 
     const updated = await prisma.withdrawalRequest.findUnique({ where: { id: params.id } });

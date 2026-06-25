@@ -75,20 +75,19 @@ async function main() {
     status: contact.status,
   });
 
-  const resendLocal = await import("resend").then(({ Resend }) => {
-    const key = process.env.RESEND_API_KEY?.trim();
-    if (!key) return { ok: false, error: "RESEND_API_KEY missing locally" };
-    const client = new Resend(key);
-    return client.emails
-      .send({
-        from: process.env.EMAIL_FROM ?? "BlackrockReserve <noreply@theblackrockreserve.com>",
-        to: ["delivered@resend.dev"],
-        subject: "Local Resend check",
-        html: "<p>OK</p>",
-      })
-      .then((r) => ({ ok: !r.error, id: r.data?.id, error: r.error?.message }));
+  const smtpCheck = await import("nodemailer").then(async (nodemailer) => {
+    const user = process.env.GMAIL_USER?.trim() || process.env.SMTP_USER?.trim();
+    const pass = (process.env.GMAIL_APP_PASSWORD ?? process.env.SMTP_PASSWORD ?? "").replace(/\s+/g, "");
+    if (!user || !pass) return { ok: false, error: "GMAIL_USER / GMAIL_APP_PASSWORD missing locally" };
+    const transporter = nodemailer.createTransport({ service: "gmail", auth: { user, pass } });
+    try {
+      await transporter.verify();
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : "SMTP verify failed" };
+    }
   });
-  results.push({ check: "local Resend API", ...resendLocal });
+  results.push({ check: "local SMTP connection", ...smtpCheck });
 
   // Remove the temporary verification account so it does not appear in admin/user lists
   const cleanup = await prisma.user.deleteMany({ where: { email: TEST_EMAIL } });
