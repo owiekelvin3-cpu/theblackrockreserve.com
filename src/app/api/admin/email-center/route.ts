@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { getAdminSession, forbiddenResponse } from "@/lib/api-auth";
-import { isSuperAdmin } from "@/lib/admin-email/super-admin";
 import {
   ensureDefaultEmailTemplates,
   getEmailCenterOverview,
@@ -22,8 +21,7 @@ export async function GET() {
     smtpConfigured: isEmailConfigured(),
     permissions: {
       canSendIndividual: true,
-      canSendBroadcast: isSuperAdmin(session.user.email),
-      isSuperAdmin: isSuperAdmin(session.user.email),
+      canSendBroadcast: true,
     },
     admin: {
       id: session.user.id,

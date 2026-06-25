@@ -3,7 +3,6 @@ import { z } from "zod";
 import { EmailRecipientFilter } from "@prisma/client";
 import { getAdminSession, forbiddenResponse } from "@/lib/api-auth";
 import { getClientIp } from "@/lib/admin-audit";
-import { isSuperAdmin } from "@/lib/admin-email/super-admin";
 import { createBroadcast } from "@/lib/admin-email/service";
 import { countBroadcastRecipients } from "@/lib/admin-email/recipients";
 
@@ -28,10 +27,6 @@ const sendSchema = z.object({
 export async function POST(req: NextRequest) {
   const session = await getAdminSession();
   if (!session) return forbiddenResponse();
-
-  if (!isSuperAdmin(session.user.email)) {
-    return NextResponse.json({ error: "Only the primary admin can send broadcast emails" }, { status: 403 });
-  }
 
   try {
     const body = await req.json();

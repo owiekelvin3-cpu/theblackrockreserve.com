@@ -57,7 +57,7 @@ type OverviewData = {
     sentBy: { name: string; email: string } | null;
   }>;
   smtpConfigured: boolean;
-  permissions: { canSendIndividual: boolean; canSendBroadcast: boolean; isSuperAdmin: boolean };
+  permissions: { canSendIndividual: boolean; canSendBroadcast: boolean };
 };
 
 type UserRow = { id: string; name: string; email: string; status: string };
@@ -231,10 +231,10 @@ export default function AdminEmailCenter() {
   }, [broadcastFilter, selectedUserIds]);
 
   useEffect(() => {
-    if (tab === "broadcast" && data?.permissions.canSendBroadcast) {
+    if (tab === "broadcast") {
       void previewRecipientCount();
     }
-  }, [tab, broadcastFilter, selectedUserIds, data?.permissions.canSendBroadcast, previewRecipientCount]);
+  }, [tab, broadcastFilter, selectedUserIds, previewRecipientCount]);
 
   const applyTemplate = (template: TemplateRow, target: "compose" | "broadcast") => {
     if (target === "compose") {
@@ -508,18 +508,8 @@ export default function AdminEmailCenter() {
       )}
 
       {tab === "broadcast" && (
-        <div className="space-y-4">
-          {!data?.permissions.canSendBroadcast ? (
-            <div className="rounded-xl border border-[var(--admin-border)] bg-white/[0.03] p-6 text-center">
-              <Megaphone size={32} className="mx-auto text-[var(--admin-muted)] mb-3" />
-              <p className="text-white font-medium">Broadcast access restricted</p>
-              <p className="text-sm text-[var(--admin-muted)] mt-1">
-                Only the primary administrator (ADMIN_EMAIL) can send broadcast emails.
-              </p>
-            </div>
-          ) : (
-            <div className="grid lg:grid-cols-2 gap-6">
-              <AdminFormPanel title="Broadcast Email">
+        <div className="grid lg:grid-cols-2 gap-6">
+          <AdminFormPanel title="Broadcast Email">
                 <div className="space-y-4">
                   <div>
                     <label className="admin-label">Audience</label>
@@ -598,8 +588,6 @@ export default function AdminEmailCenter() {
                 </div>
               </AdminFormPanel>
               <EmailPreviewFrame subject={broadcastSubject} bodyHtml={broadcastBody} />
-            </div>
-          )}
         </div>
       )}
 
