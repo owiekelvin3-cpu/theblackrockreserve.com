@@ -131,6 +131,7 @@ export const authOptions: NextAuthOptions = {
     /** Avoid re-encoding JWT on every request (was 0 — caused excess cookie churn) */
     updateAge: 24 * 60 * 60,
   },
+  useSecureCookies: process.env.NODE_ENV === "production",
   cookies: {
     sessionToken: {
       name:
@@ -143,6 +144,30 @@ export const authOptions: NextAuthOptions = {
         path: "/",
         secure: process.env.NODE_ENV === "production",
         maxAge: 30 * 24 * 60 * 60,
+      },
+    },
+    callbackUrl: {
+      name:
+        process.env.NODE_ENV === "production"
+          ? "__Secure-next-auth.callback-url"
+          : "next-auth.callback-url",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+    csrfToken: {
+      name:
+        process.env.NODE_ENV === "production"
+          ? "__Host-next-auth.csrf-token"
+          : "next-auth.csrf-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
       },
     },
   },

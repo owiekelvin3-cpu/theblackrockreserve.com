@@ -3,7 +3,7 @@
  */
 import { PrismaClient } from "@prisma/client";
 
-const BASE = process.env.VERIFY_BASE ?? "https://www.blackrockreserve.site";
+const BASE = process.env.VERIFY_BASE ?? "https://theblackrockreserve-com.vercel.app";
 const TEST_EMAIL = process.env.VERIFY_EMAIL ?? `br-verify-${Date.now()}@mailinator.com`;
 
 const prisma = new PrismaClient();

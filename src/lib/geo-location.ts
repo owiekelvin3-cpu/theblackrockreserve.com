@@ -29,7 +29,7 @@ export async function lookupIpLocation(ip?: string): Promise<GeoLocation | null>
 
   try {
     const res = await fetch(
-      `http://ip-api.com/json/${encodeURIComponent(ip)}?fields=status,city,regionName,country`,
+      `https://ip-api.com/json/${encodeURIComponent(ip)}?fields=status,city,regionName,country`,
       { signal: AbortSignal.timeout(4000), cache: "no-store" }
     );
     const data = (await res.json()) as {

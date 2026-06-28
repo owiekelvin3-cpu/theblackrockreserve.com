@@ -18,7 +18,7 @@ export default function DashboardShell({
   children: React.ReactNode;
 }) {
   return (
-    <SessionProvider session={session} refetchOnWindowFocus={false} refetchInterval={0}>
+    <SessionProvider session={session} refetchOnWindowFocus>
       <DashboardLayoutProvider>
         <ProfileImageProvider>
         <FrozenAccountProvider>

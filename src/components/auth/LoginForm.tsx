@@ -15,12 +15,14 @@ import Skeleton from "@/components/ui/Skeleton";
 import type { LoginInput } from "@/lib/validations";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { useValidationSchemas } from "@/lib/i18n/use-validation-schemas";
+import { waitForSessionRole } from "@/lib/auth-session-client";
+import { safeRedirectPath } from "@/lib/cookie-options";
 
 function LoginFormInner() {
   const { t } = useI18n();
   const schemas = useValidationSchemas();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
+  const callbackUrl = safeRedirectPath(searchParams.get("callbackUrl"), "/dashboard");
   const authError = searchParams.get("error");
   const authMessages: Record<string, string> = {
     sign_in_required: t("auth.signInRequired"),
@@ -65,7 +67,8 @@ function LoginFormInner() {
     void fetch("/api/auth/track-session", { method: "POST", credentials: "include" });
 
     setRedirecting(true);
-    window.location.href = destination;
+    await waitForSessionRole("USER");
+    window.location.assign(destination);
   };
 
   return (

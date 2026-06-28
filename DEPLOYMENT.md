@@ -84,7 +84,59 @@ Configure **Admin → Settings** before customers go live:
 - [ ] Supabase project is **not paused**
 - [ ] `ADMIN_PASSWORDLESS` is **not** set to `true` in production
 
-## 7. Optional: Google OAuth
+## 7. Safari on iPhone — "couldn't connect to the server"
+
+This Safari message means the **hostname never reached Vercel** (DNS, SSL, or domain not attached). It is **not** a login/CORS bug.
+
+### Working URL (use until custom DNS is fixed)
+
+`https://theblackrockreserve-com.vercel.app`
+
+Verify: open `https://theblackrockreserve-com.vercel.app/api/health` — should return `"ok": true`.
+
+### Fix custom domains (`theblackrockreserve.com`, `blackrockreserve.site`)
+
+1. Vercel → **Project → Settings → Domains** — add apex + `www` for each domain.
+2. At your registrar, set DNS exactly as Vercel shows (usually `A` `@` → `76.76.21.21` or CNAME `www` → `cname.vercel-dns.com`).
+3. Wait for **Valid Configuration** + SSL in Vercel (5–60 min).
+4. Set `NEXTAUTH_URL` and `NEXT_PUBLIC_SITE_URL` to your **primary HTTPS** domain, then redeploy.
+
+### After DNS works
+
+- Test on iPhone Safari: home → register → login → dashboard.
+- If you installed the PWA from an old/broken domain, remove from Home Screen and re-add from the working URL.
+- Clear Safari cache: Settings → Safari → Clear History and Website Data (if still seeing stale pages).
+
+## 8. Diagnosing Safari "couldn't connect" on Vercel URL
+
+If some iPhone Safari users cannot load `https://theblackrockreserve-com.vercel.app`:
+
+### Interpret connection phases (Vercel → Runtime Logs → filter `[connectivity]`)
+
+| Phase logged | Meaning |
+|--------------|---------|
+| *(no logs at all)* | Request never reached Vercel — DNS, carrier, VPN, or device network |
+| `html_parsed` only | HTML delivered; failure during JS/API load |
+| `ping_client_fail` | Page loaded but `/api/ping` unreachable from client |
+| `sw_skip` + `ios_safari_unreachable` | iOS Safari could not reach edge ping — SW not registered (by design) |
+| `health` slow/fail | Server reachable but database cold start or timeout |
+
+### User self-test page
+
+`https://theblackrockreserve-com.vercel.app/connectivity-check`
+
+### Edge ping (no database)
+
+`GET /api/ping` — edge runtime, sub-200ms when warm.
+
+### Common non-code causes
+
+- Cellular DNS flakiness (try Wi‑Fi vs LTE)
+- iCloud Private Relay / VPN
+- PWA opened from Home Screen with stale service worker — remove icon, clear Safari data, revisit URL
+- Corporate/school content filters blocking `*.vercel.app`
+
+## 9. Optional: Google OAuth
 
 If using Google sign-in, add authorized redirect URI in Google Cloud Console:
 

@@ -14,6 +14,7 @@ import type { RegisterStep1Input, RegisterStep2Input } from "@/lib/validations";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { CURRENCY_OPTIONS } from "@/lib/currency";
 import { useValidationSchemas } from "@/lib/i18n/use-validation-schemas";
+import { waitForSessionRole } from "@/lib/auth-session-client";
 
 type Step1Data = RegisterStep1Input;
 type Step2Data = RegisterStep2Input;
@@ -80,12 +81,13 @@ export default function RegisterForm() {
 
       if (result?.error) {
         toast.success(t("auth.accountSaved"));
-        window.location.href = "/login";
+        window.location.assign("/login");
         return;
       }
 
       toast.success(data.message || t("auth.accountSaved"));
-      window.location.href = "/dashboard";
+      await waitForSessionRole("USER");
+      window.location.assign("/dashboard");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("auth.registrationFailed"));
     } finally {

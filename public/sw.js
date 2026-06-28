@@ -1,12 +1,13 @@
 /* BlackrockReserve service worker — static precache + safe runtime caching */
-const CACHE_VERSION = "br-pwa-v6";
-const ICON_QUERY = "?v=6";
+const CACHE_VERSION = "br-pwa-v8";
+const ICON_QUERY = "?v=8";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const OFFLINE_URL = "/offline";
+/** Safari on poor networks can hang indefinitely without a timeout. */
+const NETWORK_TIMEOUT_MS = 12_000;
 
 const PRECACHE_URLS = [
-  "/",
   "/offline",
   `/favicon.svg${ICON_QUERY}`,
   `/apple-icon.png${ICON_QUERY}`,
@@ -22,7 +23,9 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(STATIC_CACHE)
-      .then((cache) => cache.addAll(PRECACHE_URLS))
+      .then((cache) =>
+        Promise.allSettled(PRECACHE_URLS.map((url) => cache.add(url).catch(() => undefined)))
+      )
       .then(() => self.skipWaiting())
   );
 });
@@ -54,6 +57,32 @@ function isNavigationRequest(request) {
   return request.mode === "navigate";
 }
 
+function isAuthNavigation(pathname) {
+  return (
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname === "/forgot-password" ||
+    pathname === "/reset-password" ||
+    pathname.startsWith("/admin/login") ||
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/admin")
+  );
+}
+
+function isDiagnosticsPath(pathname) {
+  return pathname === "/connectivity-check" || pathname.startsWith("/api/ping") || pathname.startsWith("/api/diagnostics");
+}
+
+async function fetchWithTimeout(request, timeoutMs) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs ?? NETWORK_TIMEOUT_MS);
+  try {
+    return await fetch(new Request(request, { signal: controller.signal }));
+  } finally {
+    clearTimeout(id);
+  }
+}
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -62,7 +91,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (isApiRequest(url)) {
+  if (isApiRequest(url) || isDiagnosticsPath(url.pathname)) {
     return;
   }
 
@@ -77,6 +106,10 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (isNavigationRequest(request)) {
+    if (isAuthNavigation(url.pathname) || url.pathname === "/" || url.pathname === "/connectivity-check") {
+      event.respondWith(networkOnlyWithTimeout(request));
+      return;
+    }
     event.respondWith(networkFirstWithOffline(request));
     return;
   }
@@ -84,10 +117,14 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(staleWhileRevalidate(request, RUNTIME_CACHE));
 });
 
+async function networkOnlyWithTimeout(request) {
+  return fetchWithTimeout(request, NETWORK_TIMEOUT_MS);
+}
+
 async function cacheFirst(request, cacheName) {
   const cached = await caches.match(request);
   if (cached) return cached;
-  const response = await fetch(request);
+  const response = await fetchWithTimeout(request, NETWORK_TIMEOUT_MS);
   if (response.ok) {
     const cache = await caches.open(cacheName);
     cache.put(request, response.clone());
@@ -98,7 +135,7 @@ async function cacheFirst(request, cacheName) {
 async function staleWhileRevalidate(request, cacheName) {
   const cache = await caches.open(cacheName);
   const cached = await cache.match(request);
-  const fetchPromise = fetch(request)
+  const fetchPromise = fetchWithTimeout(request, NETWORK_TIMEOUT_MS)
     .then((response) => {
       if (response.ok) cache.put(request, response.clone());
       return response;
@@ -109,7 +146,7 @@ async function staleWhileRevalidate(request, cacheName) {
 
 async function networkFirstWithOffline(request) {
   try {
-    const response = await fetch(request);
+    const response = await fetchWithTimeout(request, NETWORK_TIMEOUT_MS);
     if (response.ok) {
       const cache = await caches.open(RUNTIME_CACHE);
       cache.put(request, response.clone());
@@ -124,7 +161,6 @@ async function networkFirstWithOffline(request) {
   }
 }
 
-/* Push notification architecture — wire VAPID + subscription storage in a future release */
 self.addEventListener("push", (event) => {
   if (!event.data) return;
   let payload = { title: "BlackrockReserve", body: "You have a new notification." };
@@ -136,8 +172,8 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(payload.title, {
       body: payload.body,
-      icon: `/apple-icon.png?v=6`,
-      badge: `/apple-icon.png?v=6`,
+      icon: `/apple-icon.png?v=8`,
+      badge: `/apple-icon.png?v=8`,
       data: payload.data ?? {},
     })
   );

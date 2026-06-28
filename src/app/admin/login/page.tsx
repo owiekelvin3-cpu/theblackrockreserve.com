@@ -1,22 +1,14 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { signIn, signOut, getSession } from "next-auth/react";
+import { signIn, signOut } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import { LogoMark } from "@/components/layout/Logo";
 import { useI18n } from "@/components/providers/I18nProvider";
 import LanguageSelector from "@/components/ui/LanguageSelector";
-
-async function waitForAdminSession(maxAttempts = 12) {
-  for (let i = 0; i < maxAttempts; i++) {
-    const session = await getSession();
-    if (session?.user?.role === "ADMIN") return session;
-    await new Promise((resolve) => setTimeout(resolve, 200));
-  }
-  return getSession();
-}
+import { waitForSessionRole } from "@/lib/auth-session-client";
 
 function LoginForm() {
   const { t } = useI18n();
@@ -44,8 +36,6 @@ function LoginForm() {
     setFormError("");
 
     try {
-      await signOut({ redirect: false });
-
       const result = await signIn("credentials", {
         email: email.trim().toLowerCase(),
         password,
@@ -61,14 +51,14 @@ function LoginForm() {
         return;
       }
 
-      const session = await waitForAdminSession();
+      const session = await waitForSessionRole("ADMIN");
       if (session?.user?.role !== "ADMIN") {
         await signOut({ redirect: false });
         setFormError(t("admin.accessDenied"));
         return;
       }
 
-      window.location.href = "/admin";
+      window.location.assign("/admin");
     } catch {
       setFormError(t("admin.loginError"));
     } finally {

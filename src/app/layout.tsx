@@ -46,6 +46,36 @@ const splashDismissScript = `
 })();
 `;
 
+const connectivityBootstrapScript = `
+(function() {
+  try {
+    var payload = {
+      phase: 'html_parsed',
+      ok: true,
+      clientTs: Date.now(),
+      url: location.href,
+      ua: navigator.userAgent,
+      standalone: !!(navigator.standalone),
+      hasServiceWorker: 'serviceWorker' in navigator,
+      effectiveType: navigator.connection && navigator.connection.effectiveType,
+      visibility: document.visibilityState
+    };
+    var json = JSON.stringify(payload);
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon('/api/diagnostics/report', new Blob([json], { type: 'application/json' }));
+    } else {
+      fetch('/api/diagnostics/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: json,
+        keepalive: true,
+        cache: 'no-store'
+      }).catch(function() {});
+    }
+  } catch (e) {}
+})();
+`;
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
@@ -108,6 +138,7 @@ export default async function RootLayout({
   return (
     <html lang={initialLocale} dir={dir} suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: connectivityBootstrapScript }} />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <script dangerouslySetInnerHTML={{ __html: splashDismissScript }} />
         <link rel="apple-touch-icon" href={pwaIconUrl("/apple-icon.png")} sizes="180x180" />

@@ -49,6 +49,22 @@ const nextConfig = {
       });
     }
 
+    const noStoreHeaders = [{ key: "Cache-Control", value: "no-store, must-revalidate" }];
+
+    const authNoStore = [
+      { source: "/login", headers: noStoreHeaders },
+      { source: "/register", headers: noStoreHeaders },
+      { source: "/forgot-password", headers: noStoreHeaders },
+      { source: "/reset-password", headers: noStoreHeaders },
+      { source: "/admin/login", headers: noStoreHeaders },
+      { source: "/dashboard/:path*", headers: noStoreHeaders },
+      { source: "/admin/:path*", headers: noStoreHeaders },
+      { source: "/api/auth/:path*", headers: noStoreHeaders },
+      { source: "/api/ping", headers: noStoreHeaders },
+      { source: "/api/diagnostics/:path*", headers: noStoreHeaders },
+      { source: "/connectivity-check", headers: noStoreHeaders },
+    ];
+
     const staticCache = [
       {
         source: "/_next/static/:path*",
@@ -85,6 +101,7 @@ const nextConfig = {
         source: "/(.*)",
         headers: securityHeaders,
       },
+      ...authNoStore,
       ...staticCache,
     ];
   },

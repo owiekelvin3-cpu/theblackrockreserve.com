@@ -101,10 +101,16 @@ function resolveClientCurrency(serverCurrency?: SupportedCurrency): SupportedCur
   return readStoredCurrency() ?? readCookieCurrency() ?? serverCurrency ?? DEFAULT_CURRENCY;
 }
 
+function preferenceCookieSuffix(): string {
+  const secure =
+    typeof window !== "undefined" && window.location.protocol === "https:" ? ";Secure" : "";
+  return `path=/;max-age=${60 * 60 * 24 * 365};SameSite=Lax${secure}`;
+}
+
 function persistLocale(code: LocaleCode) {
   try {
     localStorage.setItem(LOCALE_STORAGE_KEY, code);
-    document.cookie = `${LOCALE_COOKIE}=${code};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Lax`;
+    document.cookie = `${LOCALE_COOKIE}=${code};${preferenceCookieSuffix()}`;
   } catch {
     /* ignore */
   }
@@ -113,7 +119,7 @@ function persistLocale(code: LocaleCode) {
 function persistCurrency(code: SupportedCurrency) {
   try {
     localStorage.setItem(CURRENCY_STORAGE_KEY, code);
-    document.cookie = `${CURRENCY_COOKIE}=${code};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Lax`;
+    document.cookie = `${CURRENCY_COOKIE}=${code};${preferenceCookieSuffix()}`;
   } catch {
     /* ignore */
   }

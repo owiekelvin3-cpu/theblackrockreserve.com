@@ -4,6 +4,7 @@ import { SessionProvider } from "next-auth/react";
 import { Toaster } from "sonner";
 import ServiceWorkerRegister from "@/components/pwa/ServiceWorkerRegister";
 import AppLaunchSplash from "@/components/pwa/AppLaunchSplash";
+import ConnectivityProbe from "@/components/diagnostics/ConnectivityProbe";
 import NotificationAudioUnlock from "@/components/providers/NotificationAudioUnlock";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { I18nProvider } from "@/components/providers/I18nProvider";
@@ -19,10 +20,11 @@ export default function Providers({
 }) {
   return (
     <ThemeProvider>
-      <SessionProvider refetchOnWindowFocus={false} refetchInterval={0}>
+      <SessionProvider refetchOnWindowFocus>
         <I18nProvider initialLocale={initialLocale}>
         <ChatProvider>
         <NotificationAudioUnlock />
+        <ConnectivityProbe />
         <ServiceWorkerRegister />
         <AppLaunchSplash />
         {children}

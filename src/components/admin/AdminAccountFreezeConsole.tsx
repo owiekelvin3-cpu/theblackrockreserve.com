@@ -209,9 +209,9 @@ export default function AdminAccountFreezeConsole() {
     refresh: refreshUsers,
   } = useAdminFetch<{ users: UserRow[] }>("/api/admin/users");
 
-  const freezes = freezeData?.freezes ?? [];
-  const requests = releaseData?.requests ?? [];
-  const allUsers = usersData?.users ?? [];
+  const freezes = useMemo(() => freezeData?.freezes ?? [], [freezeData?.freezes]);
+  const requests = useMemo(() => releaseData?.requests ?? [], [releaseData?.requests]);
+  const allUsers = useMemo(() => usersData?.users ?? [], [usersData?.users]);
 
   const frozenUserIds = useMemo(() => new Set(freezes.map((f) => f.userId)), [freezes]);
   const availableToFreeze = useMemo(
