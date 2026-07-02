@@ -2,6 +2,7 @@
 
 import { forwardRef, type ReactNode } from "react";
 import { Check } from "lucide-react";
+import AppIconMark from "@/components/ui/AppIconMark";
 import UserDisplayName from "@/components/ui/UserDisplayName";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { transactionTypeLabel } from "@/lib/transaction-receipt";
@@ -61,7 +62,10 @@ const TransactionReceiptExport = forwardRef<HTMLDivElement, TransactionReceiptEx
               <Check size={18} strokeWidth={3} />
             </div>
           </div>
-          <p className="receipt-export-brand-name">{t("brand.name")}</p>
+          <div className="receipt-export-brand-lockup">
+            <AppIconMark size={22} className="rounded-md" />
+            <span className="receipt-export-brand-name">{t("brand.name")}</span>
+          </div>
           <p className="receipt-export-brand-tag">{t("dashboard.transactionDetail.title")}</p>
         </div>
 

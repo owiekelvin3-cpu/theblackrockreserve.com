@@ -3404,6 +3404,13 @@ html.tx-member-transfer-scroll-lock {
   gap: 0.875rem;
 }
 
+.receipt-export-brand-lockup,
+.tx-detail-brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .receipt-export-brand-name {
   font-size: 1rem;
   font-weight: 700;

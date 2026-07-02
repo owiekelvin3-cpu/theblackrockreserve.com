@@ -7,6 +7,7 @@ import {
   X, Copy, Check, Download, Loader2, CheckCircle2,
 } from "lucide-react";
 import Button from "@/components/ui/Button";
+import AppIconMark from "@/components/ui/AppIconMark";
 import UserDisplayName from "@/components/ui/UserDisplayName";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { transactionTypeLabel } from "@/lib/transaction-receipt";
@@ -239,7 +240,10 @@ function TransactionDetailView({
                     <Check size={20} strokeWidth={3} />
                   </div>
                 </div>
-                <p className="tx-receipt-eyebrow">{t("brand.name")}</p>
+                <div className="tx-detail-brand-lockup">
+                  <AppIconMark size={22} className="rounded-md" />
+                  <span className="tx-receipt-eyebrow">{t("brand.name")}</span>
+                </div>
                 <h2 id="transaction-detail-title" className="tx-detail-success-title">
                   {t("dashboard.transactionDetail.title")}
                 </h2>
