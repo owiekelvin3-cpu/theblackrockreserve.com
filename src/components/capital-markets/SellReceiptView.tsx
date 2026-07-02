@@ -7,7 +7,7 @@ import {
   Copy, Check, Download, X, Shield, ArrowUpRight, FileText, TrendingUp, TrendingDown,
 } from "lucide-react";
 import Button from "@/components/ui/Button";
-import { LogoMark } from "@/components/layout/Logo";
+import ReceiptBrandHeader from "@/components/dashboard/ReceiptBrandHeader";
 import StockIcon from "@/components/capital-markets/StockIcon";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { formatReferenceId } from "@/lib/transaction-receipt";
@@ -87,6 +87,8 @@ export default function SellReceiptView({
         <X size={18} />
       </button>
 
+      <ReceiptBrandHeader />
+
       <div className="cm-sell-success-hero">
         <div className="cm-sell-success-ring" aria-hidden>
           <div className="cm-sell-success-check">
@@ -107,12 +109,9 @@ export default function SellReceiptView({
       </div>
 
       <div ref={captureRef} className="tx-receipt-capture cm-sell-receipt-capture">
+        <ReceiptBrandHeader />
         <div className="tx-receipt-header">
-          <div className="tx-receipt-success-icon tx-receipt-brand-icon-wrap" aria-hidden>
-            <LogoMark size="sm" className="rounded-lg" />
-          </div>
           <div className="min-w-0 flex-1">
-            <p className="tx-receipt-eyebrow">{t("brand.name")}</p>
             <h2 className="tx-receipt-title">{t("sell.receipt.title")}</h2>
             <p className="tx-receipt-subtitle">{t("sell.receipt.subtitle")}</p>
           </div>

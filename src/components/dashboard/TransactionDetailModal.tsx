@@ -7,7 +7,7 @@ import {
   X, Copy, Check, Download, Loader2, CheckCircle2,
 } from "lucide-react";
 import Button from "@/components/ui/Button";
-import AppIconMark from "@/components/ui/AppIconMark";
+import ReceiptBrandHeader from "@/components/dashboard/ReceiptBrandHeader";
 import UserDisplayName from "@/components/ui/UserDisplayName";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { transactionTypeLabel } from "@/lib/transaction-receipt";
@@ -234,15 +234,12 @@ function TransactionDetailView({
             </div>
 
             <div className="tx-receipt-capture">
+              <ReceiptBrandHeader />
               <div className="tx-detail-success-hero">
                 <div className="tx-detail-success-ring" aria-hidden>
                   <div className="tx-detail-success-check">
                     <Check size={20} strokeWidth={3} />
                   </div>
-                </div>
-                <div className="tx-detail-brand-lockup">
-                  <AppIconMark size={22} className="rounded-md" />
-                  <span className="tx-receipt-eyebrow">{t("brand.name")}</span>
                 </div>
                 <h2 id="transaction-detail-title" className="tx-detail-success-title">
                   {t("dashboard.transactionDetail.title")}

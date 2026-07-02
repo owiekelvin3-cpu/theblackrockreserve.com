@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Copy, CheckCircle2, Download, X, ArrowDown } from "lucide-react";
 import Button from "@/components/ui/Button";
-import AppIconMark from "@/components/ui/AppIconMark";
+import ReceiptBrandHeader from "@/components/dashboard/ReceiptBrandHeader";
 import UserDisplayName from "@/components/ui/UserDisplayName";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { formatReferenceId } from "@/lib/transaction-receipt";
@@ -183,12 +183,7 @@ function MemberTransferReceiptView({
         <div ref={captureRef} className="tx-receipt-capture tx-mt-receipt-capture">
         <div className="tx-mt-receipt-glow" aria-hidden />
 
-        <div className="tx-mt-receipt-header">
-          <div className="tx-mt-receipt-brand">
-            <AppIconMark size={24} className="rounded-lg" />
-            <span className="tx-mt-receipt-brand-name">{t("brand.name")}</span>
-          </div>
-        </div>
+        <ReceiptBrandHeader />
 
         <motion.div
           className="tx-mt-success-hero"

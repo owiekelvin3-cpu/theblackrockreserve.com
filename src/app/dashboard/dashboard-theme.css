@@ -2105,6 +2105,7 @@ html.tx-member-transfer-scroll-lock {
     0 0 40px rgba(34, 197, 94, 0.06);
 }
 
+.tx-receipt-brand-header,
 .tx-mt-receipt-header {
   display: flex;
   align-items: center;
@@ -2113,6 +2114,7 @@ html.tx-member-transfer-scroll-lock {
   margin-bottom: 0.625rem;
 }
 
+.tx-receipt-brand-lockup,
 .tx-mt-receipt-brand {
   display: flex;
   align-items: center;
@@ -2120,6 +2122,7 @@ html.tx-member-transfer-scroll-lock {
   min-width: 0;
 }
 
+.tx-receipt-brand-wordmark,
 .tx-mt-receipt-brand-name {
   font-size: 0.8125rem;
   font-weight: 700;

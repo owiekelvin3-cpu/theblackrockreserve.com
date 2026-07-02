@@ -8,7 +8,7 @@ import {
   ArrowUpRight, FileText,
 } from "lucide-react";
 import Button from "@/components/ui/Button";
-import { LogoMark } from "@/components/layout/Logo";
+import ReceiptBrandHeader from "@/components/dashboard/ReceiptBrandHeader";
 import { useI18n } from "@/components/providers/I18nProvider";
 import {
   formatReferenceId,
@@ -105,12 +105,9 @@ export default function WithdrawalReceiptModal({
             </button>
 
             <div ref={captureRef} className="tx-receipt-capture">
+            <ReceiptBrandHeader />
             <div className="tx-receipt-header">
-              <div className="tx-receipt-success-icon tx-receipt-brand-icon-wrap" aria-hidden>
-                <LogoMark size="sm" className="rounded-lg" />
-              </div>
               <div className="min-w-0 flex-1">
-                <p className="tx-receipt-eyebrow">{t("brand.name")}</p>
                 <h2 id="withdrawal-receipt-title" className="tx-receipt-title">
                   {t("withdrawals.receipt.title")}
                 </h2>
