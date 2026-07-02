@@ -2912,12 +2912,14 @@ html.tx-member-transfer-scroll-lock {
   background: linear-gradient(165deg, #ffffff 0%, #f8fafc 55%, #f1f5f9 100%);
 }
 
+.tx-receipt-backdrop,
 .tx-receipt-modal,
 .tx-mt-receipt-card {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 
+.tx-receipt-backdrop::-webkit-scrollbar,
 .tx-receipt-modal::-webkit-scrollbar,
 .tx-mt-receipt-card::-webkit-scrollbar {
   display: none;
