@@ -488,7 +488,7 @@ const enBase = {
         beneficiaryAccountNa: "Not applicable",
         recipient: "Recipient",
         transferType: "Transfer type",
-        transferTypeName: "Transfer by name",
+        transferTypeName: "Bank Transfer",
         transferTypeAccount: "Member transfer",
         status: "Status",
         confirmation: "This transfer has been credited to the beneficiary's account. Keep this receipt for your records.",
