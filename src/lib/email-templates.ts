@@ -122,11 +122,11 @@ function layout(content: string, preheader: string, locale: LocaleCode = DEFAULT
             <td style="height:4px;background:linear-gradient(90deg,#FF8C42 0%,${ACCENT} 55%,#C2410C 100%);font-size:0;line-height:0;">&nbsp;</td>
           </tr>
           <tr>
-            <td style="padding:28px 32px 20px;text-align:center;border-bottom:1px solid ${BORDER};background:linear-gradient(180deg,#FFFFFF 0%,#FAFAFA 100%);">
+            <td style="padding:28px 32px 20px;text-align:center;border-bottom:1px solid ${BORDER};background:${BG_CARD};">
               <a href="${siteUrl}" style="text-decoration:none;display:inline-block;">
                 <img src="${logoUrl}" width="56" height="56" alt="${BRAND}" style="display:block;margin:0 auto 14px;border-radius:14px;border:0;" />
                 <div style="font-size:21px;font-weight:700;color:${TEXT};letter-spacing:-0.03em;line-height:1.2;">
-                  Blackrock <span style="color:${ACCENT};">Reserve</span>
+                  <span style="color:${TEXT};">Blackrock</span> <span style="color:${ACCENT};">Reserve</span>
                 </div>
                 <div style="margin-top:6px;font-size:12px;font-weight:600;color:${TEXT_MUTED};letter-spacing:0.12em;text-transform:uppercase;">
                   Secure Banking &amp; Investments
