@@ -263,6 +263,19 @@ export const memberTransferSchema = z.object({
   transactionPin: transactionPinSchema,
 });
 
+/** Gold users — recipient name is free text, not validated against the database. */
+export const memberTransferByNameSchema = z.object({
+  accountId: z.string().min(1, "Account is required"),
+  recipientName: z
+    .string()
+    .min(1, "Recipient name is required")
+    .max(120, "Recipient name is too long")
+    .refine((v) => v.trim().length > 0, "Recipient name is required"),
+  amount: z.number().positive("Amount must be greater than zero"),
+  note: z.string().max(200).optional(),
+  transactionPin: transactionPinSchema,
+});
+
 export const depositSubmitSchema = z.object({
   accountId: z.string().min(1, "Account is required"),
   amountUsd: z.number().positive("Amount sent is required and must be greater than zero"),

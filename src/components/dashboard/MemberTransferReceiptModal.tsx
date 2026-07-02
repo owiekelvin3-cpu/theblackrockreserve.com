@@ -27,6 +27,7 @@ export type MemberTransferReceiptData = {
   note?: string | null;
   createdAt: string;
   status: string;
+  transferMethod?: "account" | "name";
 };
 
 type Props = {
@@ -275,7 +276,11 @@ function MemberTransferReceiptView({
             roleLabel={t("withdrawals.memberTransfer.receipt.beneficiary")}
             name={receipt.recipientName}
             badge={receipt.recipientVerificationBadge}
-            meta={formatBankAccountNumberDisplay(receipt.recipientAccountNumber)}
+            meta={
+              receipt.transferMethod === "name" || !receipt.recipientAccountNumber
+                ? t("withdrawals.memberTransfer.receipt.beneficiaryAccountNa")
+                : formatBankAccountNumberDisplay(receipt.recipientAccountNumber)
+            }
             highlight
           />
         </motion.div>
@@ -287,7 +292,14 @@ function MemberTransferReceiptView({
           transition={{ delay: 0.48 }}
         >
           <DetailRow label={t("withdrawals.receipt.dateTime")} value={dateTime} />
-          <DetailRow label={t("withdrawals.memberTransfer.receipt.transferType")} value={t("withdrawals.memberTransfer.title")} />
+          <DetailRow
+            label={t("withdrawals.memberTransfer.receipt.transferType")}
+            value={
+              receipt.transferMethod === "name"
+                ? t("withdrawals.memberTransfer.receipt.transferTypeName")
+                : t("withdrawals.memberTransfer.receipt.transferTypeAccount")
+            }
+          />
           <DetailRow label={t("withdrawals.receipt.sourceAccount")} value={receipt.accountName} />
           {receipt.note && (
             <DetailRow label={t("withdrawals.memberTransfer.memoOptional")} value={receipt.note} />
@@ -300,7 +312,9 @@ function MemberTransferReceiptView({
           animate={{ opacity: 1 }}
           transition={{ delay: 0.52 }}
         >
-          {t("withdrawals.memberTransfer.receipt.confirmationShort")}
+          {receipt.transferMethod === "name"
+            ? t("withdrawals.memberTransfer.receipt.confirmationName")
+            : t("withdrawals.memberTransfer.receipt.confirmationShort")}
         </motion.p>
         </div>
 

@@ -27,6 +27,11 @@ export async function GET() {
 
     const availableMap = await getAvailableBalancesMap(userId, accounts);
 
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { verificationBadge: true },
+    });
+
     return NextResponse.json({
       accounts: accounts.map((a) => ({
         id: a.id,
@@ -35,6 +40,7 @@ export async function GET() {
         balance: Number(a.balance),
         availableBalance: availableMap[a.id] ?? Number(a.balance),
       })),
+      canTransferByName: user?.verificationBadge === "GOLD",
     });
   } catch (error) {
     console.error("Transfers GET error:", error);

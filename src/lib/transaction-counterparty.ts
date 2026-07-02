@@ -2,6 +2,10 @@ import type { TransactionType, VerificationBadgeType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { INCOMING_TRANSFER_RE } from "@/lib/transaction-amount";
 import { serializeVerificationBadge } from "@/lib/verification-badge";
+import {
+  isNameOnlyTransferDescription,
+  parseNameTransferRecipient,
+} from "@/lib/name-transfer";
 
 export type CounterpartyPreview = {
   id: string | null;
@@ -11,13 +15,22 @@ export type CounterpartyPreview = {
 };
 
 const OUTGOING_TRANSFER_RE = /^transfer to\b/i;
+const OUTGOING_NAME_TRANSFER_RE = /^transfer by name to\b/i;
 
-export function isIncomingMemberTransfer(type: TransactionType | string, description: string): boolean {
-  return type === "TRANSFER" && INCOMING_TRANSFER_RE.test(description.trim());
+export function isOutgoingNameTransfer(type: TransactionType | string, description: string): boolean {
+  return type === "TRANSFER" && OUTGOING_NAME_TRANSFER_RE.test(description.trim());
 }
 
 export function isOutgoingMemberTransfer(type: TransactionType | string, description: string): boolean {
-  return type === "TRANSFER" && OUTGOING_TRANSFER_RE.test(description.trim());
+  const trimmed = description.trim();
+  return (
+    type === "TRANSFER" &&
+    (OUTGOING_TRANSFER_RE.test(trimmed) || OUTGOING_NAME_TRANSFER_RE.test(trimmed))
+  );
+}
+
+export function isIncomingMemberTransfer(type: TransactionType | string, description: string): boolean {
+  return type === "TRANSFER" && INCOMING_TRANSFER_RE.test(description.trim());
 }
 
 export function parseTransferPartyName(
@@ -25,6 +38,9 @@ export function parseTransferPartyName(
   direction: "incoming" | "outgoing"
 ): string | null {
   const trimmed = description.trim();
+  if (direction === "outgoing" && isNameOnlyTransferDescription(trimmed)) {
+    return parseNameTransferRecipient(trimmed);
+  }
   const re =
     direction === "incoming"
       ? /^Transfer from (.+?)(?:\s+—\s+|$)/i
@@ -81,6 +97,15 @@ export async function resolveCounterpartyForTransaction(
   const parsedName = parseTransferPartyName(row.description, incoming ? "incoming" : "outgoing");
   if (!parsedName) return null;
 
+  if (outgoing && isNameOnlyTransferDescription(row.description)) {
+    return {
+      id: null,
+      name: parsedName,
+      verificationBadge: "NONE",
+      relation: "recipient",
+    };
+  }
+
   const user = await prisma.user.findFirst({
     where: { name: parsedName, role: "USER" },
     select: { id: true, name: true, verificationBadge: true },
@@ -134,6 +159,15 @@ export async function loadCounterpartiesForTransactions(
 
     const parsedName = parseTransferPartyName(row.description, incoming ? "incoming" : "outgoing");
     if (parsedName) {
+      if (outgoing && isNameOnlyTransferDescription(row.description)) {
+        map.set(row.id, {
+          id: null,
+          name: parsedName,
+          verificationBadge: "NONE",
+          relation: "recipient",
+        });
+        continue;
+      }
       unresolved.push(row);
     }
   }
@@ -175,6 +209,7 @@ export async function loadCounterpartiesForTransactions(
 
   for (const row of unresolved) {
     const incoming = isIncomingMemberTransfer(row.type, row.description);
+    const outgoing = !incoming;
     const relation: CounterpartyPreview["relation"] = incoming ? "sender" : "recipient";
 
     const linked = row.counterpartyUserId ? usersById.get(row.counterpartyUserId) : undefined;
@@ -190,6 +225,16 @@ export async function loadCounterpartiesForTransactions(
 
     const parsedName = parseTransferPartyName(row.description, incoming ? "incoming" : "outgoing");
     if (!parsedName) continue;
+
+    if (outgoing && isNameOnlyTransferDescription(row.description)) {
+      map.set(row.id, {
+        id: null,
+        name: parsedName,
+        verificationBadge: "NONE",
+        relation: "recipient",
+      });
+      continue;
+    }
 
     const byName = usersByName.get(parsedName);
     map.set(row.id, {

@@ -11,6 +11,7 @@ import {
 import { formatMoneyForUser } from "@/lib/exchange-rates";
 import { serializeVerificationBadge } from "@/lib/verification-badge";
 import { sendUserNotificationEmail } from "@/lib/user-notifications";
+import { buildNameTransferDescription } from "@/lib/name-transfer";
 
 function roundMoney(n: number) {
   return Math.round(n * 100) / 100;
@@ -206,6 +207,111 @@ export async function transferToMember(
       note: memo ?? null,
       createdAt: result.createdAt.toISOString(),
       status: "COMPLETED" as const,
+    },
+  };
+}
+
+export async function transferByRecipientName(
+  senderId: string,
+  params: {
+    accountId: string;
+    recipientName: string;
+    amount: number;
+    note?: string;
+  }
+) {
+  const amount = roundMoney(params.amount);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error("Enter a valid amount greater than zero");
+  }
+
+  const recipientName = params.recipientName.trim();
+  if (!recipientName) {
+    throw new Error("Recipient name is required");
+  }
+
+  const sender = await prisma.user.findUnique({
+    where: { id: senderId },
+    select: { id: true, name: true, status: true, verificationBadge: true, preferredCurrency: true },
+  });
+  if (!sender || sender.status !== "ACTIVE") {
+    throw new Error("Your account cannot send transfers right now");
+  }
+  if (sender.verificationBadge !== "GOLD") {
+    throw new Error("Transfer by name is available for Gold verified members only");
+  }
+
+  const senderAccount = await prisma.bankAccount.findFirst({
+    where: { id: params.accountId, userId: senderId },
+  });
+  if (!senderAccount) throw new Error("Source account not found");
+
+  const available = await getAvailableBalance(senderId, params.accountId);
+  if (available == null || available < amount) {
+    throw new Error("Insufficient available balance for this transfer");
+  }
+
+  const memo = params.note?.trim();
+  const description = buildNameTransferDescription(recipientName, memo);
+  const senderAmountLabel = await formatMoneyForUser(amount, sender.preferredCurrency);
+
+  const result = await runInteractiveTransaction(async (tx) => {
+    const fromAccount = await tx.bankAccount.findFirst({
+      where: { id: senderAccount.id, userId: senderId },
+    });
+    if (!fromAccount) throw new Error("Account not found");
+
+    const fromBalance = Number(fromAccount.balance);
+    if (fromBalance < amount) throw new Error("Insufficient balance");
+
+    await tx.bankAccount.update({
+      where: { id: fromAccount.id },
+      data: { balance: roundMoney(fromBalance - amount) },
+    });
+
+    return tx.transaction.create({
+      data: {
+        userId: senderId,
+        accountId: fromAccount.id,
+        type: "TRANSFER",
+        amount,
+        description,
+        status: "COMPLETED",
+      },
+    });
+  });
+
+  const senderTitle = "Transfer sent";
+  const senderMessage = `You sent ${senderAmountLabel} to ${recipientName}.`;
+
+  void sendUserNotificationEmail({
+    userId: senderId,
+    title: senderTitle,
+    message: senderMessage,
+    category: "transactions",
+  }).catch((err) => console.error("Name transfer sender email failed:", err));
+
+  const senderAccountNumber = await getUserAccountNumber(senderId);
+
+  return {
+    amount,
+    recipientName,
+    referenceId: result.id,
+    message: `Successfully sent ${senderAmountLabel} to ${recipientName}`,
+    receipt: {
+      id: result.id,
+      amount,
+      recipientAccountNumber: "",
+      recipientName,
+      recipientVerificationBadge: "NONE" as const,
+      senderName: sender.name,
+      senderVerificationBadge: serializeVerificationBadge(sender.verificationBadge),
+      senderAccountNumber,
+      accountName: senderAccount.name,
+      note: memo ?? null,
+      createdAt: result.createdAt.toISOString(),
+      status: "COMPLETED" as const,
+      transferMethod: "name" as const,
     },
   };
 }
