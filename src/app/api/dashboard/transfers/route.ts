@@ -3,7 +3,7 @@ import { getSessionUserId, unauthorizedResponse } from "@/lib/api-auth";
 import { memberTransferSchema } from "@/lib/validations";
 import { transferToMember } from "@/lib/member-transfer-service";
 import { requireTransactionPin } from "@/lib/transaction-pin";
-import { getAvailableBalancesMap } from "@/lib/withdrawal-balance";
+import { getFundSourceAccounts } from "@/lib/fund-source-accounts";
 import { prisma } from "@/lib/prisma";
 import { ensureUserPrimaryAccountNumber } from "@/lib/bank-account-number";
 import { getActiveAccountFreeze, isTransferBlocked } from "@/lib/account-freeze";
@@ -19,13 +19,7 @@ export async function GET() {
       await ensureUserPrimaryAccountNumber(userId);
     }
 
-    const accounts = await prisma.bankAccount.findMany({
-      where: { userId },
-      select: { id: true, name: true, currency: true, balance: true },
-      orderBy: { createdAt: "asc" },
-    });
-
-    const availableMap = await getAvailableBalancesMap(userId, accounts);
+    const accounts = await getFundSourceAccounts(userId);
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -33,13 +27,7 @@ export async function GET() {
     });
 
     return NextResponse.json({
-      accounts: accounts.map((a) => ({
-        id: a.id,
-        name: a.name,
-        currency: a.currency,
-        balance: Number(a.balance),
-        availableBalance: availableMap[a.id] ?? Number(a.balance),
-      })),
+      accounts,
       canTransferByName: user?.verificationBadge === "GOLD",
     });
   } catch (error) {

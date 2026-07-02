@@ -346,7 +346,7 @@ export default function WithdrawalsPage() {
                   >
                     {withdrawalData.accounts.map((a) => (
                       <option key={a.id} value={a.id}>
-                        {a.name} ({a.currency}) — {formatCurrency(a.availableBalance)} available
+                        {a.name} ({a.currency}) — {formatCurrency(a.balance)}
                       </option>
                     ))}
                   </select>

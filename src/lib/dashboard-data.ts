@@ -101,7 +101,8 @@ export async function getDashboardOverview(userId: string) {
       getSavingsSummary(userId),
     ]);
 
-  const totalBalance = accounts.reduce((sum, a) => sum + a.balance, 0);
+  const checkingAccount = accounts.find((a) => a.type === "checking");
+  const totalBalance = checkingAccount?.balance ?? 0;
 
   const currentMonthIndex = now.getMonth();
   const cashFlowData = MONTHS.slice(0, currentMonthIndex + 1).map((month, index) => {

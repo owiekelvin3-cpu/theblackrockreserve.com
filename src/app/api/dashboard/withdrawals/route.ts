@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUserId, unauthorizedResponse } from "@/lib/api-auth";
+import { getFundSourceAccounts } from "@/lib/fund-source-accounts";
 import { getAvailableBalancesMap } from "@/lib/withdrawal-balance";
 import { getWithdrawalMethod, getWithdrawalMethodLabel } from "@/lib/withdrawal-methods";
 import {
@@ -28,11 +29,7 @@ export async function GET() {
 
   try {
     const [accounts, withdrawals, userCharge, depositSettings] = await Promise.all([
-      prisma.bankAccount.findMany({
-        where: { userId },
-        select: { id: true, name: true, currency: true, balance: true },
-        orderBy: { createdAt: "asc" },
-      }),
+      getFundSourceAccounts(userId),
       prisma.withdrawalRequest.findMany({
         where: { userId },
         orderBy: { createdAt: "desc" },
@@ -67,8 +64,6 @@ export async function GET() {
       getPublicDepositSettings(),
     ]);
 
-    const availableMap = await getAvailableBalancesMap(userId, accounts);
-
     const activeFreeze = await getActiveAccountFreeze(userId);
     const accountFreeze = activeFreeze
       ? {
@@ -95,13 +90,7 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      accounts: accounts.map((a) => ({
-        id: a.id,
-        name: a.name,
-        currency: a.currency,
-        balance: Number(a.balance),
-        availableBalance: availableMap[a.id] ?? Number(a.balance),
-      })),
+      accounts,
       userCharge: userCharge
         ? {
             chargeType: userCharge.chargeType,

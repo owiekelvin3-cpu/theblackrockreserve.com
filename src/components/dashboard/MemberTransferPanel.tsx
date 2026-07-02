@@ -17,6 +17,7 @@ type AccountOption = {
   id: string;
   name: string;
   currency: string;
+  balance: number;
   availableBalance: number;
 };
 
@@ -204,7 +205,7 @@ export default function MemberTransferPanel({ accounts, onTransferComplete, clas
             >
               {accounts.map((a) => (
                 <option key={a.id} value={a.id}>
-                  {a.name} ({a.currency}) — {formatCurrency(a.availableBalance)} available
+                  {a.name} ({a.currency}) — {formatCurrency(a.balance)}
                 </option>
               ))}
             </select>

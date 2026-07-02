@@ -73,6 +73,7 @@ export default function TransferPage() {
     id: a.id,
     name: a.name,
     currency: a.currency,
+    balance: a.balance,
     availableBalance: a.availableBalance,
   }));
 
