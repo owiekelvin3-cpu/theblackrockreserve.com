@@ -97,8 +97,9 @@ export default function SellModal({ holding, open, onClose, onSuccess }: SellMod
 
   const validateAmount = (): string | null => {
     if (!holding) return t("sell.assetRequired");
-    if (!amount.trim() || amountNum <= 0) return t("sell.amountRequired");
-    if (sharesToSell <= 0) return t("sell.amountTooSmall");
+    if (!amount.trim() || !Number.isFinite(amountNum) || amountNum <= 0)
+      return t("sell.amountRequired");
+    if (!Number.isFinite(sharesToSell) || sharesToSell <= 0) return t("sell.amountTooSmall");
     if (sharesToSell > holding.shares + 0.000001) return t("sell.insufficientShares");
     if (grossProceeds < holding.minSaleUsd) {
       return t("sell.minSale", { amount: formatCurrency(holding.minSaleUsd) });

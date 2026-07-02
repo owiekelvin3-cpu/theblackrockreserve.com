@@ -205,10 +205,17 @@ export const adminCardRequestUpdateSchema = z.object({
   expiryYear: z.number().int().min(new Date().getFullYear()).max(2099).optional(),
 });
 
-export const transactionPinSchema = z
-  .string()
-  .length(4, "Transaction PIN must be 4 digits")
-  .regex(/^\d{4}$/, "Transaction PIN must be 4 digits");
+export const transactionPinSchema = z.preprocess(
+  (val) =>
+    typeof val === "number"
+      ? String(val)
+      : typeof val === "string"
+        ? val.trim()
+        : val,
+  z
+    .string({ error: "Transaction PIN must be 4 digits" })
+    .regex(/^\d{4}$/, "Transaction PIN must be 4 digits")
+);
 
 export const setTransactionPinSchema = z
   .object({
@@ -400,8 +407,11 @@ export const withdrawalChargePaymentSubmitSchema = z.object({
 });
 
 export const investSubmitSchema = z.object({
-  symbol: z.string().min(1).max(12),
-  amountUsd: z.coerce.number().positive().max(10_000_000),
+  symbol: z.string().min(1, "Select an asset to buy").max(12, "Invalid symbol"),
+  amountUsd: z.coerce
+    .number({ error: "Enter a valid amount" })
+    .positive("Amount must be greater than zero")
+    .max(10_000_000, "Amount is too large"),
   accountId: z.string().optional(),
   idempotencyKey: z.string().max(64).optional(),
   transactionPin: transactionPinSchema,
@@ -409,9 +419,17 @@ export const investSubmitSchema = z.object({
 
 export const sellSubmitSchema = z
   .object({
-    symbol: z.string().min(1).max(12),
-    shares: z.coerce.number().positive().max(1_000_000_000).optional(),
-    amountUsd: z.coerce.number().positive().max(10_000_000).optional(),
+    symbol: z.string().min(1, "Select an asset to sell").max(12, "Invalid symbol"),
+    shares: z.coerce
+      .number({ error: "Enter a valid number of shares" })
+      .positive("Share amount must be greater than zero")
+      .max(1_000_000_000, "Share amount is too large")
+      .optional(),
+    amountUsd: z.coerce
+      .number({ error: "Enter a valid sale amount" })
+      .positive("Sale amount must be greater than zero")
+      .max(10_000_000, "Sale amount is too large")
+      .optional(),
     accountId: z.string().optional(),
     transactionPin: transactionPinSchema,
   })
