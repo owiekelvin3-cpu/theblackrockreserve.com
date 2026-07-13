@@ -437,6 +437,12 @@ export async function getAdminKycQueue() {
 export async function getAdminMessages() {
   const messages = await prisma.contactMessage.findMany({
     orderBy: { createdAt: "desc" },
+    include: {
+      replies: {
+        orderBy: { createdAt: "asc" },
+        include: { admin: { select: { name: true } } },
+      },
+    },
   });
 
   return messages.map((m) => ({
@@ -446,7 +452,112 @@ export async function getAdminMessages() {
     subject: m.subject,
     message: m.message,
     createdAt: m.createdAt.toISOString(),
+    replyCount: m.replies.length,
+    replies: m.replies.map((r) => ({
+      id: r.id,
+      content: r.content,
+      emailSent: r.emailSent,
+      createdAt: r.createdAt.toISOString(),
+      adminName: r.admin?.name ?? "Support",
+    })),
   }));
+}
+
+export async function getAdminContactMessage(id: string) {
+  const message = await prisma.contactMessage.findUnique({
+    where: { id },
+    include: {
+      replies: {
+        orderBy: { createdAt: "asc" },
+        include: { admin: { select: { name: true } } },
+      },
+    },
+  });
+  if (!message) return null;
+  return {
+    id: message.id,
+    name: message.name,
+    email: message.email,
+    subject: message.subject,
+    message: message.message,
+    createdAt: message.createdAt.toISOString(),
+    replyCount: message.replies.length,
+    replies: message.replies.map((r) => ({
+      id: r.id,
+      content: r.content,
+      emailSent: r.emailSent,
+      createdAt: r.createdAt.toISOString(),
+      adminName: r.admin?.name ?? "Support",
+    })),
+  };
+}
+
+export async function replyToContactMessage(params: {
+  messageId: string;
+  adminId: string;
+  content: string;
+}) {
+  const content = params.content.trim();
+  if (!content) throw new Error("Reply is required");
+
+  const contact = await prisma.contactMessage.findUnique({
+    where: { id: params.messageId },
+  });
+  if (!contact) throw new Error("Contact message not found");
+
+  const { isEmailConfigured, sendEmail } = await import("@/lib/email");
+  const { contactFormReplyEmail } = await import("@/lib/email-templates");
+  const { getPublicContactSettings } = await import("@/lib/platform-settings");
+
+  if (!isEmailConfigured()) {
+    throw new Error("Email is not configured. Set GMAIL_USER and GMAIL_APP_PASSWORD.");
+  }
+
+  const siteUrl =
+    process.env.NEXTAUTH_URL?.replace(/\/$/, "") ||
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
+    "https://www.theblackrockreserve.com";
+
+  const settings = await getPublicContactSettings().catch(() => null);
+  const replyTo =
+    settings?.contactEmail?.trim() ||
+    process.env.NOTIFY_EMAIL?.trim() ||
+    "blackrockreservesupport@gmail.com";
+
+  const mail = contactFormReplyEmail({
+    name: contact.name,
+    originalSubject: contact.subject,
+    originalMessage: contact.message,
+    replyContent: content,
+    siteUrl,
+  });
+
+  await sendEmail({
+    to: contact.email,
+    replyTo,
+    ...mail,
+  });
+
+  const reply = await prisma.contactMessageReply.create({
+    data: {
+      contactMessageId: contact.id,
+      adminId: params.adminId,
+      content,
+      emailSent: true,
+    },
+    include: { admin: { select: { name: true } } },
+  });
+
+  return {
+    contact: await getAdminContactMessage(contact.id),
+    reply: {
+      id: reply.id,
+      content: reply.content,
+      emailSent: reply.emailSent,
+      createdAt: reply.createdAt.toISOString(),
+      adminName: reply.admin?.name ?? "Support",
+    },
+  };
 }
 
 export async function deleteAdminMessage(id: string) {

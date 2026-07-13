@@ -15,6 +15,14 @@ import Skeleton from "@/components/ui/Skeleton";
 import AdminFetchState from "@/components/admin/AdminFetchState";
 import { useAdminFetch } from "@/hooks/use-admin-fetch";
 
+interface ContactReply {
+  id: string;
+  content: string;
+  emailSent: boolean;
+  createdAt: string;
+  adminName: string;
+}
+
 interface ContactRow {
   id: string;
   name: string;
@@ -22,6 +30,8 @@ interface ContactRow {
   subject: string;
   message: string;
   createdAt: string;
+  replyCount?: number;
+  replies?: ContactReply[];
 }
 
 interface ConversationRow {
@@ -243,6 +253,7 @@ export default function AdminMessagesPage() {
 
   const selectItem = (item: InboxItem) => {
     setSelection({ kind: item.kind, id: item.id });
+    setReply("");
     setMobileShowChat(true);
   };
 
@@ -302,24 +313,38 @@ export default function AdminMessagesPage() {
 
   useEffect(() => {
     threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: "smooth" });
-  }, [thread?.messages, threadLoading]);
+  }, [thread?.messages, threadLoading, selectedContact?.replies?.length, selectedContact?.id]);
 
   const sendReply = async () => {
-    if (selection?.kind !== "chat" || !reply.trim() || sending) return;
+    if (!selection || !reply.trim() || sending) return;
     setSending(true);
     try {
-      const res = await fetch(`/api/admin/messages/conversations/${selection.id}`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: reply.trim() }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Failed to send reply");
-      setThread(json.conversation);
-      setReply("");
-      toast.success("Reply sent to client");
-      refresh();
+      if (selection.kind === "chat") {
+        const res = await fetch(`/api/admin/messages/conversations/${selection.id}`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: reply.trim() }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Failed to send reply");
+        setThread(json.conversation);
+        setReply("");
+        toast.success("Reply sent to client");
+        refresh();
+      } else {
+        const res = await fetch(`/api/admin/messages/${selection.id}`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: reply.trim() }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Failed to send email reply");
+        setReply("");
+        toast.success(`Reply emailed to ${json.message?.email || "sender"}`);
+        refresh();
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to send reply");
     } finally {
@@ -454,6 +479,11 @@ export default function AdminMessagesPage() {
                         </div>
                         <div className="admin-wa-inbox-preview">
                           <span className="admin-wa-inbox-snippet">{m.subject}</span>
+                          {(m.replyCount ?? 0) > 0 && (
+                            <span className="admin-wa-inbox-badge" title={`${m.replyCount} emailed replies`}>
+                              {m.replyCount}
+                            </span>
+                          )}
                         </div>
                         <p className="admin-wa-type-tag">Contact form</p>
                       </div>
@@ -513,25 +543,79 @@ export default function AdminMessagesPage() {
                       </div>
                     </div>
                   </div>
+
+                  {(selectedContact.replies ?? []).map((r, i, arr) => {
+                    const prevAt = i === 0 ? selectedContact.createdAt : arr[i - 1].createdAt;
+                    const showDate = !sameDay(r.createdAt, prevAt);
+                    return (
+                      <div key={r.id}>
+                        {showDate && (
+                          <div className="admin-wa-date-pill">
+                            <span>{formatDayLabel(r.createdAt)}</span>
+                          </div>
+                        )}
+                        <div className="admin-wa-bubble-row admin-wa-bubble-row-out">
+                          <div className="admin-wa-bubble admin-wa-bubble-out">
+                            <p className="admin-wa-bubble-sender">
+                              {r.adminName} · Emailed reply
+                            </p>
+                            <p className="admin-wa-bubble-text">{r.content}</p>
+                            <div className="admin-wa-bubble-meta">
+                              <span>{formatBubbleTime(r.createdAt)}</span>
+                              {r.emailSent && (
+                                <CheckCheck size={12} className="text-[var(--admin-accent)]" />
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+
                   <div className="admin-wa-bubble-row admin-wa-bubble-row-system">
                     <div className="admin-wa-bubble admin-wa-bubble-system">
-                      Reply to this client at {selectedContact.email} or respond in Support Chat
-                      if they have a dashboard account.
+                      Replies are sent by email to {selectedContact.email}. No account is required.
+                      If they reply to the email, it arrives in your support inbox.
                     </div>
                   </div>
                 </div>
 
-                <div className="admin-wa-contact-actions">
-                  <button
-                    type="button"
-                    onClick={() => deleteContact(selectedContact.id)}
-                    disabled={deleting === selectedContact.id}
-                    className="admin-wa-delete-btn"
-                  >
-                    <Trash2 size={15} />
-                    {deleting === selectedContact.id ? "Deleting…" : "Delete message"}
-                  </button>
-                </div>
+                <form
+                  className="admin-wa-compose"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    sendReply();
+                  }}
+                >
+                  <div className="admin-wa-compose-input-wrap">
+                    <textarea
+                      value={reply}
+                      onChange={(e) => setReply(e.target.value)}
+                      placeholder={`Email a reply to ${selectedContact.email}…`}
+                      rows={2}
+                      disabled={sending}
+                    />
+                  </div>
+                  <div className="admin-wa-contact-compose-actions">
+                    <button
+                      type="button"
+                      onClick={() => deleteContact(selectedContact.id)}
+                      disabled={deleting === selectedContact.id || sending}
+                      className="admin-wa-delete-btn"
+                      title="Delete message"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={sending || !reply.trim()}
+                      className="admin-wa-send-btn"
+                      aria-label="Send email reply"
+                    >
+                      <Send size={18} />
+                    </button>
+                  </div>
+                </form>
               </>
             ) : selection.kind === "chat" ? (
               threadLoading && !threadReady ? (

@@ -78,6 +78,7 @@ model User {
   reviewedChargePayments   WithdrawalChargePayment[] @relation("ChargePaymentReviewer")
   supportConversation      SupportConversation?
   adminSupportReplies      SupportMessage[]          @relation("AdminSupportReplies")
+  contactMessageReplies    ContactMessageReply[]     @relation("AdminContactReplies")
   verificationBadge        VerificationBadgeType     @default(NONE)
   verificationBadgeAt      DateTime?
   verificationBadgeById    String?
@@ -232,12 +233,27 @@ model InvestmentOrder {
 }
 
 model ContactMessage {
-  id        String   @id @default(cuid())
+  id        String               @id @default(cuid())
   name      String
   email     String
   subject   String
   message   String
-  createdAt DateTime @default(now())
+  createdAt DateTime             @default(now())
+  replies   ContactMessageReply[]
+}
+
+model ContactMessageReply {
+  id               String   @id @default(cuid())
+  contactMessageId String
+  adminId          String?
+  content          String   @db.Text
+  emailSent        Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  contactMessage ContactMessage @relation(fields: [contactMessageId], references: [id], onDelete: Cascade)
+  admin          User?          @relation("AdminContactReplies", fields: [adminId], references: [id], onDelete: SetNull)
+
+  @@index([contactMessageId, createdAt])
 }
 
 model SupportConversation {

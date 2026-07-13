@@ -1249,6 +1249,13 @@
   flex-shrink: 0;
 }
 
+.admin-wa-contact-compose-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
 .admin-wa-delete-btn {
   display: inline-flex;
   align-items: center;

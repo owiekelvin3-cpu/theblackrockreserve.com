@@ -273,6 +273,42 @@ export function contactNotificationEmail(data: {
   };
 }
 
+export function contactFormReplyEmail(data: {
+  name: string;
+  originalSubject: string;
+  originalMessage: string;
+  replyContent: string;
+  siteUrl: string;
+}) {
+  const html = layout(
+    `
+      ${emailHeading("Reply from Blackrock Reserve")}
+      ${emailGreeting(data.name)}
+      ${emailParagraph("Thank you for contacting Blackrock Reserve. Here is our response to your message:")}
+      ${emailHighlightBox(`<span style="white-space:pre-wrap;">${escapeHtml(data.replyContent)}</span>`, "accent")}
+      ${emailInfoCard([
+        { label: "Your original subject", value: escapeHtml(data.originalSubject) },
+        {
+          label: "Your original message",
+          value: escapeHtml(
+            data.originalMessage.length > 500
+              ? `${data.originalMessage.slice(0, 500)}…`
+              : data.originalMessage
+          ),
+        },
+      ])}
+      ${emailParagraph("You can reply to this email to continue the conversation with our support team.")}
+      ${emailButton(`${data.siteUrl}/contact`, "Visit Contact Page")}
+    `,
+    "Blackrock Reserve replied to your message"
+  );
+  return {
+    subject: `Re: ${data.originalSubject}`,
+    html,
+    text: `Dear ${data.name},\n\nThank you for contacting Blackrock Reserve. Here is our response:\n\n${data.replyContent}\n\n---\nYour original subject: ${data.originalSubject}\nYour original message: ${data.originalMessage}\n\nYou can reply to this email to continue the conversation.`,
+  };
+}
+
 export function depositApprovedEmail(data: { name: string; amount: string; siteUrl: string }) {
   const html = layout(
     `
