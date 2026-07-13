@@ -236,6 +236,8 @@ const enBase = {
     needBitcoin: "Need Bitcoin?",
     needBitcoinDesc: "Don't have Bitcoin yet? Purchase from a trusted exchange using the link below.",
     buyBitcoin: "Buy Bitcoin",
+    altPayPrefill:
+      "Hello, I would like to fund my account with an alternative payment method such as Visa, Mastercard, Apple Pay, Google Pay, or bank transfer. Please connect me with a support representative to complete the deposit.",
     confirmDeposit: "Confirm Your Deposit",
     creditToAccount: "Credit to account",
     noAccount: "No account found — contact support before depositing.",
@@ -453,7 +455,7 @@ const enBase = {
       modalTitle: "Alternative payment methods",
       modalEyebrow: "Assisted by client services",
       modalDesc:
-        "Card payments, Apple Pay, Google Pay, and bank transfer are available through our client services team. A support representative will guide you through a secure payment and confirm it against your withdrawal request.",
+        "Card payments, Apple Pay, Google Pay, and bank transfer are available through our client services team. A support representative will guide you through a secure payment and confirm it for your request.",
       secureNote:
         "Payments are handled by a verified representative. Never share your transaction PIN or login password in chat.",
       humanNote:

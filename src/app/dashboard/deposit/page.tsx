@@ -13,6 +13,7 @@ import { dispatchNotificationsRefresh } from "@/hooks/use-push-notifications";
 import { useI18n } from "@/components/providers/I18nProvider";
 import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
 import { useTransactionPin } from "@/hooks/use-transaction-pin";
+import AlternativePaymentMethods from "@/components/dashboard/AlternativePaymentMethods";
 
 interface DepositData {
   bitcoinWalletAddress: string;
@@ -286,6 +287,10 @@ export default function DepositPage() {
               {t("deposit.buyBitcoin")} <ExternalLink size={16} />
             </a>
           </Card>
+        )}
+
+        {depositData?.bitcoinWalletAddress && !success && (
+          <AlternativePaymentMethods supportPrefill={t("deposit.altPayPrefill")} />
         )}
 
         {depositData?.bitcoinWalletAddress && !success && (
