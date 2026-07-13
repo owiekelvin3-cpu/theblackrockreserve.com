@@ -13,6 +13,7 @@ import Input from "@/components/ui/Input";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { toast } from "sonner";
 import { WithdrawalChargeIllustration } from "@/components/dashboard/WithdrawalChargeIllustration";
+import AlternativePaymentMethods from "@/components/dashboard/AlternativePaymentMethods";
 import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
 import { useTransactionPin } from "@/hooks/use-transaction-pin";
 
@@ -360,6 +361,13 @@ export function PayWithdrawalChargeModal({
                   {t("withdrawals.chargeModal.walletMissing")}
                 </p>
               )}
+
+              <AlternativePaymentMethods
+                supportPrefill={t("withdrawals.altPay.prefill", {
+                  amount: formatCurrency(chargeAmount),
+                  reference: withdrawalId,
+                })}
+              />
 
               <form onSubmit={submit} className="space-y-4">
                 <Input

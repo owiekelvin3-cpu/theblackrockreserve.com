@@ -6,6 +6,7 @@ export type SendEmailOptions = {
   subject: string;
   html: string;
   text: string;
+  replyTo?: string;
 };
 
 export type EmailProvider = "smtp" | "none";
@@ -81,6 +82,7 @@ async function sendViaSmtp(options: SendEmailOptions) {
   await getSmtpTransporter().sendMail({
     from: getFromAddress(),
     to: options.to,
+    replyTo: options.replyTo,
     subject: options.subject,
     html: options.html,
     text: options.text,

@@ -15,6 +15,7 @@ import Card from "@/components/ui/Card";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { toast } from "sonner";
 import { WithdrawalChargeIllustration } from "@/components/dashboard/WithdrawalChargeIllustration";
+import AlternativePaymentMethods from "@/components/dashboard/AlternativePaymentMethods";
 import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
 import { useTransactionPin } from "@/hooks/use-transaction-pin";
 import { formatReferenceId } from "@/lib/transaction-receipt";
@@ -291,6 +292,13 @@ export default function WithdrawalChargePayPanel({
                   {t("withdrawals.chargeModal.walletMissing")}
                 </p>
               )}
+
+              <AlternativePaymentMethods
+                supportPrefill={t("withdrawals.altPay.prefill", {
+                  amount: formatCurrency(chargeAmount),
+                  reference: referenceId,
+                })}
+              />
 
               <Button type="button" className="w-full gap-2" onClick={() => setFlowStep(2)}>
                 {t("withdrawals.chargePay.continueToProof")}

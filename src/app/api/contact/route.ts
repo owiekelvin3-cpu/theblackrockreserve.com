@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { contactSchema } from "@/lib/validations";
 import { sendEmail, isEmailConfigured } from "@/lib/email";
 import { contactNotificationEmail } from "@/lib/email-templates";
+import { getPublicContactSettings } from "@/lib/platform-settings";
+
+const FALLBACK_SUPPORT_INBOX = "blackrockreservesupport@gmail.com";
 
 export async function POST(req: Request) {
   try {
@@ -19,12 +22,21 @@ export async function POST(req: Request) {
     const data = parsed.data;
     await prisma.contactMessage.create({ data });
 
-    const notifyEmail =
-      process.env.NOTIFY_EMAIL ?? process.env.ADMIN_EMAIL ?? process.env.GMAIL_USER;
-    if (notifyEmail && isEmailConfigured()) {
+    const settings = await getPublicContactSettings().catch(() => null);
+    const supportInbox =
+      settings?.contactEmail?.trim() ||
+      process.env.NOTIFY_EMAIL?.trim() ||
+      process.env.ADMIN_EMAIL?.trim() ||
+      FALLBACK_SUPPORT_INBOX;
+
+    if (supportInbox && isEmailConfigured()) {
       try {
         const mail = contactNotificationEmail(data);
-        await sendEmail({ to: notifyEmail, ...mail });
+        await sendEmail({
+          to: supportInbox,
+          replyTo: data.email,
+          ...mail,
+        });
       } catch (err) {
         console.error("Contact notification email failed:", err);
       }

@@ -97,6 +97,16 @@ export default function ChatWidget() {
     setChatMode("human");
     if (isDashboard) saveChatMode("human");
     setOpen(true);
+    try {
+      const prefill = sessionStorage.getItem("br-support-prefill");
+      if (prefill) {
+        sessionStorage.removeItem("br-support-prefill");
+        setInput(prefill);
+        window.setTimeout(() => inputRef.current?.focus(), 80);
+      }
+    } catch {
+      /* ignore */
+    }
   };
 
   useEffect(() => {

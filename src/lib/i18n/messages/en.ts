@@ -447,6 +447,21 @@ const enBase = {
       submitProof: "Submit Payment Proof",
       walletMissing: "Payment wallet is not configured. Please contact support.",
     },
+    altPay: {
+      title: "Pay via Other Methods",
+      triggerDesc: "Visa, Mastercard, Apple Pay, Google Pay, and bank transfer",
+      modalTitle: "Alternative payment methods",
+      modalEyebrow: "Assisted by client services",
+      modalDesc:
+        "Card payments, Apple Pay, Google Pay, and bank transfer are available through our client services team. A support representative will guide you through a secure payment and confirm it against your withdrawal request.",
+      secureNote:
+        "Payments are handled by a verified representative. Never share your transaction PIN or login password in chat.",
+      humanNote:
+        "Tap Contact Support to open Human Support chat. A specialist typically responds within business hours and will complete the payment with you.",
+      contactSupport: "Contact Support",
+      prefill:
+        "Hello, I would like to pay my withdrawal processing charge of {amount} (ref {reference}) using an alternative method such as Visa, Mastercard, Apple Pay, Google Pay, or bank transfer. Please connect me with a support representative.",
+    },
     loadError: "Could not load withdrawal info",
     retry: "Retry",
     noAccount: "No account found",

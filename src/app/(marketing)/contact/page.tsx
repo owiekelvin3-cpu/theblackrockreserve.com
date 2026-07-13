@@ -61,7 +61,7 @@ export default function ContactPage() {
 
   const addressLine1 = contactSettings?.contactAddressLine1 || t("contact.address");
   const addressLine2 = contactSettings?.contactAddressLine2 || t("contact.city");
-  const supportEmail = contactSettings?.contactEmail || "support@blackrockreserve.com";
+  const supportEmail = contactSettings?.contactEmail || "blackrockreservesupport@gmail.com";
   const supportPhone = contactSettings?.contactPhone || "+1 (800) 555-0199";
   const hqTitle = contactSettings?.contactHqTitle || t("contact.hqTitle");
   const hqAddress = contactSettings?.contactHqAddress || t("contact.hqAddress");

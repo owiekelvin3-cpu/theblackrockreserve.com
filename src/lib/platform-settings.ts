@@ -66,7 +66,7 @@ const DEFAULTS: Record<SettingKey, string> = {
   [SETTING_KEYS.DEPOSIT_CONFIRMATION_MESSAGE]:
     "Your deposit proof has been submitted. We will verify your payment and credit your account shortly.",
   [SETTING_KEYS.JOINT_APPROVAL_THRESHOLD]: "5000",
-  [SETTING_KEYS.CONTACT_EMAIL]: "support@blackrockreserve.com",
+  [SETTING_KEYS.CONTACT_EMAIL]: "blackrockreservesupport@gmail.com",
   [SETTING_KEYS.CONTACT_PHONE]: "+1 (800) 555-0199",
   [SETTING_KEYS.CONTACT_ADDRESS_LINE1]: "1 Blackrock Plaza, Suite 400",
   [SETTING_KEYS.CONTACT_ADDRESS_LINE2]: "New York, NY 10004",

@@ -1807,6 +1807,116 @@
   border-color: rgba(15, 20, 25, 0.1);
 }
 
+.wc-alt-pay-trigger {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.875rem 1rem;
+  border-radius: 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.wc-alt-pay-trigger:hover {
+  border-color: rgba(255, 95, 5, 0.35);
+  background: rgba(255, 95, 5, 0.06);
+}
+
+.wc-alt-pay-trigger:active {
+  transform: scale(0.995);
+}
+
+[data-theme="light"] .wc-alt-pay-trigger {
+  background: #ffffff;
+  border-color: rgba(15, 20, 25, 0.1);
+  box-shadow: 0 1px 2px rgba(15, 20, 25, 0.04);
+}
+
+[data-theme="light"] .wc-alt-pay-trigger:hover {
+  border-color: rgba(255, 95, 5, 0.4);
+  background: #fff8f3;
+}
+
+.wc-alt-pay-trigger-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-primary, #f3f4f6);
+  letter-spacing: 0.01em;
+}
+
+[data-theme="light"] .wc-alt-pay-trigger-title {
+  color: #0f1419;
+}
+
+.wc-alt-pay-trigger-desc {
+  font-size: 0.6875rem;
+  color: var(--text-muted, #9ca3af);
+  margin-top: 0.15rem;
+  line-height: 1.4;
+}
+
+.wc-alt-pay-icons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.wc-alt-pay-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 1.75rem;
+  border-radius: 0.4rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e5e7eb;
+}
+
+[data-theme="light"] .wc-alt-pay-icon {
+  background: #f3f4f6;
+  border-color: rgba(15, 20, 25, 0.08);
+  color: #111827;
+}
+
+.wc-alt-pay-methods-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+@media (min-width: 400px) {
+  .wc-alt-pay-methods-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.wc-alt-pay-method-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--text-secondary, #d1d5db);
+}
+
+.wc-alt-pay-method-chip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  color: #e5e7eb;
+}
+
 .wc-progress-pill {
   display: inline-flex;
   align-items: center;

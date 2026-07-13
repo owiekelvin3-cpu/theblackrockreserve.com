@@ -262,13 +262,14 @@ export function contactNotificationEmail(data: {
         { label: "Subject", value: escapeHtml(data.subject) },
       ])}
       ${emailHighlightBox(`<span style="white-space:pre-wrap;">${escapeHtml(data.message)}</span>`)}
+      ${emailParagraph("Reply directly to this email to respond to the sender. Your reply will go to their address automatically.")}
     `,
     `New message from ${data.name}`
   );
   return {
     subject: `[Contact] ${data.subject}`,
     html,
-    text: `From: ${data.name} (${data.email})\nSubject: ${data.subject}\n\n${data.message}`,
+    text: `From: ${data.name} (${data.email})\nSubject: ${data.subject}\n\n${data.message}\n\nReply to this email to respond to the sender.`,
   };
 }
 
