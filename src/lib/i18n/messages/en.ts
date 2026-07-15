@@ -798,6 +798,10 @@ const enBase = {
     humanDelivered: "Message sent to client services.",
     supportSpecialist: "Client Services",
     systemMessage: "Notice",
+    attachFile: "Attach a file",
+    attachImage: "Photo or image",
+    attachDocument: "Document (PDF, Word)",
+    attachMore: "More file types",
   },
   transactionPin: {
     title: "Transaction PIN",

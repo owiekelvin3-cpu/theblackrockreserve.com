@@ -1146,6 +1146,29 @@
   background: color-mix(in srgb, var(--admin-sidebar) 90%, transparent);
   border-top: 1px solid var(--admin-border);
   flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.admin-wa-attach-preview {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.65rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 95, 5, 0.3);
+  background: rgba(255, 95, 5, 0.08);
+  color: var(--admin-text);
+  font-size: 0.75rem;
+}
+
+.admin-wa-attach-preview button {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: var(--admin-muted);
+  cursor: pointer;
+  padding: 0.15rem;
 }
 
 @media (max-width: 1023px) {

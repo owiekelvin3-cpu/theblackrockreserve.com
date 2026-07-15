@@ -1,4 +1,8 @@
 import { prisma } from "@/lib/prisma";
+import {
+  formatSupportAttachmentLabel,
+  type ValidatedSupportAttachment,
+} from "@/lib/support-attachment";
 
 export type SupportMessageDto = {
   id: string;
@@ -6,6 +10,12 @@ export type SupportMessageDto = {
   content: string;
   createdAt: string;
   adminName?: string;
+  attachment?: {
+    name: string;
+    mime: string;
+    dataUrl: string;
+    kind: "image" | "document" | "file";
+  } | null;
 };
 
 export type SupportConversationSummary = {
@@ -25,15 +35,43 @@ function mapMessage(m: {
   role: string;
   content: string;
   createdAt: Date;
+  attachmentName?: string | null;
+  attachmentMime?: string | null;
+  attachmentData?: string | null;
   admin?: { name: string } | null;
 }): SupportMessageDto {
+  const attachment =
+    m.attachmentName && m.attachmentMime && m.attachmentData
+      ? {
+          name: m.attachmentName,
+          mime: m.attachmentMime,
+          dataUrl: m.attachmentData,
+          kind: (m.attachmentMime.startsWith("image/")
+            ? "image"
+            : m.attachmentMime.includes("pdf") ||
+                m.attachmentMime.includes("word") ||
+                m.attachmentMime.includes("sheet") ||
+                m.attachmentMime.startsWith("text/")
+              ? "document"
+              : "file") as "image" | "document" | "file",
+        }
+      : null;
+
   return {
     id: m.id,
     role: m.role as SupportMessageDto["role"],
     content: m.content,
     createdAt: m.createdAt.toISOString(),
     adminName: m.admin?.name,
+    attachment,
   };
+}
+
+function previewContent(content: string, attachment?: ValidatedSupportAttachment | null) {
+  const trimmed = content.trim();
+  if (trimmed) return trimmed;
+  if (attachment) return formatSupportAttachmentLabel(attachment.name, attachment.mime);
+  return "";
 }
 
 export async function getUserSupportConversation(userId: string) {
@@ -64,9 +102,13 @@ export async function markSupportRepliesRead(userId: string) {
   });
 }
 
-export async function sendUserSupportMessage(userId: string, content: string) {
+export async function sendUserSupportMessage(
+  userId: string,
+  content: string,
+  attachment?: ValidatedSupportAttachment | null
+) {
   const trimmed = content.trim();
-  if (!trimmed) throw new Error("Message cannot be empty");
+  if (!trimmed && !attachment) throw new Error("Message cannot be empty");
 
   let conversation = await prisma.supportConversation.findUnique({
     where: { userId },
@@ -90,12 +132,17 @@ export async function sendUserSupportMessage(userId: string, content: string) {
     });
   }
 
+  const storedContent = previewContent(trimmed, attachment);
+
   await prisma.$transaction([
     prisma.supportMessage.create({
       data: {
         conversationId: conversation.id,
         role: "USER",
-        content: trimmed,
+        content: storedContent,
+        attachmentName: attachment?.name,
+        attachmentMime: attachment?.mime,
+        attachmentData: attachment?.dataUrl,
       },
     }),
     prisma.supportConversation.update({
@@ -123,23 +170,38 @@ export async function getAdminSupportConversations() {
           where: { role: { in: ["USER", "ADMIN"] } },
           orderBy: { createdAt: "desc" },
           take: 1,
-          select: { content: true, createdAt: true, role: true },
+          select: {
+            content: true,
+            createdAt: true,
+            role: true,
+            attachmentName: true,
+            attachmentMime: true,
+          },
         },
         _count: { select: { messages: true } },
       },
     });
 
-    return conversations.map((c): SupportConversationSummary => ({
-      id: c.id,
-      userId: c.user.id,
-      userName: c.user.name,
-      userEmail: c.user.email,
-      status: c.status,
-      adminUnread: c.adminUnread,
-      lastMessage: c.messages[0]?.content ?? "",
-      lastMessageAt: (c.messages[0]?.createdAt ?? c.updatedAt).toISOString(),
-      messageCount: c._count.messages,
-    }));
+    return conversations.map((c): SupportConversationSummary => {
+      const last = c.messages[0];
+      const lastMessage = last
+        ? last.content ||
+          (last.attachmentName
+            ? formatSupportAttachmentLabel(last.attachmentName, last.attachmentMime)
+            : "")
+        : "";
+      return {
+        id: c.id,
+        userId: c.user.id,
+        userName: c.user.name,
+        userEmail: c.user.email,
+        status: c.status,
+        adminUnread: c.adminUnread,
+        lastMessage,
+        lastMessageAt: (last?.createdAt ?? c.updatedAt).toISOString(),
+        messageCount: c._count.messages,
+      };
+    });
   } catch (error) {
     console.error("Support conversations unavailable:", error);
     return [];
@@ -184,10 +246,11 @@ export async function getAdminSupportConversation(id: string) {
 export async function sendAdminSupportReply(
   conversationId: string,
   adminId: string,
-  content: string
+  content: string,
+  attachment?: ValidatedSupportAttachment | null
 ) {
   const trimmed = content.trim();
-  if (!trimmed) throw new Error("Reply cannot be empty");
+  if (!trimmed && !attachment) throw new Error("Reply cannot be empty");
 
   const conversation = await prisma.supportConversation.findUnique({
     where: { id: conversationId },
@@ -197,11 +260,15 @@ export async function sendAdminSupportReply(
   if (!conversation) throw new Error("Conversation not found");
   if (conversation.status === "CLOSED") throw new Error("Conversation is closed");
 
+  const storedContent = previewContent(trimmed, attachment);
   const messageData = {
     conversationId,
     role: "ADMIN" as const,
-    content: trimmed,
+    content: storedContent,
     adminId,
+    attachmentName: attachment?.name,
+    attachmentMime: attachment?.mime,
+    attachmentData: attachment?.dataUrl,
   };
 
   try {
@@ -222,7 +289,10 @@ export async function sendAdminSupportReply(
         data: {
           conversationId,
           role: "ADMIN",
-          content: trimmed,
+          content: storedContent,
+          attachmentName: attachment?.name,
+          attachmentMime: attachment?.mime,
+          attachmentData: attachment?.dataUrl,
         },
       }),
       prisma.supportConversation.update({

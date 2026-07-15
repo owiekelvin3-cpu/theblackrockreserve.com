@@ -274,6 +274,9 @@ model SupportMessage {
   conversationId String
   role           String
   content        String   @db.Text
+  attachmentName String?
+  attachmentMime String?
+  attachmentData String?  @db.Text
   adminId        String?
   createdAt      DateTime @default(now())
 

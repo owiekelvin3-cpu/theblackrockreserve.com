@@ -8,10 +8,22 @@ import {
   getAdminSupportConversation,
   sendAdminSupportReply,
 } from "@/lib/support-chat";
+import { validateSupportAttachment } from "@/lib/support-attachment";
 
-const replySchema = z.object({
-  content: z.string().min(1, "Reply is required").max(4000),
-});
+const replySchema = z
+  .object({
+    content: z.string().max(4000).optional().default(""),
+    attachment: z
+      .object({
+        name: z.string().min(1).max(180),
+        mime: z.string().min(3).max(120),
+        dataUrl: z.string().min(32).max(8_000_000),
+      })
+      .optional(),
+  })
+  .refine((data) => Boolean(data.content?.trim()) || Boolean(data.attachment), {
+    message: "Reply or attachment is required",
+  });
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const session = await getAdminSession();
@@ -43,14 +55,27 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       );
     }
 
+    let attachment = null;
+    if (parsed.data.attachment) {
+      const validated = validateSupportAttachment(parsed.data.attachment);
+      if (!validated.ok) {
+        return NextResponse.json({ error: validated.error }, { status: 400 });
+      }
+      attachment = validated.attachment;
+    }
+
     const conversation = await sendAdminSupportReply(
       params.id,
       session.user.id,
-      parsed.data.content
+      parsed.data.content?.trim() ?? "",
+      attachment
     );
 
     if (!conversation) {
-      return NextResponse.json({ error: "Reply saved but conversation could not be reloaded" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Reply saved but conversation could not be reloaded" },
+        { status: 500 }
+      );
     }
 
     if (conversation.user) {
@@ -79,7 +104,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       await logAdminAction(
         session.user.id,
         "REPLY_SUPPORT_CHAT",
-        { conversationId: params.id },
+        { conversationId: params.id, hasAttachment: Boolean(attachment) },
         conversation.user?.id,
         getClientIp(req)
       );

@@ -3,17 +3,41 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { MessageCircle, X, Send, Bot, User, Minimize2, Headphones, Info } from "lucide-react";
+import {
+  MessageCircle,
+  X,
+  Send,
+  Bot,
+  User,
+  Minimize2,
+  Headphones,
+  Info,
+  Paperclip,
+  ImageIcon,
+  FileText,
+  Files,
+} from "lucide-react";
 import type { ChatSuggestion } from "@/lib/chatbot";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { useChat } from "@/components/providers/ChatProvider";
 import { getLocalizedWelcome } from "@/lib/i18n/chat-i18n";
+import SupportChatAttachment, {
+  type ChatAttachmentView,
+} from "@/components/chat/SupportChatAttachment";
+import {
+  readFileAsSupportAttachment,
+  supportAttachmentAccept,
+  type SupportAttachmentKind,
+  type ValidatedSupportAttachment,
+} from "@/lib/support-attachment";
+import { toast } from "sonner";
 
 type ChatMessage = {
   id: string;
   role: "user" | "bot" | "admin" | "system";
   content: string;
+  attachment?: ChatAttachmentView | null;
 };
 
 type ChatMode = "bot" | "human";
@@ -70,8 +94,14 @@ export default function ChatWidget() {
   const [typing, setTyping] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [isFrozen, setIsFrozen] = useState(false);
+  const [attachMenuOpen, setAttachMenuOpen] = useState(false);
+  const [pendingAttachment, setPendingAttachment] = useState<ValidatedSupportAttachment | null>(
+    null
+  );
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const attachKindRef = useRef<SupportAttachmentKind>("file");
 
   const isAdmin = pathname.startsWith("/admin");
   const hideLauncher = isAdmin || isDashboard;
@@ -161,7 +191,12 @@ export default function ChatWidget() {
   }, [messages, initialized, chatMode]);
 
   const mapHumanMessages = useCallback(
-    (items: { id: string; role: string; content: string }[]): ChatMessage[] =>
+    (items: {
+      id: string;
+      role: string;
+      content: string;
+      attachment?: ChatAttachmentView | null;
+    }[]): ChatMessage[] =>
       items.map((m) => ({
         id: m.id,
         content: m.content,
@@ -173,6 +208,7 @@ export default function ChatWidget() {
               : m.role === "SYSTEM"
                 ? "system"
                 : "bot",
+        attachment: m.attachment ?? null,
       })),
     []
   );
@@ -215,15 +251,29 @@ export default function ChatWidget() {
   );
 
   const sendHumanMessage = useCallback(
-    async (text: string) => {
+    async (text: string, attachment?: ValidatedSupportAttachment | null) => {
       const trimmed = text.trim();
-      if (!trimmed || humanSending) return;
+      if ((!trimmed && !attachment) || humanSending) return;
 
       setHumanSending(true);
       setInput("");
+      setPendingAttachment(null);
+      setAttachMenuOpen(false);
       setHumanMessages((prev) => [
         ...prev,
-        { id: `user-${Date.now()}`, role: "user", content: trimmed },
+        {
+          id: `user-${Date.now()}`,
+          role: "user",
+          content: trimmed || (attachment ? attachment.name : ""),
+          attachment: attachment
+            ? {
+                name: attachment.name,
+                mime: attachment.mime,
+                dataUrl: attachment.dataUrl,
+                kind: attachment.kind,
+              }
+            : null,
+        },
       ]);
 
       try {
@@ -231,7 +281,16 @@ export default function ChatWidget() {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content: trimmed }),
+          body: JSON.stringify({
+            content: trimmed,
+            attachment: attachment
+              ? {
+                  name: attachment.name,
+                  mime: attachment.mime,
+                  dataUrl: attachment.dataUrl,
+                }
+              : undefined,
+          }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed");
@@ -239,10 +298,14 @@ export default function ChatWidget() {
         if (data.conversation?.messages) {
           setHumanMessages(mapHumanMessages(data.conversation.messages));
         }
-      } catch {
+      } catch (err) {
         setHumanMessages((prev) => [
           ...prev,
-          { id: `err-${Date.now()}`, role: "system", content: t("chat.humanSendError") },
+          {
+            id: `err-${Date.now()}`,
+            role: "system",
+            content: err instanceof Error ? err.message : t("chat.humanSendError"),
+          },
         ]);
       } finally {
         setHumanSending(false);
@@ -250,6 +313,26 @@ export default function ChatWidget() {
     },
     [humanSending, mapHumanMessages, t]
   );
+
+  const openAttachPicker = (kind: SupportAttachmentKind) => {
+    attachKindRef.current = kind;
+    setAttachMenuOpen(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.accept = supportAttachmentAccept(kind);
+      fileInputRef.current.value = "";
+      fileInputRef.current.click();
+    }
+  };
+
+  const onAttachmentSelected = async (file: File | null) => {
+    if (!file) return;
+    const result = await readFileAsSupportAttachment(file);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+    setPendingAttachment(result.attachment);
+  };
 
   useEffect(() => {
     if (open) {
@@ -310,12 +393,15 @@ export default function ChatWidget() {
   const sendMessage = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
-      if (!trimmed || typing || humanSending) return;
+      if (typing || humanSending) return;
 
       if (isDashboard && chatMode === "human") {
-        await sendHumanMessage(trimmed);
+        if (!trimmed && !pendingAttachment) return;
+        await sendHumanMessage(trimmed, pendingAttachment);
         return;
       }
+
+      if (!trimmed) return;
 
       const displayText =
         trimmed === "contact_page" ? "I'd like to contact support" : trimmed;
@@ -344,7 +430,17 @@ export default function ChatWidget() {
 
       await addBotReply(trimmed, historySnapshot);
     },
-    [addBotReply, typing, humanSending, router, t, isDashboard, chatMode, sendHumanMessage]
+    [
+      addBotReply,
+      typing,
+      humanSending,
+      router,
+      t,
+      isDashboard,
+      chatMode,
+      sendHumanMessage,
+      pendingAttachment,
+    ]
   );
 
   if (isAdmin) return null;
@@ -552,7 +648,16 @@ export default function ChatWidget() {
                         {t("chat.supportSpecialist")}
                       </p>
                     )}
-                    {msg.content}
+                    {msg.content &&
+                      !(msg.attachment && msg.content === msg.attachment.name) && (
+                        <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                      )}
+                    {msg.attachment && (
+                      <SupportChatAttachment
+                        attachment={msg.attachment}
+                        invert={msg.role === "user"}
+                      />
+                    )}
                   </div>
                 </div>
               ))}
@@ -599,7 +704,7 @@ export default function ChatWidget() {
             {/* Input */}
             <form
               className={cn(
-                "border-t border-border flex gap-2 shrink-0 safe-area-pb",
+                "border-t border-border flex flex-col gap-2 shrink-0 safe-area-pb",
                 isDashboard ? "p-4 sm:p-6 max-w-3xl mx-auto w-full" : "p-3"
               )}
               onSubmit={(e) => {
@@ -607,26 +712,104 @@ export default function ChatWidget() {
                 sendMessage(input);
               }}
             >
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={
-                  isHumanMode ? t("chat.humanPlaceholder") : t("chat.placeholder")
-                }
-                className="flex-1 rounded-xl border border-border bg-surface-overlay px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent-brand/50 focus:outline-none focus:ring-1 focus:ring-accent-brand/30"
-                maxLength={isHumanMode ? 2000 : 1000}
-                disabled={inputDisabled}
-              />
-              <button
-                type="submit"
-                disabled={!input.trim() || inputDisabled}
-                className="h-10 w-10 rounded-xl brand-gradient-bg flex items-center justify-center text-white disabled:opacity-40 transition-opacity shadow-brand"
-                aria-label={t("chat.sendMessage")}
-              >
-                <Send size={16} />
-              </button>
+              {isHumanMode && pendingAttachment && (
+                <div className="flex items-center gap-2 rounded-xl border border-accent-brand/25 bg-accent-brand/10 px-3 py-2">
+                  <Paperclip size={14} className="text-accent-brand shrink-0" />
+                  <span className="text-xs text-text-primary truncate flex-1">
+                    {pendingAttachment.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPendingAttachment(null)}
+                    className="p-1 rounded-md text-text-muted hover:text-text-primary"
+                    aria-label={t("common.close")}
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              )}
+
+              <div className="flex gap-2 relative">
+                {isHumanMode && (
+                  <>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      className="hidden"
+                      onChange={(e) => onAttachmentSelected(e.target.files?.[0] ?? null)}
+                    />
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setAttachMenuOpen((v) => !v)}
+                        disabled={inputDisabled}
+                        className="h-10 w-10 rounded-xl border border-border bg-surface-overlay flex items-center justify-center text-text-secondary hover:text-accent-brand hover:border-accent-brand/40 disabled:opacity-40 transition-colors"
+                        aria-label={t("chat.attachFile")}
+                      >
+                        <Paperclip size={16} />
+                      </button>
+                      <AnimatePresence>
+                        {attachMenuOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                            className="absolute bottom-12 left-0 z-20 w-48 rounded-xl border border-border bg-bg-secondary shadow-xl overflow-hidden"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => openAttachPicker("image")}
+                              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-text-primary hover:bg-white/5"
+                            >
+                              <ImageIcon size={15} className="text-accent-brand" />
+                              {t("chat.attachImage")}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openAttachPicker("document")}
+                              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-text-primary hover:bg-white/5"
+                            >
+                              <FileText size={15} className="text-accent-brand" />
+                              {t("chat.attachDocument")}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openAttachPicker("file")}
+                              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-text-primary hover:bg-white/5"
+                            >
+                              <Files size={15} className="text-accent-brand" />
+                              {t("chat.attachMore")}
+                            </button>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </>
+                )}
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={
+                    isHumanMode ? t("chat.humanPlaceholder") : t("chat.placeholder")
+                  }
+                  className="flex-1 rounded-xl border border-border bg-surface-overlay px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent-brand/50 focus:outline-none focus:ring-1 focus:ring-accent-brand/30"
+                  maxLength={isHumanMode ? 2000 : 1000}
+                  disabled={inputDisabled}
+                />
+                <button
+                  type="submit"
+                  disabled={
+                    inputDisabled ||
+                    (!input.trim() && !(isHumanMode && pendingAttachment))
+                  }
+                  className="h-10 w-10 rounded-xl brand-gradient-bg flex items-center justify-center text-white disabled:opacity-40 transition-opacity shadow-brand"
+                  aria-label={t("chat.sendMessage")}
+                >
+                  <Send size={16} />
+                </button>
+              </div>
             </form>
           </motion.div>
         )}

@@ -4,16 +4,26 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   CheckCheck,
+  FileText,
+  ImageIcon,
   MessageSquare,
+  Paperclip,
   RefreshCw,
   Search,
   Send,
   Trash2,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import Skeleton from "@/components/ui/Skeleton";
 import AdminFetchState from "@/components/admin/AdminFetchState";
 import { useAdminFetch } from "@/hooks/use-admin-fetch";
+import SupportChatAttachment from "@/components/chat/SupportChatAttachment";
+import {
+  readFileAsSupportAttachment,
+  supportAttachmentAccept,
+  type ValidatedSupportAttachment,
+} from "@/lib/support-attachment";
 
 interface ContactReply {
   id: string;
@@ -52,6 +62,12 @@ interface ThreadMessage {
   content: string;
   createdAt: string;
   adminName?: string;
+  attachment?: {
+    name: string;
+    mime: string;
+    dataUrl: string;
+    kind?: "image" | "document" | "file";
+  } | null;
 }
 
 interface ConversationDetail {
@@ -148,7 +164,11 @@ export default function AdminMessagesPage() {
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [pendingAttachment, setPendingAttachment] = useState<ValidatedSupportAttachment | null>(
+    null
+  );
   const threadRef = useRef<HTMLDivElement>(null);
+  const chatFileInputRef = useRef<HTMLInputElement>(null);
   const partialErrorShown = useRef(false);
 
   const contacts = useMemo(() => data?.messages ?? [], [data?.messages]);
@@ -254,6 +274,7 @@ export default function AdminMessagesPage() {
   const selectItem = (item: InboxItem) => {
     setSelection({ kind: item.kind, id: item.id });
     setReply("");
+    setPendingAttachment(null);
     setMobileShowChat(true);
   };
 
@@ -261,6 +282,7 @@ export default function AdminMessagesPage() {
     setMobileShowChat(false);
     setSelection(null);
     setReply("");
+    setPendingAttachment(null);
   };
 
   const loadThread = useCallback(async (id: string, silent = false) => {
@@ -316,7 +338,9 @@ export default function AdminMessagesPage() {
   }, [thread?.messages, threadLoading, selectedContact?.replies?.length, selectedContact?.id]);
 
   const sendReply = async () => {
-    if (!selection || !reply.trim() || sending) return;
+    if (!selection || sending) return;
+    if (selection.kind === "chat" && !reply.trim() && !pendingAttachment) return;
+    if (selection.kind === "contact" && !reply.trim()) return;
     setSending(true);
     try {
       if (selection.kind === "chat") {
@@ -324,12 +348,22 @@ export default function AdminMessagesPage() {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content: reply.trim() }),
+          body: JSON.stringify({
+            content: reply.trim(),
+            attachment: pendingAttachment
+              ? {
+                  name: pendingAttachment.name,
+                  mime: pendingAttachment.mime,
+                  dataUrl: pendingAttachment.dataUrl,
+                }
+              : undefined,
+          }),
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || "Failed to send reply");
         setThread(json.conversation);
         setReply("");
+        setPendingAttachment(null);
         toast.success("Reply sent to client");
         refresh();
       } else {
@@ -350,6 +384,16 @@ export default function AdminMessagesPage() {
     } finally {
       setSending(false);
     }
+  };
+
+  const onAdminAttachSelected = async (file: File | null) => {
+    if (!file) return;
+    const result = await readFileAsSupportAttachment(file);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+    setPendingAttachment(result.attachment);
   };
 
   const deleteContact = async (id: string) => {
@@ -703,7 +747,16 @@ export default function AdminMessagesPage() {
                                     {m.adminName ?? "Support"} · Client Services
                                   </p>
                                 )}
-                                <p className="admin-wa-bubble-text">{m.content}</p>
+                                {m.content &&
+                                  !(m.attachment && m.content === m.attachment.name) && (
+                                    <p className="admin-wa-bubble-text">{m.content}</p>
+                                  )}
+                                {m.attachment && (
+                                  <SupportChatAttachment
+                                    attachment={m.attachment}
+                                    invert={m.role === "ADMIN"}
+                                  />
+                                )}
                                 {!isSystem && (
                                   <div className="admin-wa-bubble-meta">
                                     <span>{formatBubbleTime(m.createdAt)}</span>
@@ -727,6 +780,40 @@ export default function AdminMessagesPage() {
                       sendReply();
                     }}
                   >
+                    {pendingAttachment && (
+                      <div className="admin-wa-attach-preview">
+                        {pendingAttachment.kind === "image" ? (
+                          <ImageIcon size={14} />
+                        ) : (
+                          <FileText size={14} />
+                        )}
+                        <span className="truncate">{pendingAttachment.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => setPendingAttachment(null)}
+                          aria-label="Remove attachment"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    )}
+                    <input
+                      ref={chatFileInputRef}
+                      type="file"
+                      className="hidden"
+                      accept={supportAttachmentAccept("file")}
+                      onChange={(e) => onAdminAttachSelected(e.target.files?.[0] ?? null)}
+                    />
+                    <button
+                      type="button"
+                      className="admin-wa-icon-btn"
+                      disabled={sending}
+                      onClick={() => chatFileInputRef.current?.click()}
+                      aria-label="Attach file"
+                      title="Attach image or document"
+                    >
+                      <Paperclip size={18} />
+                    </button>
                     <div className="admin-wa-compose-input-wrap">
                       <textarea
                         value={reply}
@@ -745,7 +832,7 @@ export default function AdminMessagesPage() {
                     </div>
                     <button
                       type="submit"
-                      disabled={!reply.trim() || sending}
+                      disabled={(!reply.trim() && !pendingAttachment) || sending}
                       className="admin-wa-send-btn"
                       aria-label={sending ? "Sending" : "Send message"}
                     >
