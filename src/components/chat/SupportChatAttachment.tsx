@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Download, FileText, ImageIcon, Paperclip, X, ZoomIn } from "lucide-react";
+import { Download, FileText, ImageIcon, Paperclip, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -43,7 +43,8 @@ function downloadAttachment(attachment: ChatAttachmentView) {
   }
 }
 
-function ImageLightbox({
+/** Full-screen in-chat image viewer — WhatsApp / iMessage style. */
+function InChatImageViewer({
   attachment,
   onClose,
 }: {
@@ -51,74 +52,107 @@ function ImageLightbox({
   onClose: () => void;
 }) {
   const [mounted, setMounted] = useState(false);
+  const dragY = useRef(0);
+  const startY = useRef<number | null>(null);
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
+    const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
+      document.body.style.overflow = prevOverflow;
     };
   }, [onClose]);
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    startY.current = e.touches[0]?.clientY ?? null;
+    dragY.current = 0;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (startY.current == null) return;
+    dragY.current = (e.touches[0]?.clientY ?? startY.current) - startY.current;
+  };
+
+  const onTouchEnd = () => {
+    if (dragY.current > 90) onClose();
+    startY.current = null;
+    dragY.current = 0;
+  };
 
   if (!mounted) return null;
 
   return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-6" role="presentation">
-        <motion.button
+      <motion.div
+        key="chat-image-viewer"
+        role="dialog"
+        aria-modal="true"
+        aria-label={attachment.name}
+        className="fixed inset-0 z-[100000] flex flex-col bg-black"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.18 }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        {/* Top bar */}
+        <div className="absolute inset-x-0 top-0 z-10 flex items-center gap-2 bg-gradient-to-b from-black/80 to-transparent px-3 pb-8 pt-[max(0.75rem,env(safe-area-inset-top))]">
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
+            aria-label="Close"
+          >
+            <X size={20} />
+          </button>
+          <p className="min-w-0 flex-1 truncate text-sm font-medium text-white/95">
+            {attachment.name}
+          </p>
+          <button
+            type="button"
+            onClick={() => downloadAttachment(attachment)}
+            className="inline-flex h-10 items-center gap-1.5 rounded-full bg-white/10 px-3.5 text-xs font-semibold text-white backdrop-blur-sm hover:bg-white/20"
+            aria-label="Download image"
+          >
+            <Download size={15} />
+            Save
+          </button>
+        </div>
+
+        {/* Image stage — tap empty area to close */}
+        <button
           type="button"
-          aria-label="Close image"
-          className="absolute inset-0 bg-black/85 backdrop-blur-sm"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          className="flex min-h-0 flex-1 cursor-default items-center justify-center px-2 pb-[max(1rem,env(safe-area-inset-bottom))] pt-16"
           onClick={onClose}
-        />
-        <motion.div
-          role="dialog"
-          aria-modal="true"
-          aria-label={attachment.name}
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.96 }}
-          className="relative z-[1] flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#111] shadow-2xl"
+          aria-label="Close image"
         >
-          <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
-            <ImageIcon size={16} className="text-accent-brand shrink-0" />
-            <p className="min-w-0 flex-1 truncate text-sm font-medium text-white">{attachment.name}</p>
-            <button
-              type="button"
-              onClick={() => downloadAttachment(attachment)}
-              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-white/80 hover:bg-white/10 hover:text-white"
-            >
-              <Download size={14} />
-              Download
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg p-2 text-white/70 hover:bg-white/10 hover:text-white"
-              aria-label="Close"
-            >
-              <X size={18} />
-            </button>
-          </div>
-          <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-black/40 p-3 sm:p-5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={attachment.dataUrl}
-              alt={attachment.name}
-              className="max-h-[78vh] w-auto max-w-full object-contain"
-            />
-          </div>
-        </motion.div>
-      </div>
+          <motion.img
+            src={attachment.dataUrl}
+            alt={attachment.name}
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            className="max-h-full max-w-full select-none object-contain"
+            draggable={false}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </button>
+
+        <p className="pointer-events-none absolute inset-x-0 bottom-[max(0.75rem,env(safe-area-inset-bottom))] text-center text-[11px] text-white/45">
+          Swipe down or tap outside to close
+        </p>
+      </motion.div>
     </AnimatePresence>,
     document.body
   );
@@ -131,8 +165,10 @@ export default function SupportChatAttachment({
   attachment: ChatAttachmentView;
   invert?: boolean;
 }) {
-  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
   const [broken, setBroken] = useState(false);
+  const closeViewer = useCallback(() => setViewerOpen(false), []);
+
   const isImage =
     (attachment.kind === "image" || attachment.mime.startsWith("image/")) &&
     !broken &&
@@ -143,29 +179,20 @@ export default function SupportChatAttachment({
       <>
         <button
           type="button"
-          onClick={() => setLightboxOpen(true)}
-          className="group mt-2 block w-full overflow-hidden rounded-xl border border-white/15 text-left focus:outline-none focus:ring-2 focus:ring-accent-brand/40"
+          onClick={() => setViewerOpen(true)}
+          className="group mt-2 block w-full overflow-hidden rounded-xl border border-white/15 bg-black/25 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-brand/50"
+          aria-label={`Open ${attachment.name}`}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={attachment.dataUrl}
             alt={attachment.name}
-            className="mx-auto max-h-72 w-full bg-black/20 object-contain"
+            className="mx-auto max-h-64 w-full object-cover sm:max-h-72 sm:object-contain"
             onError={() => setBroken(true)}
           />
-          <span
-            className={cn(
-              "flex items-center gap-1.5 px-2.5 py-1.5 text-[11px]",
-              invert ? "bg-black/20 text-white/90" : "bg-black/30 text-white/90"
-            )}
-          >
-            <ZoomIn size={12} />
-            <span className="truncate flex-1">{attachment.name}</span>
-            <span className="opacity-80">View</span>
-          </span>
         </button>
-        {lightboxOpen && (
-          <ImageLightbox attachment={attachment} onClose={() => setLightboxOpen(false)} />
+        {viewerOpen && (
+          <InChatImageViewer attachment={attachment} onClose={closeViewer} />
         )}
       </>
     );
@@ -184,7 +211,7 @@ export default function SupportChatAttachment({
     >
       <span
         className={cn(
-          "h-9 w-9 rounded-lg flex items-center justify-center shrink-0",
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
           invert ? "bg-white/15" : "bg-accent-brand/15"
         )}
       >
@@ -197,11 +224,14 @@ export default function SupportChatAttachment({
         )}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-xs font-medium truncate">{attachment.name}</span>
-        <span className={cn("block text-[10px] mt-0.5", invert ? "text-white/70" : "text-text-muted")}>
-          {attachment.mime.startsWith("image/")
-            ? "Tap to download image"
-            : "Tap to download"}
+        <span className="block truncate text-xs font-medium">{attachment.name}</span>
+        <span
+          className={cn(
+            "mt-0.5 block text-[10px]",
+            invert ? "text-white/70" : "text-text-muted"
+          )}
+        >
+          Tap to download
         </span>
       </span>
       <Download size={14} className={invert ? "text-white/80" : "text-text-muted"} />
