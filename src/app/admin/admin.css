@@ -1090,6 +1090,13 @@
   line-height: 1.45;
   position: relative;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  min-width: 0;
+}
+
+.admin-wa-bubble:has(img),
+.admin-wa-bubble:has(button[class*="group"]) {
+  max-width: min(92%, 28rem);
+  width: min(92%, 28rem);
 }
 
 .admin-wa-bubble-in {

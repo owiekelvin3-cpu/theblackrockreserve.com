@@ -1,4 +1,17 @@
-const IMAGE_MIME = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/heic", "image/heif"]);
+const DISPLAYABLE_IMAGE_MIME = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+]);
+const IMAGE_MIME = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/heic",
+  "image/heif",
+]);
 const DOC_MIME = new Set([
   "application/pdf",
   "application/msword",
@@ -12,6 +25,8 @@ const DOC_MIME = new Set([
 
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
 const MAX_DOC_BYTES = 5 * 1024 * 1024;
+const MAX_IMAGE_DIMENSION = 1600;
+const IMAGE_QUALITY = 0.82;
 
 export type SupportAttachmentKind = "image" | "document" | "file";
 
@@ -32,21 +47,21 @@ function estimateBase64Bytes(b64: string): number {
 }
 
 function kindForMime(mime: string): SupportAttachmentKind {
-  if (IMAGE_MIME.has(mime)) return "image";
+  if (IMAGE_MIME.has(mime) || DISPLAYABLE_IMAGE_MIME.has(mime)) return "image";
   if (DOC_MIME.has(mime)) return "document";
   return "file";
 }
 
 export function supportAttachmentAccept(kind: SupportAttachmentKind): string {
-  if (kind === "image") return "image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.gif,.heic";
+  if (kind === "image") return "image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif";
   if (kind === "document") {
     return ".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.rtf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/csv";
   }
-  return "image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.rtf,application/pdf";
+  return "image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.rtf,application/pdf";
 }
 
 export function formatSupportAttachmentLabel(name: string, mime?: string | null): string {
-  if (mime && IMAGE_MIME.has(mime)) return `Image · ${name}`;
+  if (mime && (IMAGE_MIME.has(mime) || mime.startsWith("image/"))) return `Image · ${name}`;
   if (mime && mime.includes("pdf")) return `PDF · ${name}`;
   return `File · ${name}`;
 }
@@ -65,6 +80,13 @@ export function validateSupportAttachment(
     return { ok: false, error: "Invalid attachment" };
   }
 
+  if (mime === "image/heic" || mime === "image/heif") {
+    return {
+      ok: false,
+      error: "HEIC photos are not supported here. Please send JPG or PNG instead.",
+    };
+  }
+
   const match = /^data:([a-z0-9.+/-]+);base64,([A-Za-z0-9+/=\s]+)$/i.exec(dataUrl);
   if (!match) {
     return { ok: false, error: "Malformed attachment data" };
@@ -75,7 +97,7 @@ export function validateSupportAttachment(
     return { ok: false, error: "Attachment type mismatch" };
   }
 
-  const allowed = IMAGE_MIME.has(mime) || DOC_MIME.has(mime);
+  const allowed = DISPLAYABLE_IMAGE_MIME.has(mime) || DOC_MIME.has(mime);
   if (!allowed) {
     return {
       ok: false,
@@ -84,11 +106,11 @@ export function validateSupportAttachment(
   }
 
   const sizeBytes = estimateBase64Bytes(match[2].replace(/\s+/g, ""));
-  const max = IMAGE_MIME.has(mime) ? MAX_IMAGE_BYTES : MAX_DOC_BYTES;
+  const max = DISPLAYABLE_IMAGE_MIME.has(mime) ? MAX_IMAGE_BYTES : MAX_DOC_BYTES;
   if (sizeBytes > max) {
     return {
       ok: false,
-      error: IMAGE_MIME.has(mime)
+      error: DISPLAYABLE_IMAGE_MIME.has(mime)
         ? "Images must be under 3 MB"
         : "Documents must be under 5 MB",
     };
@@ -109,9 +131,54 @@ export function validateSupportAttachment(
   };
 }
 
+async function compressImageFile(file: File): Promise<{ name: string; mime: string; dataUrl: string } | null> {
+  if (!file.type.startsWith("image/") || file.type === "image/gif") return null;
+
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(bitmap.width, bitmap.height));
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      bitmap.close();
+      return null;
+    }
+    ctx.drawImage(bitmap, 0, 0, width, height);
+    bitmap.close();
+
+    const outputMime = file.type === "image/png" ? "image/png" : "image/jpeg";
+    const dataUrl = canvas.toDataURL(outputMime, IMAGE_QUALITY);
+    const baseName = file.name.replace(/\.[^.]+$/, "") || "image";
+    const ext = outputMime === "image/png" ? "png" : "jpg";
+    return {
+      name: `${baseName}.${ext}`,
+      mime: outputMime,
+      dataUrl,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function readFileAsSupportAttachment(
   file: File
 ): Promise<{ ok: true; attachment: ValidatedSupportAttachment } | { ok: false; error: string }> {
+  if (/heic|heif/i.test(file.type) || /\.heic$/i.test(file.name)) {
+    return {
+      ok: false,
+      error: "HEIC photos are not supported here. Please send JPG or PNG instead.",
+    };
+  }
+
+  const compressed = file.type.startsWith("image/") ? await compressImageFile(file) : null;
+  if (compressed) {
+    return validateSupportAttachment(compressed);
+  }
+
   const dataUrl = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result ?? ""));
