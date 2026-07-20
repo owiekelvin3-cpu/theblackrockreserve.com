@@ -305,7 +305,7 @@ const enBase = {
       taxRate: "tax rate",
       taxDue: "Tax due",
       feeNote: "Required before profit is credited to your main balance",
-      payFee: "Pay fee",
+      payFee: "Pay from an external account",
       payFromBalanceTitle: "Pay from main balance",
       payFromBalanceDesc:
         "You have {available} available. Deduct {tax} from your main balance and release your profit instantly.",
