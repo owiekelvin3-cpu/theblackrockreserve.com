@@ -402,6 +402,7 @@ export const withdrawalChargePaymentSubmitSchema = z.object({
       message: "Transaction reference must be at least 10 characters when provided",
     }),
   proofNote: z.string().optional(),
+  proofImage: z.string().min(1, "Payment screenshot is required"),
   paymentMethod: z.string().min(1).default("BITCOIN"),
   transactionPin: transactionPinSchema,
 });

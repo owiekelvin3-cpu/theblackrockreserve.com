@@ -32,6 +32,7 @@ interface WithdrawalRow {
   chargePaymentId: string | null;
   chargePaymentStatus: string | null;
   chargePaymentTxHash: string | null;
+  chargePaymentProofImage: string | null;
   destination: string;
   destinationExtra: string | null;
   note: string | null;
@@ -105,6 +106,19 @@ function WithdrawalSummary({ withdrawal }: { withdrawal: WithdrawalRow }) {
               <span className="block text-xs text-[var(--admin-muted)]">{withdrawal.chargePaymentStatus}</span>
             )}
           </span>
+        </div>
+      )}
+      {withdrawal.chargePaymentProofImage && (
+        <div className="flex justify-between gap-3 items-center">
+          <span className="text-[var(--admin-muted)]">Charge screenshot</span>
+          <a
+            href={withdrawal.chargePaymentProofImage}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="admin-link text-xs"
+          >
+            View screenshot
+          </a>
         </div>
       )}
       {withdrawal.chargePaymentTxHash && (

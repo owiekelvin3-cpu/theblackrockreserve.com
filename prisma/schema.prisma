@@ -641,6 +641,7 @@ model WithdrawalChargePayment {
   status              WithdrawalChargePaymentStatus @default(UNPAID)
   txHash              String?
   proofNote           String?
+  proofImage          String?                       @db.Text
   reviewedBy          String?
   reviewNote          String?
   paidAt              DateTime?

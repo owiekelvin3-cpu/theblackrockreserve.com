@@ -444,6 +444,11 @@ const enBase = {
       txHashLabel: "Transaction reference (optional)",
       txHashPlaceholder: "Paste your transaction ID or hash",
       txHashTooShort: "Transaction reference must be at least 10 characters when provided",
+      proofImageLabel: "Payment screenshot",
+      proofImageHint: "Upload a clear screenshot of your payment confirmation (JPG, PNG, WEBP, or GIF, max 3 MB)",
+      proofImageRequired: "Please upload a payment screenshot",
+      proofImageTooLarge: "Image must be under 3 MB",
+      proofImageUploaded: "Screenshot ready to submit",
       noteLabel: "Payment note (optional)",
       notePlaceholder: "Additional payment details for our team",
       submitProof: "Submit Payment Proof",
@@ -553,7 +558,8 @@ const enBase = {
       subtitle:
         "To securely process your {amount} withdrawal request, the network requires a temporary {percent} liquidity verification deposit from the receiving account. These funds are held securely in escrow for just 60 seconds while the system verifies the destination ledger. Once the check is complete, the entire {percent} deposit is immediately released and credited straight back to your account balance.",
       step2Title: "Submit proof of payment",
-      step2Subtitle: "Enter your transaction reference so our team can verify your liquidity deposit.",
+      step2Subtitle:
+        "Upload a payment screenshot and enter your transaction reference so our team can verify your liquidity deposit.",
       continueToProof: "I've Sent Payment — Continue",
       backToPayment: "Back to payment details",
       back: "Back to withdrawals",

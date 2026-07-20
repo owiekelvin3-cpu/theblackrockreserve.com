@@ -6,7 +6,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Copy, Check, X, Shield, Lock, Headphones,
-  Info, ArrowRight, FileCheck, Wallet,
+  Info, ArrowRight, FileCheck, Wallet, Upload, ImageIcon,
 } from "lucide-react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -189,6 +189,8 @@ export function PayWithdrawalChargeModal({
   const { t, formatCurrency } = useI18n();
   const [txHash, setTxHash] = useState("");
   const [proofNote, setProofNote] = useState("");
+  const [proofImage, setProofImage] = useState<string | null>(null);
+  const [proofFileName, setProofFileName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
   const { open: pinOpen, loading: pinLoading, error: pinError, requestPin, closePin, confirmPin } = useTransactionPin();
@@ -201,8 +203,34 @@ export function PayWithdrawalChargeModal({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleProofImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) {
+      toast.error(t("withdrawals.chargeModal.proofImageTooLarge"));
+      e.target.value = "";
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setProofImage(reader.result as string);
+      setProofFileName(file.name);
+      toast.success(t("withdrawals.chargeModal.proofImageUploaded"));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearProofImage = () => {
+    setProofImage(null);
+    setProofFileName("");
+  };
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!proofImage) {
+      toast.error(t("withdrawals.chargeModal.proofImageRequired"));
+      return;
+    }
     requestPin(async (transactionPin) => {
       setSubmitting(true);
       try {
@@ -213,6 +241,7 @@ export function PayWithdrawalChargeModal({
           body: JSON.stringify({
             txHash,
             proofNote: proofNote || undefined,
+            proofImage,
             paymentMethod: "BITCOIN",
             transactionPin,
           }),
@@ -222,6 +251,7 @@ export function PayWithdrawalChargeModal({
         toast.success(json.message);
         setTxHash("");
         setProofNote("");
+        clearProofImage();
         onPaid();
         onClose();
       } catch (err) {
@@ -370,6 +400,54 @@ export function PayWithdrawalChargeModal({
               />
 
               <form onSubmit={submit} className="space-y-4">
+                <div>
+                  <label className="block text-sm text-text-secondary mb-2">
+                    {t("withdrawals.chargeModal.proofImageLabel")}{" "}
+                    <span className="text-accent-red">*</span>
+                  </label>
+                  <p className="text-xs text-text-muted mb-2">{t("withdrawals.chargeModal.proofImageHint")}</p>
+                  {proofImage ? (
+                    <div className="relative rounded-xl border border-white/10 bg-white/5 p-3">
+                      <div className="flex items-center gap-3">
+                        <div className="h-16 w-16 rounded-lg overflow-hidden bg-bg-primary shrink-0 flex items-center justify-center">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={proofImage} alt="" className="h-full w-full object-cover" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm text-white truncate flex items-center gap-1.5">
+                            <ImageIcon size={14} className="text-accent-brand shrink-0" />
+                            {proofFileName || t("withdrawals.chargeModal.proofImageLabel")}
+                          </p>
+                          <p className="text-xs text-accent-green mt-0.5">
+                            {t("withdrawals.chargeModal.proofImageUploaded")}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={clearProofImage}
+                          className="p-1.5 rounded-lg text-text-muted hover:text-white hover:bg-white/10 transition-colors"
+                          aria-label="Remove image"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="block border border-dashed border-white/15 rounded-xl p-4 hover:border-accent-brand/40 transition-colors cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        className="hidden"
+                        onChange={handleProofImageChange}
+                        required
+                      />
+                      <div className="flex items-center gap-2 text-text-muted text-sm">
+                        <Upload size={16} />
+                        <span>{t("withdrawals.chargeModal.proofImageHint")}</span>
+                      </div>
+                    </label>
+                  )}
+                </div>
                 <Input
                   label={t("withdrawals.chargeModal.txHashLabel")}
                   value={txHash}
@@ -382,7 +460,7 @@ export function PayWithdrawalChargeModal({
                   onChange={(e) => setProofNote(e.target.value)}
                   placeholder={t("withdrawals.chargeModal.notePlaceholder")}
                 />
-                <Button type="submit" className="w-full gap-2" disabled={submitting || pinLoading}>
+                <Button type="submit" className="w-full gap-2" disabled={submitting || pinLoading || !proofImage}>
                   {submitting ? t("common.processing") : t("withdrawals.chargeModal.submitProof")}
                   {!submitting && <FileCheck size={16} />}
                 </Button>

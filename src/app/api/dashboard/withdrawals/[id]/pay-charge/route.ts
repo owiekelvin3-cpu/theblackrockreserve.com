@@ -5,6 +5,7 @@ import { formatWithdrawalStatus, formatChargePaymentStatus } from "@/lib/withdra
 import { buildWithdrawalReceiptData } from "@/lib/withdrawal-receipt";
 import { getPublicDepositSettings } from "@/lib/platform-settings";
 import { withdrawalChargePaymentSubmitSchema } from "@/lib/validations";
+import { validateDepositProofImageDataUrl } from "@/lib/deposit-proof-image";
 import { requireTransactionPin } from "@/lib/transaction-pin";
 import { createUserNotification } from "@/lib/user-notifications";
 import { formatCurrency } from "@/lib/utils";
@@ -87,6 +88,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
             amountUsd: Number(withdrawal.chargePayment.amountUsd),
             txHash: withdrawal.chargePayment.txHash,
             proofNote: withdrawal.chargePayment.proofNote,
+            hasProofImage: Boolean(withdrawal.chargePayment.proofImage),
             paidAt: withdrawal.chargePayment.paidAt?.toISOString() ?? null,
           }
         : null,
@@ -122,6 +124,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const pinError = await requireTransactionPin(userId, parsed.data.transactionPin);
     if (pinError) return pinError;
 
+    const proofCheck = validateDepositProofImageDataUrl(parsed.data.proofImage);
+    if (!proofCheck.ok) {
+      return NextResponse.json({ error: proofCheck.error }, { status: 400 });
+    }
+
     const withdrawal = await prisma.withdrawalRequest.findFirst({
       where: { id, userId },
       include: { chargePayment: true },
@@ -149,6 +156,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         status: "PENDING_VERIFICATION",
         txHash: parsed.data.txHash?.trim() || null,
         proofNote: parsed.data.proofNote?.trim() || null,
+        proofImage: parsed.data.proofImage,
         paymentMethod: parsed.data.paymentMethod,
       },
     });

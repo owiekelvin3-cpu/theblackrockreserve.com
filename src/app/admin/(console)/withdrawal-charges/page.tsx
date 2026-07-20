@@ -13,6 +13,7 @@ import {
   AdminTableScroll,
   AdminMobileList,
   AdminMobileCard,
+  AdminModal,
 } from "@/components/admin/AdminUi";
 import AdminFetchState from "@/components/admin/AdminFetchState";
 import { useAdminFetch } from "@/hooks/use-admin-fetch";
@@ -43,6 +44,7 @@ interface PaymentRow {
   status: string;
   txHash: string | null;
   proofNote: string | null;
+  proofImage: string | null;
   createdAt: string;
 }
 
@@ -57,7 +59,13 @@ function formatChargeLabel(charge: Pick<ChargeRow, "chargeType" | "amountUsd" | 
   return formatCurrency(charge.amountUsd);
 }
 
-function PaymentSummary({ payment }: { payment: PaymentRow }) {
+function PaymentSummary({
+  payment,
+  onViewProof,
+}: {
+  payment: PaymentRow;
+  onViewProof?: () => void;
+}) {
   return (
     <div className="rounded-lg border border-[var(--admin-border)] bg-white/[0.02] p-4 space-y-2 text-sm">
       <div className="flex justify-between gap-3">
@@ -75,6 +83,14 @@ function PaymentSummary({ payment }: { payment: PaymentRow }) {
         <span className="text-[var(--admin-muted)]">Charge amount</span>
         <span className="font-semibold text-white">{formatCurrency(payment.amountUsd)}</span>
       </div>
+      {payment.proofImage && (
+        <div className="flex justify-between gap-3 items-center">
+          <span className="text-[var(--admin-muted)]">Screenshot</span>
+          <button type="button" onClick={onViewProof} className="admin-link text-xs">
+            View screenshot
+          </button>
+        </div>
+      )}
       {payment.txHash && (
         <div className="flex justify-between gap-3">
           <span className="text-[var(--admin-muted)]">TX reference</span>
@@ -110,6 +126,7 @@ export default function AdminWithdrawalChargesPage() {
   const [removeUserId, setRemoveUserId] = useState<string | null>(null);
   const [confirmApplyAll, setConfirmApplyAll] = useState(false);
   const [confirmSaveSingle, setConfirmSaveSingle] = useState(false);
+  const [proofPreview, setProofPreview] = useState<PaymentRow | null>(null);
 
   const charges = data?.charges ?? [];
   const users = data?.users ?? [];
@@ -445,6 +462,25 @@ export default function AdminWithdrawalChargesPage() {
                       <p className="font-medium">{formatCurrency(p.amountUsd)}</p>
                     </div>
                   </div>
+                  {(p.proofImage || p.txHash || p.proofNote) && (
+                    <div className="text-xs mb-3 space-y-1">
+                      {p.proofImage && (
+                        <button
+                          type="button"
+                          onClick={() => setProofPreview(p)}
+                          className="admin-link"
+                        >
+                          View screenshot
+                        </button>
+                      )}
+                      {p.txHash && (
+                        <p className="font-mono truncate text-[var(--admin-muted)]" title={p.txHash}>
+                          {p.txHash}
+                        </p>
+                      )}
+                      {p.proofNote && <p className="text-[var(--admin-muted)] truncate">{p.proofNote}</p>}
+                    </div>
+                  )}
                   {p.status === "PENDING_VERIFICATION" && (
                     <div className="flex gap-2">
                       <button
@@ -492,12 +528,24 @@ export default function AdminWithdrawalChargesPage() {
                       </td>
                       <td className="py-3 px-5 font-medium">{formatCurrency(p.amountUsd)}</td>
                       <td className="py-3 px-5 text-xs max-w-[160px]">
+                        {p.proofImage && (
+                          <button
+                            type="button"
+                            onClick={() => setProofPreview(p)}
+                            className="admin-link block mb-1"
+                          >
+                            View screenshot
+                          </button>
+                        )}
                         {p.txHash && (
                           <p className="font-mono truncate" title={p.txHash}>
                             {p.txHash}
                           </p>
                         )}
                         {p.proofNote && <p className="text-[var(--admin-muted)] truncate">{p.proofNote}</p>}
+                        {!p.proofImage && !p.txHash && !p.proofNote && (
+                          <span className="text-[var(--admin-muted)]">—</span>
+                        )}
                       </td>
                       <td className="py-3 px-5">
                         <span className="admin-badge admin-badge-submitted">{p.status}</span>
@@ -610,7 +658,10 @@ export default function AdminWithdrawalChargesPage() {
           onConfirm={() => reviewPayment(pendingPaymentAction.id, "PAID")}
           loading={reviewing === pendingPaymentAction.id}
         >
-          <PaymentSummary payment={selectedPayment} />
+          <PaymentSummary
+            payment={selectedPayment}
+            onViewProof={() => setProofPreview(selectedPayment)}
+          />
         </AdminActionModal>
       )}
 
@@ -628,9 +679,37 @@ export default function AdminWithdrawalChargesPage() {
           onConfirm={(reviewNote) => reviewPayment(pendingPaymentAction.id, "REJECTED", reviewNote)}
           loading={reviewing === pendingPaymentAction.id}
         >
-          <PaymentSummary payment={selectedPayment} />
+          <PaymentSummary
+            payment={selectedPayment}
+            onViewProof={() => setProofPreview(selectedPayment)}
+          />
         </AdminActionModal>
       )}
+
+      <AdminModal
+        open={!!proofPreview?.proofImage}
+        onClose={() => setProofPreview(null)}
+        title="Payment screenshot"
+        description={
+          proofPreview
+            ? `${proofPreview.userName} · ${formatCurrency(proofPreview.amountUsd)}`
+            : undefined
+        }
+        footer={
+          <button type="button" className="admin-btn-ghost text-xs px-4 py-2" onClick={() => setProofPreview(null)}>
+            Close
+          </button>
+        }
+      >
+        {proofPreview?.proofImage && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={proofPreview.proofImage}
+            alt="Payment screenshot"
+            className="w-full max-h-[70vh] object-contain rounded-lg border border-[var(--admin-border)]"
+          />
+        )}
+      </AdminModal>
     </AdminPage>
   );
 }
