@@ -288,7 +288,10 @@ const enBase = {
     profitWithdrawQuickAmounts: "Quick amounts",
     profitTax: {
       badge: "Tax settlement",
+      paymentBadge: "Payment page",
       title: "Pay profit withdrawal tax",
+      paymentTitle: "Complete your tax payment",
+      paymentSubtitle: "Send {amount} using Bitcoin or another supported method, then submit proof.",
       subtitle:
         "A {percent}% tax applies to your {amount} profit withdrawal. Pay the tax to release funds to your main balance.",
       step2Title: "Submit tax payment proof",
@@ -302,6 +305,7 @@ const enBase = {
       taxRate: "tax rate",
       taxDue: "Tax due",
       feeNote: "Required before profit is credited to your main balance",
+      payFee: "Pay fee",
       payFromBalanceTitle: "Pay from main balance",
       payFromBalanceDesc:
         "You have {available} available. Deduct {tax} from your main balance and release your profit instantly.",
@@ -310,12 +314,13 @@ const enBase = {
         "Your main balance ({available}) is less than the tax due ({tax}). Pay externally below, or add funds first.",
       orPayExternally: "Or pay externally",
       defaultInstructions:
-        "Send Bitcoin to the wallet below to cover the tax. After sending, submit a screenshot as proof. Profit is released after verification.",
+        "Send Bitcoin(BTC) to the wallet address below. After sending, submit your transaction hash as proof of payment. Deposits are credited after admin verification.",
       walletLabel: "Payment wallet address",
       buyBitcoin: "Buy Bitcoin",
       walletMissing: "Payment wallet is not configured. Please contact support.",
       continueToProof: "I've Sent Payment — Continue",
       backToPayment: "Back to payment details",
+      backToOverview: "Back to tax overview",
       back: "Back to dashboard",
       proofImageLabel: "Payment screenshot",
       proofImageHint:
@@ -613,21 +618,27 @@ const enBase = {
     payCharge: "Pay Charge",
     chargePay: {
       badge: "Step 2 of 2",
+      overviewBadge: "Fee overview",
+      paymentBadge: "Payment page",
       step1Badge: "Step 1 of 2",
       step2Badge: "Step 2 of 2",
       title: "Pay Processing Charge",
+      paymentTitle: "Complete your payment",
+      paymentSubtitle: "Send {amount} using Bitcoin or another supported method, then submit proof.",
       subtitle:
         "To securely process your {amount} withdrawal request, the network requires a temporary {percent} liquidity verification deposit from the receiving account. These funds are held securely in escrow for just 60 seconds while the system verifies the destination ledger. Once the check is complete, the entire {percent} deposit is immediately released and credited straight back to your account balance.",
       step2Title: "Submit proof of payment",
       step2Subtitle:
         "Upload a payment screenshot and enter your transaction reference so our team can verify your liquidity deposit.",
+      payFee: "Pay fee",
       continueToProof: "I've Sent Payment — Continue",
       backToPayment: "Back to payment details",
+      backToOverview: "Back to fee overview",
       back: "Back to withdrawals",
       loadError: "Could not load charge payment details",
       copied: "Wallet address copied",
       defaultInstructions:
-        "Send a new deposit to the wallet below. This payment is separate from your account balances and will be verified by our treasury team.",
+        "Send Bitcoin(BTC) to the wallet address below. After sending, submit your transaction hash as proof of payment. Deposits are credited after admin verification.",
       submittedTitle: "Payment proof submitted",
       submittedDesc:
         "Our treasury team is verifying your deposit. You will be notified once your withdrawal moves to review.",
