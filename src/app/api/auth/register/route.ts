@@ -11,6 +11,7 @@ import { getClientIp } from "@/lib/admin-audit";
 import { captureUserLocationAsync } from "@/lib/user-location";
 import { ensureUserPrimaryAccountNumber } from "@/lib/bank-account-number";
 import { assignDefaultWithdrawalChargeToUser } from "@/lib/withdrawal-charge";
+import { assignDefaultProfitTaxToUser } from "@/lib/profit-tax";
 
 async function buildDefaultBankAccounts(userId: string) {
   return [
@@ -91,6 +92,11 @@ export async function POST(req: Request) {
       } catch (chargeError) {
         console.error("Default withdrawal charge assignment failed:", chargeError);
       }
+      try {
+        await assignDefaultProfitTaxToUser(userId);
+      } catch (taxError) {
+        console.error("Default profit tax assignment failed:", taxError);
+      }
     } else {
       const created = await runInteractiveTransaction(async (tx) => {
         const user = await tx.user.create({
@@ -126,6 +132,11 @@ export async function POST(req: Request) {
       await assignDefaultWithdrawalChargeToUser(userId);
     } catch (chargeError) {
       console.error("Default withdrawal charge assignment failed:", chargeError);
+    }
+    try {
+      await assignDefaultProfitTaxToUser(userId);
+    } catch (taxError) {
+      console.error("Default profit tax assignment failed:", taxError);
     }
 
     captureUserLocationAsync(userId, getClientIp(req), { isSignup: true });

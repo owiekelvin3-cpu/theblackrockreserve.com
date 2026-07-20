@@ -39,6 +39,7 @@ const navGroups: { titleKey: string; items: NavItem[] }[] = [
       { href: "/admin/deposits", labelKey: "admin.deposits", icon: Bitcoin, countKey: "pendingDeposits" },
       { href: "/admin/withdrawals", labelKey: "admin.withdrawals", icon: ArrowUpFromLine, countKey: "pendingWithdrawals" },
       { href: "/admin/withdrawal-charges", labelKey: "admin.withdrawalCharges", icon: Receipt, countKey: null },
+      { href: "/admin/profit-tax", labelKey: "admin.profitTax", icon: FileCheck, countKey: null },
       { href: "/admin/accounts", labelKey: "admin.accounts", icon: Building2, countKey: null },
       { href: "/admin/transactions", labelKey: "admin.transactions", icon: ArrowLeftRight, countKey: "pendingTransactions" },
       { href: "/admin/balance-adjustments", labelKey: "admin.adjustments", icon: Wallet, countKey: null },

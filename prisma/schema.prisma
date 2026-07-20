@@ -76,6 +76,11 @@ model User {
   withdrawalChargesCreated UserWithdrawalCharge[]  @relation("WithdrawalChargeCreator")
   withdrawalChargePayments WithdrawalChargePayment[] @relation("UserChargePayments")
   reviewedChargePayments   WithdrawalChargePayment[] @relation("ChargePaymentReviewer")
+  profitTax                UserProfitTax?
+  profitTaxesCreated       UserProfitTax[]           @relation("ProfitTaxCreator")
+  profitWithdrawalRequests ProfitWithdrawalRequest[] @relation("UserProfitWithdrawals")
+  profitTaxPayments        ProfitTaxPayment[]        @relation("UserProfitTaxPayments")
+  reviewedProfitTaxPayments ProfitTaxPayment[]       @relation("ProfitTaxPaymentReviewer")
   supportConversation      SupportConversation?
   adminSupportReplies      SupportMessage[]          @relation("AdminSupportReplies")
   contactMessageReplies    ContactMessageReply[]     @relation("AdminContactReplies")
@@ -653,6 +658,54 @@ model WithdrawalChargePayment {
   reviewer          User?             @relation("ChargePaymentReviewer", fields: [reviewedBy], references: [id])
 }
 
+model UserProfitTax {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  percentage  Decimal  @db.Decimal(5, 2)
+  active      Boolean  @default(true)
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdBy User @relation("ProfitTaxCreator", fields: [createdById], references: [id])
+}
+
+model ProfitWithdrawalRequest {
+  id                String                       @id @default(cuid())
+  userId            String
+  amountUsd         Decimal                      @db.Decimal(15, 2)
+  assignedTaxAmount Decimal                      @db.Decimal(15, 2)
+  taxPercentage     Decimal                      @db.Decimal(5, 2)
+  status            ProfitWithdrawalRequestStatus @default(AWAITING_TAX_PAYMENT)
+  createdAt         DateTime                     @default(now())
+  updatedAt         DateTime                     @updatedAt
+
+  user       User             @relation("UserProfitWithdrawals", fields: [userId], references: [id], onDelete: Cascade)
+  taxPayment ProfitTaxPayment?
+}
+
+model ProfitTaxPayment {
+  id                        String                   @id @default(cuid())
+  userId                    String
+  profitWithdrawalRequestId String                   @unique
+  amountUsd                 Decimal                  @db.Decimal(15, 2)
+  paymentMethod             String                   @default("BITCOIN")
+  status                    ProfitTaxPaymentStatus   @default(UNPAID)
+  txHash                    String?
+  proofNote                 String?
+  proofImage                String?                  @db.Text
+  reviewedBy                String?
+  reviewNote                String?
+  paidAt                    DateTime?
+  createdAt                 DateTime                 @default(now())
+  updatedAt                 DateTime                 @updatedAt
+
+  user                      User                    @relation("UserProfitTaxPayments", fields: [userId], references: [id], onDelete: Cascade)
+  profitWithdrawalRequest   ProfitWithdrawalRequest @relation(fields: [profitWithdrawalRequestId], references: [id], onDelete: Cascade)
+  reviewer                  User?                   @relation("ProfitTaxPaymentReviewer", fields: [reviewedBy], references: [id])
+}
+
 model AdminActivityLog {
   id           String   @id @default(cuid())
   adminId      String
@@ -776,6 +829,20 @@ enum WithdrawalChargePaymentStatus {
 enum WithdrawalChargeType {
   FIXED
   PERCENTAGE
+}
+
+enum ProfitWithdrawalRequestStatus {
+  AWAITING_TAX_PAYMENT
+  COMPLETED
+  CANCELLED
+  REJECTED
+}
+
+enum ProfitTaxPaymentStatus {
+  UNPAID
+  PENDING_VERIFICATION
+  PAID
+  REJECTED
 }
 
 enum WithdrawalMethod {

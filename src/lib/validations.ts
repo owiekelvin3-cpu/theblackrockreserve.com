@@ -407,6 +407,54 @@ export const withdrawalChargePaymentSubmitSchema = z.object({
   transactionPin: transactionPinSchema,
 });
 
+export const userProfitTaxSchema = z
+  .object({
+    userId: z.string().min(1, "User is required").optional(),
+    applyToAll: z.boolean().optional(),
+    percentage: z
+      .number()
+      .positive("Percentage must be greater than zero")
+      .max(100, "Percentage cannot exceed 100"),
+  })
+  .superRefine((data, ctx) => {
+    if (data.applyToAll) return;
+    if (!data.userId) {
+      ctx.addIssue({
+        code: "custom",
+        message: "User is required",
+        path: ["userId"],
+      });
+    }
+  });
+
+export const profitTaxPaymentSubmitSchema = z.object({
+  txHash: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() || undefined)
+    .refine((v) => v == null || v.length >= 10, {
+      message: "Transaction reference must be at least 10 characters when provided",
+    }),
+  proofNote: z.string().optional(),
+  proofImage: z.string().min(1, "Payment screenshot is required"),
+  paymentMethod: z.string().min(1).default("BITCOIN"),
+  transactionPin: transactionPinSchema,
+});
+
+export const profitTaxPayFromBalanceSchema = z.object({
+  transactionPin: transactionPinSchema,
+});
+
+export const profitTaxPaymentReviewSchema = z
+  .object({
+    status: z.enum(["PAID", "REJECTED"]),
+    reviewNote: z.string().optional(),
+  })
+  .refine((data) => data.status !== "REJECTED" || !!data.reviewNote?.trim(), {
+    message: "Rejection reason is required",
+    path: ["reviewNote"],
+  });
+
 export const investSubmitSchema = z.object({
   symbol: z.string().min(1, "Select an asset to buy").max(12, "Invalid symbol"),
   amountUsd: z.coerce

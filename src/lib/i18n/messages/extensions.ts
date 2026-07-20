@@ -337,6 +337,7 @@ const extensions = {
     deposits: "Deposits",
     withdrawals: "Withdrawals",
     withdrawalCharges: "Withdrawal Charges",
+    profitTax: "Profit Tax",
     wChargesShort: "W. Charges",
     accounts: "Accounts",
     transactions: "Transactions",

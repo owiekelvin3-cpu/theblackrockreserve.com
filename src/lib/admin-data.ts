@@ -762,3 +762,76 @@ export async function getAdminWithdrawalChargePayments() {
     createdAt: p.createdAt.toISOString(),
   }));
 }
+
+export async function getAdminProfitTaxes() {
+  const [taxes, users] = await Promise.all([
+    prisma.userProfitTax.findMany({
+      where: { user: verifiedCustomerWhere },
+      orderBy: { updatedAt: "desc" },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        createdBy: { select: { name: true, email: true } },
+      },
+    }),
+    prisma.user.findMany({
+      where: { ...verifiedCustomerWhere, role: "USER" },
+      select: { id: true, name: true, email: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
+
+  return {
+    taxes: taxes.map((t) => ({
+      id: t.id,
+      userId: t.userId,
+      userName: t.user.name,
+      userEmail: t.user.email,
+      percentage: Number(t.percentage),
+      active: t.active,
+      createdByName: t.createdBy.name,
+      createdAt: t.createdAt.toISOString(),
+      updatedAt: t.updatedAt.toISOString(),
+    })),
+    users,
+  };
+}
+
+export async function getAdminProfitTaxPayments() {
+  const payments = await prisma.profitTaxPayment.findMany({
+    where: { user: verifiedCustomerWhere },
+    orderBy: { createdAt: "desc" },
+    include: {
+      user: { select: { id: true, name: true, email: true } },
+      profitWithdrawalRequest: {
+        select: {
+          id: true,
+          amountUsd: true,
+          taxPercentage: true,
+          status: true,
+        },
+      },
+      reviewer: { select: { name: true } },
+    },
+  });
+
+  return payments.map((p) => ({
+    id: p.id,
+    userId: p.userId,
+    userName: p.user.name,
+    userEmail: p.user.email,
+    profitWithdrawalRequestId: p.profitWithdrawalRequestId,
+    profitAmount: Number(p.profitWithdrawalRequest.amountUsd),
+    profitStatus: p.profitWithdrawalRequest.status,
+    taxPercentage: Number(p.profitWithdrawalRequest.taxPercentage),
+    amountUsd: Number(p.amountUsd),
+    paymentMethod: p.paymentMethod,
+    status: p.status,
+    txHash: p.txHash,
+    proofNote: p.proofNote,
+    proofImage: p.proofImage,
+    reviewNote: p.reviewNote,
+    reviewerName: p.reviewer?.name ?? null,
+    paidAt: p.paidAt?.toISOString() ?? null,
+    createdAt: p.createdAt.toISOString(),
+  }));
+}

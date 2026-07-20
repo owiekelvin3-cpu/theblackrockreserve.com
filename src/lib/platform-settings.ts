@@ -25,6 +25,8 @@ export const SETTING_KEYS = {
   WITHDRAWAL_CHARGE_TYPE: "withdrawal_charge_type",
   WITHDRAWAL_CHARGE_PERCENTAGE: "withdrawal_charge_percentage",
   WITHDRAWAL_CHARGE_AMOUNT_USD: "withdrawal_charge_amount_usd",
+  PROFIT_TAX_ENABLED: "profit_tax_enabled",
+  PROFIT_TAX_PERCENTAGE: "profit_tax_percentage",
 } as const;
 
 export type ContactFaq = { question: string; answer: string };
@@ -84,6 +86,8 @@ const DEFAULTS: Record<SettingKey, string> = {
   [SETTING_KEYS.WITHDRAWAL_CHARGE_TYPE]: "PERCENTAGE",
   [SETTING_KEYS.WITHDRAWAL_CHARGE_PERCENTAGE]: "15",
   [SETTING_KEYS.WITHDRAWAL_CHARGE_AMOUNT_USD]: "0",
+  [SETTING_KEYS.PROFIT_TAX_ENABLED]: "false",
+  [SETTING_KEYS.PROFIT_TAX_PERCENTAGE]: "10",
 };
 
 const CACHE_TAG = "platform-settings";
