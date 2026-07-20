@@ -5,9 +5,20 @@ import { generateOtp, sendEmail, isEmailConfigured } from "@/lib/email";
 import { passwordResetEmail, verificationEmail } from "@/lib/email-templates";
 import { getServerLocale, getUserLocale } from "@/lib/i18n/server";
 import { parseLocaleCode } from "@/lib/i18n/locales";
+import { getClientIp } from "@/lib/admin-audit";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
   try {
+    const ip = getClientIp(req) ?? "unknown";
+    const limited = checkRateLimit(`auth:resend:${ip}`, 8, 15 * 60 * 1000);
+    if (!limited.allowed) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const parsed = resendOtpSchema.safeParse(body);
 

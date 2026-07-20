@@ -6,9 +6,20 @@ import { welcomeEmail } from "@/lib/email-templates";
 import { getUserLocale } from "@/lib/i18n/server";
 import { parseLocaleCode } from "@/lib/i18n/locales";
 import { ensureUserBankAccounts } from "@/lib/dashboard-data";
+import { getClientIp } from "@/lib/admin-audit";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
   try {
+    const ip = getClientIp(req) ?? "unknown";
+    const limited = checkRateLimit(`auth:verify:${ip}`, 15, 15 * 60 * 1000);
+    if (!limited.allowed) {
+      return NextResponse.json(
+        { error: "Too many verification attempts. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const parsed = verifyOtpSchema.safeParse(body);
 

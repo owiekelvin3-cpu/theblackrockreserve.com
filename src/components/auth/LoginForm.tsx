@@ -26,6 +26,7 @@ function LoginFormInner() {
   const authError = searchParams.get("error");
   const authMessages: Record<string, string> = {
     sign_in_required: t("auth.signInRequired"),
+    auth_config: t("auth.configError"),
     Configuration: t("auth.configError"),
   };
   const bannerMessage = authError ? authMessages[authError] : null;

@@ -9,7 +9,10 @@ export function useValidationSchemas() {
   const { t } = useI18n();
 
   return useMemo(() => {
-    const email = z.string().email(t("validation.emailInvalid"));
+    const email = z
+      .string()
+      .email(t("validation.emailInvalid"))
+      .transform((v) => v.trim().toLowerCase());
     const password = z
       .string()
       .min(8, t("validation.passwordMin"))

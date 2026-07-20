@@ -21,17 +21,29 @@ export async function GET(request: NextRequest) {
   const durationMs = Date.now() - start;
   const authOk = isNextAuthConfigured();
   const emailOk = isEmailConfigured();
+  const ok = authOk && databaseOk;
 
   logConnectivity("health", request, {
     phase: "health_complete",
-    ok: authOk && databaseOk,
+    ok,
     durationMs,
     error: dbError ?? undefined,
     extra: { databaseOk, authOk },
   });
 
+  // Production: only expose status booleans (no secrets, URLs, or provider details).
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({
+      ok,
+      serverMs: durationMs,
+      auth: { configured: authOk },
+      database: { connected: databaseOk },
+      email: { configured: emailOk },
+    });
+  }
+
   return NextResponse.json({
-    ok: authOk && databaseOk,
+    ok,
     serverMs: durationMs,
     auth: {
       configured: authOk,

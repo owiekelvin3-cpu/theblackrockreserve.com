@@ -3,15 +3,21 @@ import { SUPPORTED_CURRENCIES } from "@/lib/currency";
 
 export const preferredCurrencySchema = z.enum(SUPPORTED_CURRENCIES);
 
+/** Canonical email for auth lookups and storage (avoids case-mismatch login failures). */
+export const authEmailSchema = z
+  .string()
+  .email("Please enter a valid email address")
+  .transform((v) => v.trim().toLowerCase());
+
 export const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  email: authEmailSchema,
   password: z.string().min(8, "Password must be at least 8 characters"),
   remember: z.boolean().optional(),
 });
 
 export const registerStep1Schema = z.object({
   fullName: z.string().min(2, "Full name is required"),
-  email: z.string().email("Please enter a valid email address"),
+  email: authEmailSchema,
   phone: z.string().min(10, "Please enter a valid phone number"),
   dateOfBirth: z.string().min(1, "Date of birth is required"),
 });
@@ -31,23 +37,23 @@ export const registerStep2Schema = z.object({
 });
 
 export const forgotPasswordSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  email: authEmailSchema,
 });
 
 export const contactSchema = z.object({
   name: z.string().min(2, "Name is required"),
-  email: z.string().email("Please enter a valid email address"),
+  email: authEmailSchema,
   subject: z.string().min(3, "Subject is required"),
   message: z.string().min(10, "Message must be at least 10 characters"),
 });
 
 export const verifyOtpSchema = z.object({
-  email: z.string().email(),
+  email: authEmailSchema,
   otp: z.string().length(6, "OTP must be 6 digits"),
 });
 
 export const resendOtpSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  email: authEmailSchema,
   purpose: z.enum(["verify", "reset"]),
 });
 
@@ -74,7 +80,7 @@ export const changePasswordSchema = z
 
 export const resetPasswordSchema = z
   .object({
-    email: z.string().email("Please enter a valid email address"),
+    email: authEmailSchema,
     otp: z.string().length(6, "OTP must be 6 digits"),
     password: z
       .string()
@@ -90,7 +96,7 @@ export const resetPasswordSchema = z
 
 export const registerApiSchema = z.object({
   fullName: z.string().min(2, "Full name is required"),
-  email: z.string().email("Please enter a valid email address"),
+  email: authEmailSchema,
   phone: z.string().min(10, "Please enter a valid phone number"),
   dateOfBirth: z.string().min(1, "Date of birth is required"),
   password: z
@@ -111,7 +117,7 @@ export type ContactInput = z.infer<typeof contactSchema>;
 
 export const adminUserUpdateSchema = z.object({
   name: z.string().min(2).optional(),
-  email: z.string().email().optional(),
+  email: authEmailSchema.optional(),
   phone: z.string().nullable().optional(),
   accountType: z.enum(["PERSONAL", "BUSINESS"]).optional(),
   kycStatus: z.enum(["PENDING", "SUBMITTED", "VERIFIED", "REJECTED"]).optional(),

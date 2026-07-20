@@ -2,9 +2,20 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { resetPasswordSchema } from "@/lib/validations";
+import { getClientIp } from "@/lib/admin-audit";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
   try {
+    const ip = getClientIp(req) ?? "unknown";
+    const limited = checkRateLimit(`auth:reset:${ip}`, 10, 15 * 60 * 1000);
+    if (!limited.allowed) {
+      return NextResponse.json(
+        { error: "Too many reset attempts. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const parsed = resetPasswordSchema.safeParse(body);
 

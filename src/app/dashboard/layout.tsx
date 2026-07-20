@@ -3,12 +3,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { isNextAuthConfigured } from "@/lib/auth-config";
 import DashboardShell from "@/components/dashboard/DashboardShell";
-import DashboardClientLayout from "@/components/dashboard/DashboardClientLayout";
 import "./dashboard-theme.css";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   if (!isNextAuthConfigured()) {
-    return <DashboardClientLayout>{children}</DashboardClientLayout>;
+    redirect("/login?error=auth_config");
   }
 
   const session = await getServerSession(authOptions);

@@ -1,6 +1,5 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 import { stripJwtBloat } from "@/lib/cookie-audit";
@@ -50,6 +49,9 @@ async function findLoginUser(email: string) {
 /**
  * JWT session cookie must stay small (<4 KB). Only store auth primitives.
  * Profile images, settings, and user data belong in the database.
+ *
+ * Google OAuth is intentionally disabled until account linking + DB user
+ * provisioning are implemented (partial OAuth sessions break dashboard APIs).
  */
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -116,14 +118,6 @@ export const authOptions: NextAuthOptions = {
         };
       },
     }),
-    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-      ? [
-          GoogleProvider({
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          }),
-        ]
-      : []),
   ],
   session: {
     strategy: "jwt",
@@ -184,13 +178,18 @@ export const authOptions: NextAuthOptions = {
       } else if (trigger === "update" && token.sub) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.sub },
-          select: { id: true, role: true, emailVerified: true },
+          select: { id: true, role: true, emailVerified: true, status: true },
         });
-        if (dbUser) {
-          token.id = dbUser.id;
-          token.role = dbUser.role;
-          token.emailVerified = !!dbUser.emailVerified;
+        if (!dbUser || dbUser.status === "SUSPENDED") {
+          // Invalidate privileged claims; next request will fail auth guards.
+          token.id = "";
+          token.role = "USER";
+          token.emailVerified = false;
+          return stripJwtBloat(token as Record<string, unknown>) as typeof token;
         }
+        token.id = dbUser.id;
+        token.role = dbUser.role;
+        token.emailVerified = !!dbUser.emailVerified;
       }
 
       return stripJwtBloat(token as Record<string, unknown>) as typeof token;

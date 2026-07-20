@@ -12,6 +12,7 @@ import { captureUserLocationAsync } from "@/lib/user-location";
 import { ensureUserPrimaryAccountNumber } from "@/lib/bank-account-number";
 import { assignDefaultWithdrawalChargeToUser } from "@/lib/withdrawal-charge";
 import { assignDefaultProfitTaxToUser } from "@/lib/profit-tax";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 async function buildDefaultBankAccounts(userId: string) {
   return [
@@ -28,6 +29,15 @@ async function deliverWelcomeEmail(name: string, email: string, preferredLocale:
 
 export async function POST(req: Request) {
   try {
+    const ip = getClientIp(req) ?? "unknown";
+    const limited = checkRateLimit(`auth:register:${ip}`, 8, 15 * 60 * 1000);
+    if (!limited.allowed) {
+      return NextResponse.json(
+        { error: "Too many registration attempts. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const parsed = registerApiSchema.safeParse(body);
 

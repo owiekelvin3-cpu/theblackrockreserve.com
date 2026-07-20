@@ -19,6 +19,17 @@ function dashboardDeniedResponse(
   return NextResponse.redirect(loginUrl);
 }
 
+function authNotConfiguredResponse(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.json({ error: "Authentication is not configured" }, { status: 503 });
+  }
+  if (pathname.startsWith("/admin")) {
+    return NextResponse.redirect(new URL("/admin/login?error=auth_config", request.url));
+  }
+  return NextResponse.redirect(new URL("/login?error=auth_config", request.url));
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -32,11 +43,20 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(signOutUrl);
   }
 
-  if (!process.env.NEXTAUTH_SECRET?.trim()) {
-    return NextResponse.next();
+  const secret = process.env.NEXTAUTH_SECRET?.trim();
+  if (!secret) {
+    // Fail closed — never expose dashboard/admin without a working auth secret.
+    return authNotConfiguredResponse(request);
   }
 
-  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+  const token = await getToken({ req: request, secret });
+
+  if (pathname.startsWith("/api/admin")) {
+    if (!token || token.role !== "ADMIN") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.next();
+  }
 
   if (pathname.startsWith("/api/dashboard")) {
     if (!isVerifiedCustomerToken(token)) {
@@ -77,5 +97,7 @@ export const config = {
     "/dashboard/:path*",
     "/api/dashboard",
     "/api/dashboard/:path*",
+    "/api/admin",
+    "/api/admin/:path*",
   ],
 };
