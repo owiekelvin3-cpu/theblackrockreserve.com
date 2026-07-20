@@ -62,7 +62,11 @@ function needsChargeReview(w: WithdrawalRow) {
 }
 
 function isActionable(w: WithdrawalRow) {
-  return needsWithdrawalReview(w) || needsChargeReview(w);
+  return (
+    needsWithdrawalReview(w) ||
+    needsChargeReview(w) ||
+    w.status === "AWAITING_CHARGE_PAYMENT"
+  );
 }
 
 function WithdrawalSummary({ withdrawal }: { withdrawal: WithdrawalRow }) {
@@ -172,9 +176,9 @@ function WithdrawalActions({
           onClick={() => onWithdrawalAction(withdrawal.id, "REJECTED")}
           disabled={busy}
           className="admin-btn-ghost text-xs text-red-400 py-1 px-3"
-          title="Cancel withdrawal and return funds"
+          title="Revoke withdrawal and return funds to the user's account"
         >
-          Cancel & refund
+          Revoke & return funds
         </button>
       </div>
     );
@@ -194,8 +198,9 @@ function WithdrawalActions({
           onClick={() => onWithdrawalAction(withdrawal.id, "REJECTED")}
           disabled={busy}
           className="admin-btn-ghost text-xs text-red-400 py-1 px-3"
+          title="Revoke withdrawal and return funds to the user's account"
         >
-          Reject
+          Revoke & return funds
         </button>
       </div>
     );
@@ -205,15 +210,15 @@ function WithdrawalActions({
     return (
       <div className={`flex gap-2 ${stackClass} items-end`}>
         <p className="text-[10px] text-[var(--admin-muted)] max-w-[140px] text-right">
-          Waiting for user charge payment
+          Waiting for user charge payment · funds already held
         </p>
         <button
           onClick={() => onWithdrawalAction(withdrawal.id, "REJECTED")}
           disabled={busy}
           className="admin-btn-ghost text-xs text-red-400 py-1 px-3"
-          title="Cancel withdrawal and return funds"
+          title="Revoke withdrawal and return funds to the user's account"
         >
-          Cancel & refund
+          Revoke & return funds
         </button>
       </div>
     );
@@ -256,8 +261,8 @@ export default function AdminWithdrawalsPage() {
       if (!res.ok) throw new Error(json.error || "Review failed");
       toast.success(
         status === "APPROVED"
-          ? "Withdrawal confirmed and balance debited"
-          : "Withdrawal rejected — user notified"
+          ? "Withdrawal confirmed for payout"
+          : "Withdrawal revoked — funds returned to the user's account"
       );
       setPendingAction(null);
       refresh();
@@ -297,7 +302,7 @@ export default function AdminWithdrawalsPage() {
     <AdminPage>
       <AdminPageHeader
         title="Withdrawal Requests"
-        description="Confirm charge payments first, then approve withdrawals ready for payout"
+        description="Funds are held when users submit. Confirm charges, approve payouts, or revoke to return money to the account."
         action={<AdminRefreshButton onClick={refresh} />}
       />
 
@@ -446,7 +451,7 @@ export default function AdminWithdrawalsPage() {
         <AdminActionModal
           open
           title="Confirm withdrawal"
-          description="This will debit the user's account balance and mark the withdrawal as approved. The customer will be notified."
+          description="Mark this withdrawal as approved and sent. Funds were already deducted when the user submitted the request."
           confirmLabel="Confirm withdrawal"
           onClose={() => setPendingAction(null)}
           onConfirm={() => reviewWithdrawal(pendingAction.id, "APPROVED")}
@@ -459,13 +464,13 @@ export default function AdminWithdrawalsPage() {
       {selectedWithdrawal && pendingAction?.kind === "withdrawal" && pendingAction.status === "REJECTED" && (
         <AdminActionModal
           open
-          title="Reject withdrawal request"
-          description="Provide a reason — the user will be notified."
-          confirmLabel="Confirm rejection"
+          title="Revoke withdrawal & return funds"
+          description="Only admins can revoke a withdrawal. The held amount will be credited back to the user's account and they will be notified."
+          confirmLabel="Revoke & return funds"
           variant="danger"
           requireReason
-          reasonLabel="Rejection reason"
-          reasonPlaceholder="Reason for rejection..."
+          reasonLabel="Reason"
+          reasonPlaceholder="Reason for revoking this withdrawal..."
           onClose={() => setPendingAction(null)}
           onConfirm={(reviewNote) => reviewWithdrawal(pendingAction.id, "REJECTED", reviewNote)}
           loading={reviewing === pendingAction.id}
