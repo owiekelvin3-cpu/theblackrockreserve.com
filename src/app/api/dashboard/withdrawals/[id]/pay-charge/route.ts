@@ -10,6 +10,7 @@ import { requireTransactionPin } from "@/lib/transaction-pin";
 import { createUserNotification } from "@/lib/user-notifications";
 import { formatCurrency } from "@/lib/utils";
 import { prisma } from "@/lib/prisma";
+import { invalidateAdminCaches } from "@/lib/admin-cache";
 import QRCode from "qrcode";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -172,6 +173,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     } catch (notifyError) {
       console.error("Charge payment notification error:", notifyError);
     }
+
+    invalidateAdminCaches();
 
     return NextResponse.json({
       success: true,

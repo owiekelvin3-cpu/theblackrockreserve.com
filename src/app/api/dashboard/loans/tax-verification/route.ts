@@ -8,6 +8,7 @@ import {
   notifyTaxRefundSubmitted,
 } from "@/lib/loan-notifications";
 import { prisma } from "@/lib/prisma";
+import { invalidateAdminCaches } from "@/lib/admin-cache";
 
 export async function POST(req: NextRequest) {
   const userId = await getSessionUserId();
@@ -36,6 +37,7 @@ export async function POST(req: NextRequest) {
     await notifyTaxRefundSubmitted(userId, record.id, record.applicationNumber);
     const userName = await getUserName(userId);
     await notifyAdminsTaxRefundSubmitted(userName, record.applicationNumber);
+    invalidateAdminCaches();
 
     return NextResponse.json({
       success: true,

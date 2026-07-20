@@ -87,14 +87,26 @@ export async function ensureBrowserNotificationPermission() {
   return result === "granted";
 }
 
-export function showBrowserNotification(title: string, body: string, tag?: string) {
+export function showBrowserNotification(
+  title: string,
+  body: string,
+  tag?: string,
+  options?: { force?: boolean }
+) {
   if (typeof window === "undefined" || !("Notification" in window)) return;
   if (Notification.permission !== "granted") return;
-  if (document.visibilityState === "visible") return;
+  // Default: only when tab is hidden (toast covers foreground). force=true always shows.
+  if (!options?.force && document.visibilityState === "visible") return;
 
   try {
-    new Notification(title, { body, tag, icon: "/apple-icon.png?v=6" });
+    new Notification(title, {
+      body,
+      tag,
+      icon: "/apple-icon.png?v=6",
+      requireInteraction: Boolean(options?.force),
+    });
   } catch {
     /* ignore unsupported environments */
   }
 }
+

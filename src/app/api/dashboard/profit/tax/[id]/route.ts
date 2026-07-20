@@ -14,6 +14,7 @@ import {
   getSpendableBalance,
 } from "@/lib/profit-tax";
 import { prisma } from "@/lib/prisma";
+import { invalidateAdminCaches } from "@/lib/admin-cache";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await getSessionUserId();
@@ -158,6 +159,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     } catch (notifyError) {
       console.error("Profit tax notification error:", notifyError);
     }
+
+    invalidateAdminCaches();
 
     return NextResponse.json({
       success: true,

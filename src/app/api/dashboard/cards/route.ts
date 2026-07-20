@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUserId, unauthorizedResponse } from "@/lib/api-auth";
 import { getUserPhysicalCardsDashboard, createPhysicalCardRequest } from "@/lib/physical-cards";
 import { physicalCardOrderSchema } from "@/lib/validations";
+import { invalidateAdminCaches } from "@/lib/admin-cache";
 
 export async function GET() {
   const userId = await getSessionUserId();
@@ -31,6 +32,7 @@ export async function POST(req: NextRequest) {
     }
 
     const request = await createPhysicalCardRequest(userId, parsed.data);
+    invalidateAdminCaches();
     return NextResponse.json({ success: true, request });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to submit card request";

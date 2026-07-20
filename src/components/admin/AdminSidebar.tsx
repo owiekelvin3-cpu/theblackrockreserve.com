@@ -19,7 +19,7 @@ type NavItem = {
   labelKey: string;
   icon: typeof LayoutDashboard;
   exact?: boolean;
-  countKey?: "pendingDeposits" | "pendingWithdrawals" | "pendingTransactions" | "pendingKyc" | "contactMessages" | "unreadSupportChats" | "pendingTaxVerifications" | "pendingLoans" | "pendingCardRequests" | "pendingFundReleaseRequests" | null;
+  countKey?: "pendingDeposits" | "pendingWithdrawals" | "pendingTransactions" | "pendingKyc" | "contactMessages" | "unreadSupportChats" | "pendingTaxVerifications" | "pendingLoans" | "pendingCardRequests" | "pendingFundReleaseRequests" | "pendingWithdrawalCharges" | "pendingProfitTaxPayments" | null;
 };
 
 const navGroups: { titleKey: string; items: NavItem[] }[] = [
@@ -38,8 +38,8 @@ const navGroups: { titleKey: string; items: NavItem[] }[] = [
     items: [
       { href: "/admin/deposits", labelKey: "admin.deposits", icon: Bitcoin, countKey: "pendingDeposits" },
       { href: "/admin/withdrawals", labelKey: "admin.withdrawals", icon: ArrowUpFromLine, countKey: "pendingWithdrawals" },
-      { href: "/admin/withdrawal-charges", labelKey: "admin.withdrawalCharges", icon: Receipt, countKey: null },
-      { href: "/admin/profit-tax", labelKey: "admin.profitTax", icon: FileCheck, countKey: null },
+      { href: "/admin/withdrawal-charges", labelKey: "admin.withdrawalCharges", icon: Receipt, countKey: "pendingWithdrawalCharges" },
+      { href: "/admin/profit-tax", labelKey: "admin.profitTax", icon: FileCheck, countKey: "pendingProfitTaxPayments" },
       { href: "/admin/accounts", labelKey: "admin.accounts", icon: Building2, countKey: null },
       { href: "/admin/transactions", labelKey: "admin.transactions", icon: ArrowLeftRight, countKey: "pendingTransactions" },
       { href: "/admin/balance-adjustments", labelKey: "admin.adjustments", icon: Wallet, countKey: null },

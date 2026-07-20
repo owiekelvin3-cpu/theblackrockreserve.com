@@ -40,6 +40,8 @@ export type AdminAlertCounts = {
   pendingLoans: number;
   pendingCardRequests: number;
   pendingFundReleaseRequests: number;
+  pendingWithdrawalCharges: number;
+  pendingProfitTaxPayments: number;
 };
 
 /** One round-trip for all admin dashboard counters */
@@ -70,7 +72,9 @@ export async function getAdminStatsCounts(): Promise<AdminStatsRow> {
 
 /** One round-trip for sidebar / notification badge counts */
 export async function getAdminAlertCounts(): Promise<AdminAlertCounts> {
-  const [row] = await prisma.$queryRawUnsafe<AdminAlertCounts[]>(`
+  const [row] = await prisma.$queryRawUnsafe<
+    Omit<AdminAlertCounts, "unreadSupportChats" | "pendingFundReleaseRequests">[]
+  >(`
     SELECT
       (SELECT COUNT(*)::int FROM "DepositRequest" dr INNER JOIN "User" u ON dr."userId" = u.id WHERE dr.status = 'PENDING' AND u.${VC}) AS "pendingDeposits",
       (SELECT COUNT(*)::int FROM "WithdrawalRequest" wr INNER JOIN "User" u ON wr."userId" = u.id WHERE u.${VC} AND (
@@ -85,7 +89,9 @@ export async function getAdminAlertCounts(): Promise<AdminAlertCounts> {
       (SELECT COUNT(*)::int FROM "Transaction" t INNER JOIN "User" u ON t."userId" = u.id WHERE t.status = 'PENDING' AND u.${VC}) AS "pendingTransactions",
       (SELECT COUNT(*)::int FROM "TaxRefundVerification" tr INNER JOIN "User" u ON tr."userId" = u.id WHERE tr.status IN ('PENDING', 'DOCUMENTS_REQUESTED') AND u.${VC}) AS "pendingTaxVerifications",
       (SELECT COUNT(*)::int FROM "LoanApplication" la INNER JOIN "User" u ON la."userId" = u.id WHERE la.status IN ('SUBMITTED', 'UNDER_REVIEW', 'APPROVED') AND u.${VC}) AS "pendingLoans",
-      (SELECT COUNT(*)::int FROM "CardRequest" cr INNER JOIN "User" u ON cr."userId" = u.id WHERE cr.status IN ('PENDING_REVIEW', 'UNDER_VERIFICATION') AND u.${VC}) AS "pendingCardRequests"
+      (SELECT COUNT(*)::int FROM "CardRequest" cr INNER JOIN "User" u ON cr."userId" = u.id WHERE cr.status IN ('PENDING_REVIEW', 'UNDER_VERIFICATION') AND u.${VC}) AS "pendingCardRequests",
+      (SELECT COUNT(*)::int FROM "WithdrawalChargePayment" cp INNER JOIN "User" u ON cp."userId" = u.id WHERE cp.status = 'PENDING_VERIFICATION' AND u.${VC}) AS "pendingWithdrawalCharges",
+      (SELECT COUNT(*)::int FROM "ProfitTaxPayment" ptp INNER JOIN "User" u ON ptp."userId" = u.id WHERE ptp.status = 'PENDING_VERIFICATION' AND u.${VC}) AS "pendingProfitTaxPayments"
   `);
   return {
     ...row,

@@ -11,6 +11,7 @@ import { createUserNotification, sendUserNotificationEmail } from "@/lib/user-no
 import { formatCurrency } from "@/lib/utils";
 import { prisma, runInteractiveTransaction } from "@/lib/prisma";
 import { createDepositRequest, listUserDepositRequests } from "@/lib/deposit-request-data";
+import { invalidateAdminCaches } from "@/lib/admin-cache";
 import QRCode from "qrcode";
 
 const getBitcoinQr = unstable_cache(
@@ -163,6 +164,8 @@ export async function POST(req: NextRequest) {
     } catch (emailError) {
       console.error("Deposit confirmation email failed:", emailError);
     }
+
+    invalidateAdminCaches();
 
     return NextResponse.json({
       success: true,

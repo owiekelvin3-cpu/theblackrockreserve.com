@@ -22,6 +22,7 @@ import {
   FREEZE_TYPE_LABELS,
 } from "@/lib/account-freeze";
 import QRCode from "qrcode";
+import { invalidateAdminCaches } from "@/lib/admin-cache";
 
 export async function GET() {
   const userId = await getSessionUserId();
@@ -298,6 +299,8 @@ export async function POST(req: NextRequest) {
     } catch (notifyError) {
       console.error("Withdrawal notification error:", notifyError);
     }
+
+    invalidateAdminCaches();
 
     const methodDef = getWithdrawalMethod(parsed.data.method);
     const statusLabel = formatWithdrawalStatus(withdrawal.status);

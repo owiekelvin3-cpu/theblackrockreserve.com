@@ -7,6 +7,7 @@ import {
   notifyAdminsLoanSubmitted,
   notifyLoanApplicationSubmitted,
 } from "@/lib/loan-notifications";
+import { invalidateAdminCaches } from "@/lib/admin-cache";
 
 export async function POST(req: NextRequest) {
   const userId = await getSessionUserId();
@@ -32,6 +33,7 @@ export async function POST(req: NextRequest) {
     );
     const userName = await getUserName(userId);
     await notifyAdminsLoanSubmitted(userName, application.applicationNumber, application.product.name);
+    invalidateAdminCaches();
 
     return NextResponse.json({
       success: true,

@@ -14,6 +14,8 @@ export type AdminNotificationData = {
   contactMessages: number;
   unreadSupportChats: number;
   pendingTransactions: number;
+  pendingWithdrawalCharges: number;
+  pendingProfitTaxPayments: number;
   recentDepositAlerts: {
     id: string;
     depositId: string;
@@ -24,6 +26,14 @@ export type AdminNotificationData = {
     bitcoinWalletAddress: string | null;
     txHash: string | null;
     status: string;
+    createdAt: string;
+  }[];
+  recentSupportAlerts: {
+    id: string;
+    userId: string;
+    userName: string;
+    userEmail: string;
+    preview: string;
     createdAt: string;
   }[];
 };
@@ -40,7 +50,8 @@ const AdminNotificationsContext = createContext<AdminNotificationsContextValue>(
   refresh: () => {},
 });
 
-const POLL_MS = 45_000;
+/** Fast enough for support chat; still polls when the tab is in the background. */
+const POLL_MS = 12_000;
 
 export function AdminNotificationsProvider({ children }: { children: React.ReactNode }) {
   const [data, setData] = useState<AdminNotificationData | null>(null);
@@ -51,7 +62,12 @@ export function AdminNotificationsProvider({ children }: { children: React.React
       const res = await fetch("/api/admin/notifications", { credentials: "include", cache: "no-store" });
       if (!res.ok) return;
       const json = (await res.json()) as AdminNotificationData;
-      setData(json);
+      setData({
+        ...json,
+        pendingWithdrawalCharges: json.pendingWithdrawalCharges ?? 0,
+        pendingProfitTaxPayments: json.pendingProfitTaxPayments ?? 0,
+        recentSupportAlerts: json.recentSupportAlerts ?? [],
+      });
       setLastUpdated(new Date());
     } catch {
       /* polling should not break layout */
@@ -60,14 +76,14 @@ export function AdminNotificationsProvider({ children }: { children: React.React
 
   useEffect(() => {
     refresh();
-    const tick = () => {
+    const id = window.setInterval(refresh, POLL_MS);
+    const onVisible = () => {
       if (document.visibilityState === "visible") refresh();
     };
-    const id = window.setInterval(tick, POLL_MS);
-    document.addEventListener("visibilitychange", tick);
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       window.clearInterval(id);
-      document.removeEventListener("visibilitychange", tick);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [refresh]);
 
@@ -93,4 +109,6 @@ export type AdminSidebarCounts = {
   contactMessages: number;
   unreadSupportChats: number;
   pendingTransactions: number;
+  pendingWithdrawalCharges: number;
+  pendingProfitTaxPayments: number;
 };

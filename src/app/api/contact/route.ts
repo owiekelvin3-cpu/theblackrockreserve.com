@@ -4,6 +4,7 @@ import { contactSchema } from "@/lib/validations";
 import { sendEmail, isEmailConfigured } from "@/lib/email";
 import { contactNotificationEmail } from "@/lib/email-templates";
 import { getPublicContactSettings } from "@/lib/platform-settings";
+import { invalidateAdminCaches } from "@/lib/admin-cache";
 
 const FALLBACK_SUPPORT_INBOX = "blackrockreservesupport@gmail.com";
 
@@ -21,6 +22,7 @@ export async function POST(req: Request) {
 
     const data = parsed.data;
     await prisma.contactMessage.create({ data });
+    invalidateAdminCaches();
 
     const settings = await getPublicContactSettings().catch(() => null);
     const supportInbox =

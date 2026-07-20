@@ -12,13 +12,27 @@ export const ADMIN_NOTIFICATIONS_TAG = "admin-notifications";
 
 async function loadAdminNotificationCounts() {
   try {
-    const [counts, recentDepositAlerts] = await Promise.all([
+    const [counts, recentDepositAlerts, recentSupportAlerts] = await Promise.all([
       getAdminAlertCounts(),
       prisma.depositRequest.findMany({
         where: { status: "PENDING", user: verifiedCustomerWhere },
         orderBy: { createdAt: "desc" },
         take: 8,
         include: { user: { select: { id: true, name: true, email: true } } },
+      }),
+      prisma.supportConversation.findMany({
+        where: { adminUnread: true },
+        orderBy: { updatedAt: "desc" },
+        take: 5,
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+          messages: {
+            where: { role: "USER" },
+            orderBy: { createdAt: "desc" },
+            take: 1,
+            select: { content: true, createdAt: true },
+          },
+        },
       }),
     ]);
 
@@ -33,6 +47,8 @@ async function loadAdminNotificationCounts() {
       pendingLoans,
       pendingCardRequests = 0,
       pendingFundReleaseRequests = 0,
+      pendingWithdrawalCharges = 0,
+      pendingProfitTaxPayments = 0,
     } = counts;
 
     return {
@@ -46,6 +62,8 @@ async function loadAdminNotificationCounts() {
       pendingLoans,
       pendingCardRequests,
       pendingFundReleaseRequests,
+      pendingWithdrawalCharges,
+      pendingProfitTaxPayments,
       totalAlerts:
         pendingDeposits +
         pendingWithdrawals +
@@ -55,6 +73,9 @@ async function loadAdminNotificationCounts() {
         pendingLoans +
         pendingCardRequests +
         pendingFundReleaseRequests +
+        pendingWithdrawalCharges +
+        pendingProfitTaxPayments +
+        contactMessages +
         unreadSupportChats,
       recentDepositAlerts: recentDepositAlerts.map((d) => ({
         id: d.id,
@@ -67,6 +88,14 @@ async function loadAdminNotificationCounts() {
         txHash: d.txHash,
         status: "Pending Approval",
         createdAt: d.createdAt.toISOString(),
+      })),
+      recentSupportAlerts: recentSupportAlerts.map((c) => ({
+        id: c.id,
+        userId: c.user.id,
+        userName: c.user.name,
+        userEmail: c.user.email,
+        preview: c.messages[0]?.content?.slice(0, 120) ?? "New support message",
+        createdAt: (c.messages[0]?.createdAt ?? c.updatedAt).toISOString(),
       })),
     };
   } catch (error) {
@@ -82,8 +111,11 @@ async function loadAdminNotificationCounts() {
       pendingLoans: 0,
       pendingCardRequests: 0,
       pendingFundReleaseRequests: 0,
+      pendingWithdrawalCharges: 0,
+      pendingProfitTaxPayments: 0,
       totalAlerts: 0,
       recentDepositAlerts: [],
+      recentSupportAlerts: [],
     };
   }
 }
@@ -91,7 +123,7 @@ async function loadAdminNotificationCounts() {
 export const getAdminNotificationCounts = unstable_cache(
   loadAdminNotificationCounts,
   ["admin-notification-counts"],
-  { revalidate: 20, tags: [ADMIN_NOTIFICATIONS_TAG] }
+  { revalidate: 5, tags: [ADMIN_NOTIFICATIONS_TAG] }
 );
 
 async function loadAdminOverview() {
