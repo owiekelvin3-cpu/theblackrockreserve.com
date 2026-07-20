@@ -630,7 +630,7 @@ const enBase = {
       step2Title: "Submit proof of payment",
       step2Subtitle:
         "Upload a payment screenshot and enter your transaction reference so our team can verify your liquidity deposit.",
-      payFee: "Pay fee",
+      payFee: "Pay from an external account",
       continueToProof: "I've Sent Payment — Continue",
       backToPayment: "Back to payment details",
       backToOverview: "Back to fee overview",
