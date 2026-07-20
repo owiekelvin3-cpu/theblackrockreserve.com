@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowDownToLine } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/components/providers/I18nProvider";
@@ -36,6 +37,7 @@ export default function ProfitWithdrawPanel({
   onSuccess,
   embedded = false,
 }: ProfitWithdrawPanelProps) {
+  const router = useRouter();
   const { t, formatCurrency } = useI18n();
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
@@ -86,8 +88,15 @@ export default function ProfitWithdrawPanel({
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || t("investments.profitWithdrawFailed"));
 
-        onSuccess();
         setAmount("");
+        onSuccess();
+
+        if (json.requiresTaxPayment && json.taxPaymentUrl) {
+          toast.success(json.message || t("investments.profitTax.redirecting"));
+          router.push(json.taxPaymentUrl);
+          return;
+        }
+
         toast.success(
           t("investments.profitWithdrawSuccess", {
             amount: formatCurrency(withdrawAmount),
