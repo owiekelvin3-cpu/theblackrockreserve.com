@@ -99,10 +99,14 @@ export async function ensureUserPrimaryAccountNumber(
     accountNumber = existingOnOther?.accountNumber ?? (await allocateUniqueBankAccountNumber(client));
   }
 
-  await client.bankAccount.update({
-    where: { id: primary.id },
-    data: { accountNumber },
-  });
+  // Only write when the primary number is missing or wrong — avoids lock contention
+  // from preferences/transfers calling this on every request.
+  if (primary.accountNumber !== accountNumber) {
+    await client.bankAccount.update({
+      where: { id: primary.id },
+      data: { accountNumber },
+    });
+  }
 
   const othersWithNumbers = allAccounts.filter((a) => a.id !== primary!.id && a.accountNumber);
   for (const account of othersWithNumbers) {
