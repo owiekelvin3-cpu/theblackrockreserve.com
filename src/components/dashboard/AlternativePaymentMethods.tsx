@@ -6,15 +6,16 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Building2,
   Headphones,
+  Landmark,
   MessageCircle,
   ShieldCheck,
   X,
 } from "lucide-react";
 import {
-  SiApplepay,
-  SiGooglepay,
-  SiMastercard,
-  SiVisa,
+  SiCashapp,
+  SiPaypal,
+  SiVenmo,
+  SiZelle,
 } from "react-icons/si";
 import Button from "@/components/ui/Button";
 import { useChat } from "@/components/providers/ChatProvider";
@@ -22,11 +23,12 @@ import { useI18n } from "@/components/providers/I18nProvider";
 import { cn } from "@/lib/utils";
 
 const METHODS = [
-  { id: "visa", label: "Visa", Icon: SiVisa, color: "#1A1F71" },
-  { id: "mastercard", label: "Mastercard", Icon: SiMastercard, color: "#EB001B" },
-  { id: "applepay", label: "Apple Pay", Icon: SiApplepay, color: "currentColor" },
-  { id: "googlepay", label: "Google Pay", Icon: SiGooglepay, color: "currentColor" },
+  { id: "cashapp", label: "Cash App", Icon: SiCashapp, color: "#00C244" },
+  { id: "venmo", label: "Venmo", Icon: SiVenmo, color: "#008CFF" },
+  { id: "paypal", label: "PayPal", Icon: SiPaypal, color: "#003087" },
   { id: "bank", label: "Bank Transfer", Icon: Building2, color: "currentColor" },
+  { id: "zelle", label: "Zelle", Icon: SiZelle, color: "#6D1ED4" },
+  { id: "chime", label: "Chime", Icon: Landmark, color: "#1EC677" },
 ] as const;
 
 type AlternativePaymentMethodsProps = {

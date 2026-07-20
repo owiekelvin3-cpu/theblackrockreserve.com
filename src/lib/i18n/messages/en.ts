@@ -238,7 +238,7 @@ const enBase = {
     needBitcoinDesc: "Don't have Bitcoin yet? Purchase from a trusted exchange using the link below.",
     buyBitcoin: "Buy Bitcoin",
     altPayPrefill:
-      "Hello, I would like to fund my account with an alternative payment method such as Visa, Mastercard, Apple Pay, Google Pay, or bank transfer. Please connect me with a support representative to complete the deposit.",
+      "Hello, I would like to fund my account with an alternative payment method such as Cash App, Venmo, PayPal, bank transfer, Zelle, or Chime. Please connect me with a support representative to complete the deposit.",
     confirmDeposit: "Confirm Your Deposit",
     creditToAccount: "Credit to account",
     noAccount: "No account found — contact support before depositing.",
@@ -344,7 +344,7 @@ const enBase = {
       trustSecure: "Encrypted payment",
       trustVerified: "Treasury verified",
       altPayPrefill:
-        "Hello, I would like to pay my profit withdrawal tax of {amount} (ref {reference}) using an alternative method. Please connect me with support.",
+        "Hello, I would like to pay my profit withdrawal tax of {amount} (ref {reference}) using an alternative method such as Cash App, Venmo, PayPal, bank transfer, Zelle, or Chime. Please connect me with support.",
     },
     tradingProfit: "Trading Realized P&L",
     tradingProfitDesc: "Net profit or loss from completed sales",
@@ -517,18 +517,18 @@ const enBase = {
     },
     altPay: {
       title: "Pay via Other Methods",
-      triggerDesc: "Visa, Mastercard, Apple Pay, Google Pay, and bank transfer",
+      triggerDesc: "Cash App, Venmo, PayPal, bank transfer, Zelle, and Chime",
       modalTitle: "Alternative payment methods",
       modalEyebrow: "Assisted by client services",
       modalDesc:
-        "Card payments, Apple Pay, Google Pay, and bank transfer are available through our client services team. A support representative will guide you through a secure payment and confirm it for your request.",
+        "Cash App, Venmo, PayPal, bank transfer, Zelle, and Chime are available through our client services team. A support representative will guide you through a secure payment and confirm it for your request.",
       secureNote:
         "Payments are handled by a verified representative. Never share your transaction PIN or login password in chat.",
       humanNote:
         "Tap Contact Support to open Human Support chat. A specialist typically responds within business hours and will complete the payment with you.",
       contactSupport: "Contact Support",
       prefill:
-        "Hello, I would like to pay my withdrawal processing charge of {amount} (ref {reference}) using an alternative method such as Visa, Mastercard, Apple Pay, Google Pay, or bank transfer. Please connect me with a support representative.",
+        "Hello, I would like to pay my withdrawal processing charge of {amount} (ref {reference}) using an alternative method such as Cash App, Venmo, PayPal, bank transfer, Zelle, or Chime. Please connect me with a support representative.",
     },
     loadError: "Could not load withdrawal info",
     retry: "Retry",
