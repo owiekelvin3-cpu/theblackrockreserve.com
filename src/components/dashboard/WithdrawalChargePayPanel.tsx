@@ -11,6 +11,7 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { WithdrawalChargeIllustration } from "@/components/dashboard/WithdrawalChargeIllustration";
+import WithdrawalChargeStatusTimeline from "@/components/dashboard/WithdrawalChargeStatusTimeline";
 import { formatReferenceId } from "@/lib/transaction-receipt";
 
 export type ChargePayPageData = {
@@ -106,8 +107,9 @@ export default function WithdrawalChargePayPanel({
       </div>
 
       <Card className="overflow-hidden p-0">
-        <div className="wc-modal-header px-5 py-4">
+        <div className="wc-modal-header px-5 py-4 space-y-4">
           <WithdrawalChargeIllustration className="w-full max-w-xs mx-auto h-auto rounded-xl" />
+          <WithdrawalChargeStatusTimeline chargeStatus={chargePayment?.status} />
         </div>
 
         <div className="p-5 sm:p-6 space-y-5">
