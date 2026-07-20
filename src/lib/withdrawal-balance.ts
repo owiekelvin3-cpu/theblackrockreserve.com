@@ -1,14 +1,18 @@
 import { prisma } from "@/lib/prisma";
 
-/** Only approved-path withdrawals reserve wallet balance (charge must be paid first). */
-const BALANCE_RESERVING_STATUSES = ["PENDING"] as const;
+/**
+ * Only legacy pending withdrawals (funds not yet deducted) reserve balance.
+ * New withdrawals debit immediately via fundsHeld=true.
+ */
+const LEGACY_RESERVING_STATUSES = ["PENDING"] as const;
 
 export async function getPendingWithdrawalTotal(userId: string, accountId: string, excludeId?: string) {
   const agg = await prisma.withdrawalRequest.aggregate({
     where: {
       userId,
       accountId,
-      status: { in: [...BALANCE_RESERVING_STATUSES] },
+      status: { in: [...LEGACY_RESERVING_STATUSES] },
+      fundsHeld: false,
       ...(excludeId ? { id: { not: excludeId } } : {}),
     },
     _sum: { amountUsd: true },
@@ -30,7 +34,8 @@ export async function getAvailableBalancesMap(
     where: {
       userId,
       accountId: { in: accountIds },
-      status: { in: [...BALANCE_RESERVING_STATUSES] },
+      status: { in: [...LEGACY_RESERVING_STATUSES] },
+      fundsHeld: false,
       ...(excludeWithdrawalId ? { id: { not: excludeWithdrawalId } } : {}),
     },
     _sum: { amountUsd: true },

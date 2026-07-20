@@ -168,6 +168,14 @@ function WithdrawalActions({
         >
           Reject charge
         </button>
+        <button
+          onClick={() => onWithdrawalAction(withdrawal.id, "REJECTED")}
+          disabled={busy}
+          className="admin-btn-ghost text-xs text-red-400 py-1 px-3"
+          title="Cancel withdrawal and return funds"
+        >
+          Cancel & refund
+        </button>
       </div>
     );
   }
@@ -195,9 +203,19 @@ function WithdrawalActions({
 
   if (withdrawal.status === "AWAITING_CHARGE_PAYMENT") {
     return (
-      <p className="text-[10px] text-[var(--admin-muted)] max-w-[140px] ml-auto text-right">
-        Waiting for user charge payment
-      </p>
+      <div className={`flex gap-2 ${stackClass} items-end`}>
+        <p className="text-[10px] text-[var(--admin-muted)] max-w-[140px] text-right">
+          Waiting for user charge payment
+        </p>
+        <button
+          onClick={() => onWithdrawalAction(withdrawal.id, "REJECTED")}
+          disabled={busy}
+          className="admin-btn-ghost text-xs text-red-400 py-1 px-3"
+          title="Cancel withdrawal and return funds"
+        >
+          Cancel & refund
+        </button>
+      </div>
     );
   }
 

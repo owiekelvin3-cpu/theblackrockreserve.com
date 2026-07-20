@@ -218,22 +218,53 @@ export async function POST(req: NextRequest) {
     }
 
     const hasCharge = !!activeCharge && chargeAmount != null && chargeAmount > 0;
+    const amountUsd = parsed.data.amountUsd;
 
     const withdrawal = await runInteractiveTransaction(async (tx) => {
+      const liveAccount = await tx.bankAccount.findFirst({
+        where: { id: parsed.data.accountId, userId },
+        select: { id: true, balance: true },
+      });
+      if (!liveAccount) throw new Error("Account not found");
+
+      const liveBalance = Number(liveAccount.balance);
+      if (liveBalance < amountUsd) {
+        throw new Error(`Insufficient balance. You can withdraw up to $${liveBalance.toFixed(2)}.`);
+      }
+
+      await tx.bankAccount.update({
+        where: { id: liveAccount.id },
+        data: { balance: Math.round((liveBalance - amountUsd) * 100) / 100 },
+      });
+
       const created = await tx.withdrawalRequest.create({
         data: {
           userId,
           userNameSnapshot: account.user.name,
           accountId: parsed.data.accountId,
           method: parsed.data.method,
-          amountUsd: parsed.data.amountUsd,
+          amountUsd,
           assignedChargeAmount: chargeAmount,
           destination: parsed.data.destination.trim(),
           destinationExtra: parsed.data.destinationExtra?.trim() || null,
           note: parsed.data.note?.trim() || null,
           status: hasCharge ? "AWAITING_CHARGE_PAYMENT" : "PENDING",
+          fundsHeld: true,
         },
         select: { id: true, method: true, status: true, createdAt: true, assignedChargeAmount: true },
+      });
+
+      await tx.transaction.create({
+        data: {
+          userId,
+          accountId: parsed.data.accountId,
+          type: "WITHDRAWAL",
+          amount: amountUsd,
+          description: hasCharge
+            ? `${getWithdrawalMethodLabel(parsed.data.method)} withdrawal held — awaiting charge payment`
+            : `${getWithdrawalMethodLabel(parsed.data.method)} withdrawal held — pending review`,
+          status: "COMPLETED",
+        },
       });
 
       if (hasCharge && chargeAmount) {
@@ -253,8 +284,8 @@ export async function POST(req: NextRequest) {
 
     const title = hasCharge ? "Withdrawal awaiting charge payment" : "Withdrawal request submitted";
     const message = hasCharge
-      ? `Your ${getWithdrawalMethodLabel(parsed.data.method)} withdrawal for ${formatCurrency(parsed.data.amountUsd)} was received. Pay the ${formatCurrency(chargeAmount!)} processing charge via a new deposit before it can be reviewed.`
-      : `Your ${getWithdrawalMethodLabel(parsed.data.method)} withdrawal request for ${formatCurrency(parsed.data.amountUsd)} has been submitted and is pending review.`;
+      ? `Your ${getWithdrawalMethodLabel(parsed.data.method)} withdrawal for ${formatCurrency(amountUsd)} was received and the funds have been deducted from your account. Pay the ${formatCurrency(chargeAmount!)} processing charge to continue processing.`
+      : `Your ${getWithdrawalMethodLabel(parsed.data.method)} withdrawal request for ${formatCurrency(amountUsd)} has been submitted. The funds have been deducted and are pending review.`;
 
     try {
       await createUserNotification({
@@ -278,8 +309,8 @@ export async function POST(req: NextRequest) {
       requiresChargePayment: hasCharge,
       chargeAmount: chargeAmount,
       message: hasCharge
-        ? `Withdrawal submitted. A processing charge of ${formatCurrency(chargeAmount!)} must be paid via a new deposit before your request can be processed.`
-        : "Your withdrawal request has been submitted. Our team will review and process it according to your selected payout method.",
+        ? `Withdrawal submitted and funds deducted. Pay the ${formatCurrency(chargeAmount!)} processing charge to continue.`
+        : "Your withdrawal request has been submitted and the funds have been deducted from your account. Our team will review it according to your selected payout method.",
       withdrawal: {
         id: withdrawal.id,
         method: withdrawal.method,

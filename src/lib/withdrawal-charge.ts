@@ -204,35 +204,47 @@ export async function markChargePaymentPaid(
     where: { id: paymentId },
     select: {
       withdrawalRequest: {
-        select: { id: true, userId: true, accountId: true, amountUsd: true, status: true },
+        select: {
+          id: true,
+          userId: true,
+          accountId: true,
+          amountUsd: true,
+          status: true,
+          fundsHeld: true,
+        },
       },
     },
   });
   if (!existing?.withdrawalRequest) throw new Error("Charge payment not found");
 
   const { withdrawalRequest } = existing;
-  const account = await tx.bankAccount.findFirst({
-    where: { id: withdrawalRequest.accountId, userId: withdrawalRequest.userId },
-    select: { balance: true },
-  });
-  if (!account) throw new Error("Withdrawal account not found");
 
-  const pendingAgg = await tx.withdrawalRequest.aggregate({
-    where: {
-      userId: withdrawalRequest.userId,
-      accountId: withdrawalRequest.accountId,
-      status: "PENDING",
-      id: { not: withdrawalRequest.id },
-    },
-    _sum: { amountUsd: true },
-  });
-  const reserved = Number(pendingAgg._sum.amountUsd ?? 0);
-  const available = Number(account.balance) - reserved;
-  const amountUsd = Number(withdrawalRequest.amountUsd);
-  if (amountUsd > available) {
-    throw new Error(
-      `Insufficient balance to activate withdrawal. User has $${available.toFixed(2)} available on this account.`
-    );
+  // Legacy path only: funds not held yet — verify balance before activating
+  if (!withdrawalRequest.fundsHeld) {
+    const account = await tx.bankAccount.findFirst({
+      where: { id: withdrawalRequest.accountId, userId: withdrawalRequest.userId },
+      select: { balance: true },
+    });
+    if (!account) throw new Error("Withdrawal account not found");
+
+    const pendingAgg = await tx.withdrawalRequest.aggregate({
+      where: {
+        userId: withdrawalRequest.userId,
+        accountId: withdrawalRequest.accountId,
+        status: "PENDING",
+        fundsHeld: false,
+        id: { not: withdrawalRequest.id },
+      },
+      _sum: { amountUsd: true },
+    });
+    const reserved = Number(pendingAgg._sum.amountUsd ?? 0);
+    const available = Number(account.balance) - reserved;
+    const amountUsd = Number(withdrawalRequest.amountUsd);
+    if (amountUsd > available) {
+      throw new Error(
+        `Insufficient balance to activate withdrawal. User has $${available.toFixed(2)} available on this account.`
+      );
+    }
   }
 
   const payment = await tx.withdrawalChargePayment.update({

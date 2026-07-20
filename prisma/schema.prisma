@@ -612,6 +612,7 @@ model WithdrawalRequest {
   destinationExtra     String?
   note                 String?
   status               WithdrawalRequestStatus @default(PENDING)
+  fundsHeld            Boolean                 @default(false)
   reviewedBy           String?
   reviewNote           String?
   createdAt            DateTime                @default(now())
