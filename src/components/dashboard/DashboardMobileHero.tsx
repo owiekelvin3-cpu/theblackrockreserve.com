@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, ArrowUpRight } from "lucide-react";
+import { Eye, EyeOff, ArrowUpRight, Landmark, Coins } from "lucide-react";
 import ProfileAvatar from "@/components/ui/ProfileAvatar";
 import SavingsApyBadge from "@/components/dashboard/SavingsApyBadge";
 import ProfitWithdrawButton from "@/components/dashboard/ProfitWithdrawButton";
@@ -78,6 +78,9 @@ export default function DashboardMobileHero({
       >
         <div className="dash-mobile-balance-header">
           <div className="flex items-center gap-2">
+            <span className="dash-mobile-balance-icon" aria-hidden>
+              <Landmark size={16} strokeWidth={1.75} />
+            </span>
             <span className="dash-mobile-balance-label">{t("dashboard.totalBalance")}</span>
             <button
               type="button"
@@ -95,14 +98,19 @@ export default function DashboardMobileHero({
         </p>
 
         <div className="dash-mobile-balance-footer">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <p className="dash-mobile-balance-sub-label">{t("dashboard.highYieldSavings")}</p>
-              <SavingsApyBadge rate={savingsApy} size="sm" />
+          <div className="dash-mobile-balance-savings min-w-0">
+            <span className="dash-mobile-balance-icon dash-mobile-balance-icon-savings" aria-hidden>
+              <Coins size={16} strokeWidth={1.75} />
+            </span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="dash-mobile-balance-sub-label">{t("dashboard.highYieldSavings")}</p>
+                <SavingsApyBadge rate={savingsApy} size="sm" />
+              </div>
+              <p className="dash-mobile-balance-sub-value">
+                {balanceVisible ? formattedSavings : maskAmount(formattedSavings)}
+              </p>
             </div>
-            <p className="dash-mobile-balance-sub-value">
-              {balanceVisible ? formattedSavings : maskAmount(formattedSavings)}
-            </p>
           </div>
           <Link href="/dashboard/deposit" className="dash-mobile-balance-link">
             {t("dashboard.seeDetails")}
