@@ -76,4 +76,5 @@ export const FALLBACK_RATES: ExchangeRates = {
   AUD: 1.52,
   CNY: 7.24,
   AED: 3.67,
+  NGN: 1550,
 };

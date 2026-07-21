@@ -5,7 +5,7 @@ import { registerApiSchema } from "@/lib/validations";
 import { sendEmail } from "@/lib/email";
 import { welcomeEmail } from "@/lib/email-templates";
 import { parseLocaleCode } from "@/lib/i18n/locales";
-import { parseCurrencyCode } from "@/lib/currency";
+import { parseCurrencyCode, isCurrencyAllowedForBadge } from "@/lib/currency";
 import { getServerLocale } from "@/lib/i18n/server";
 import { getClientIp } from "@/lib/admin-audit";
 import { captureUserLocationAsync } from "@/lib/user-location";
@@ -54,6 +54,12 @@ export async function POST(req: Request) {
     const hashedPassword = await bcrypt.hash(password, 12);
     const preferredLocale = await getServerLocale();
     const userCurrency = parseCurrencyCode(preferredCurrency);
+    if (!isCurrencyAllowedForBadge(userCurrency, "NONE")) {
+      return NextResponse.json(
+        { error: "Selected currency is not available during registration." },
+        { status: 400 }
+      );
+    }
     const verifiedAt = new Date();
 
     const existing = await prisma.user.findUnique({

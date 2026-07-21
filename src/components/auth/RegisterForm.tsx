@@ -12,7 +12,7 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import type { RegisterStep1Input, RegisterStep2Input } from "@/lib/validations";
 import { useI18n } from "@/components/providers/I18nProvider";
-import { CURRENCY_OPTIONS } from "@/lib/currency";
+import { STANDARD_CURRENCY_OPTIONS } from "@/lib/currency";
 import { useValidationSchemas } from "@/lib/i18n/use-validation-schemas";
 import { waitForSessionRole } from "@/lib/auth-session-client";
 
@@ -155,7 +155,7 @@ export default function RegisterForm() {
               {...step2Form.register("preferredCurrency")}
               className="w-full rounded-xl border border-border bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-gold/40"
             >
-              {CURRENCY_OPTIONS.map((option) => (
+              {STANDARD_CURRENCY_OPTIONS.map((option) => (
                 <option key={option.code} value={option.code}>
                   {option.label}
                 </option>

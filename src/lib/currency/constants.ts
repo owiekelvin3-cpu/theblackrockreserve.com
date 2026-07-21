@@ -1,4 +1,4 @@
-export const SUPPORTED_CURRENCIES = [
+export const STANDARD_CURRENCIES = [
   "USD",
   "EUR",
   "GBP",
@@ -9,6 +9,16 @@ export const SUPPORTED_CURRENCIES = [
   "AED",
 ] as const;
 
+/** Extra display currencies unlocked for Gold verified members. */
+export const GOLD_EXTENDED_CURRENCIES = ["NGN"] as const;
+
+export const SUPPORTED_CURRENCIES = [
+  ...STANDARD_CURRENCIES,
+  ...GOLD_EXTENDED_CURRENCIES,
+] as const;
+
+export type StandardCurrency = (typeof STANDARD_CURRENCIES)[number];
+export type GoldExtendedCurrency = (typeof GOLD_EXTENDED_CURRENCIES)[number];
 export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
 
 export const DEFAULT_CURRENCY: SupportedCurrency = "USD";
@@ -34,12 +44,47 @@ export const CURRENCY_META: Record<SupportedCurrency, CurrencyMeta> = {
   AUD: { code: "AUD", name: "Australian Dollar", symbol: "A$", decimals: 2, bcp47: "en-AU" },
   CNY: { code: "CNY", name: "Chinese Yuan", symbol: "¥", decimals: 2, bcp47: "zh-CN" },
   AED: { code: "AED", name: "UAE Dirham", symbol: "د.إ", decimals: 2, bcp47: "ar-AE" },
+  NGN: { code: "NGN", name: "Nigerian Naira", symbol: "₦", decimals: 2, bcp47: "en-NG" },
 };
 
-export const CURRENCY_OPTIONS = SUPPORTED_CURRENCIES.map((code) => ({
-  ...CURRENCY_META[code],
-  label: `${code} – ${CURRENCY_META[code].name} (${CURRENCY_META[code].symbol})`,
-}));
+function toCurrencyOptions(codes: readonly SupportedCurrency[]) {
+  return codes.map((code) => ({
+    ...CURRENCY_META[code],
+    label: `${code} – ${CURRENCY_META[code].name} (${CURRENCY_META[code].symbol})`,
+  }));
+}
+
+export const STANDARD_CURRENCY_OPTIONS = toCurrencyOptions(STANDARD_CURRENCIES);
+
+/** @deprecated Prefer getCurrencyOptionsForBadge for user-facing selectors. */
+export const CURRENCY_OPTIONS = toCurrencyOptions(SUPPORTED_CURRENCIES);
+
+export function getCurrencyCodesForBadge(
+  verificationBadge: string | null | undefined
+): SupportedCurrency[] {
+  if (verificationBadge === "GOLD") {
+    return [...STANDARD_CURRENCIES, ...GOLD_EXTENDED_CURRENCIES];
+  }
+  return [...STANDARD_CURRENCIES];
+}
+
+export function getCurrencyOptionsForBadge(verificationBadge: string | null | undefined) {
+  return toCurrencyOptions(getCurrencyCodesForBadge(verificationBadge));
+}
+
+export function isGoldExtendedCurrency(value: string | null | undefined): value is GoldExtendedCurrency {
+  return !!value && (GOLD_EXTENDED_CURRENCIES as readonly string[]).includes(value.toUpperCase());
+}
+
+export function isCurrencyAllowedForBadge(
+  currency: string | null | undefined,
+  verificationBadge: string | null | undefined
+): boolean {
+  const code = currency?.toUpperCase();
+  if (!code || !(SUPPORTED_CURRENCIES as readonly string[]).includes(code)) return false;
+  if (isGoldExtendedCurrency(code)) return verificationBadge === "GOLD";
+  return (STANDARD_CURRENCIES as readonly string[]).includes(code);
+}
 
 export function isSupportedCurrency(value: string | null | undefined): value is SupportedCurrency {
   return !!value && (SUPPORTED_CURRENCIES as readonly string[]).includes(value.toUpperCase());

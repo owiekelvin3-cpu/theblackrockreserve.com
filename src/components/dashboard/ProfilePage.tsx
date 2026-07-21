@@ -401,6 +401,11 @@ export default function ProfilePage() {
                 <div className="profile-card-head">
                   <h3 className="profile-card-title">{t("settings.currencyPreference")}</h3>
                   <p className="profile-card-subtitle">{t("settings.currencyPreferenceDesc")}</p>
+                  {verificationBadge === "GOLD" && (
+                    <p className="profile-card-subtitle mt-1 text-accent-gold/90">
+                      {t("settings.currencyPreferenceGoldNote")}
+                    </p>
+                  )}
                 </div>
                 <div className="profile-card-body">
                   <CurrencySelector variant="full" />

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getSessionUserId, unauthorizedResponse } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { LOCALE_CODES } from "@/lib/i18n/locales";
-import { SUPPORTED_CURRENCIES } from "@/lib/currency";
+import { SUPPORTED_CURRENCIES, isCurrencyAllowedForBadge } from "@/lib/currency";
 import { parseNotificationPrefs, type NotificationPrefs } from "@/lib/notification-prefs";
 import { ensureUserPrimaryAccountNumber } from "@/lib/bank-account-number";
 import {
@@ -126,7 +126,21 @@ export async function PATCH(request: Request) {
     } = {};
 
     if (parsed.data.preferredLocale) data.preferredLocale = parsed.data.preferredLocale;
-    if (parsed.data.preferredCurrency) data.preferredCurrency = parsed.data.preferredCurrency;
+    if (parsed.data.preferredCurrency) {
+      const caps = await getDbSchemaCapabilities();
+      const existing = await prisma.user.findUnique({
+        where: { id: userId },
+        select: userVerificationBadgeSelect(caps),
+      });
+      const badge = (existing as { verificationBadge?: string } | null)?.verificationBadge ?? "NONE";
+      if (!isCurrencyAllowedForBadge(parsed.data.preferredCurrency, badge)) {
+        return NextResponse.json(
+          { error: "Nigerian Naira is available for Gold verified members only." },
+          { status: 400 }
+        );
+      }
+      data.preferredCurrency = parsed.data.preferredCurrency;
+    }
     if (parsed.data.name !== undefined) data.name = parsed.data.name.trim();
     if (parsed.data.phone !== undefined) {
       const trimmed = parsed.data.phone?.trim();

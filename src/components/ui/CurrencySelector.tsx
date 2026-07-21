@@ -5,7 +5,8 @@ import { createPortal } from "react-dom";
 import { ChevronDown, Coins, Check } from "lucide-react";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { useHydrated } from "@/hooks/use-hydrated";
-import { CURRENCY_OPTIONS } from "@/lib/currency";
+import { getCurrencyOptionsForBadge } from "@/lib/currency";
+import { useProfileImage } from "@/components/providers/ProfileImageProvider";
 import { cn } from "@/lib/utils";
 
 type Variant = "compact" | "full";
@@ -28,6 +29,7 @@ const VIEWPORT_PADDING = 8;
 
 export default function CurrencySelector({ variant = "compact", className }: CurrencySelectorProps) {
   const { preferredCurrency, setPreferredCurrency, t } = useI18n();
+  const { verificationBadge } = useProfileImage();
   const hydrated = useHydrated();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -36,7 +38,8 @@ export default function CurrencySelector({ variant = "compact", className }: Cur
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLUListElement>(null);
 
-  const current = CURRENCY_OPTIONS.find((c) => c.code === preferredCurrency) ?? CURRENCY_OPTIONS[0];
+  const currencyOptions = getCurrencyOptionsForBadge(verificationBadge);
+  const current = currencyOptions.find((c) => c.code === preferredCurrency) ?? currencyOptions[0];
 
   useEffect(() => {
     setMounted(true);
@@ -122,7 +125,7 @@ export default function CurrencySelector({ variant = "compact", className }: Cur
                 : undefined,
             }}
           >
-            {CURRENCY_OPTIONS.map((option) => {
+            {currencyOptions.map((option) => {
               const selected = option.code === preferredCurrency;
               return (
                 <li key={option.code} role="option" aria-selected={selected}>

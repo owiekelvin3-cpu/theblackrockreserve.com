@@ -1,14 +1,23 @@
 export {
   SUPPORTED_CURRENCIES,
+  STANDARD_CURRENCIES,
+  GOLD_EXTENDED_CURRENCIES,
   DEFAULT_CURRENCY,
   BASE_CURRENCY,
   CURRENCY_COOKIE,
   CURRENCY_STORAGE_KEY,
   CURRENCY_META,
   CURRENCY_OPTIONS,
+  STANDARD_CURRENCY_OPTIONS,
+  getCurrencyCodesForBadge,
+  getCurrencyOptionsForBadge,
+  isCurrencyAllowedForBadge,
+  isGoldExtendedCurrency,
   isSupportedCurrency,
   parseCurrencyCode,
   type SupportedCurrency,
+  type StandardCurrency,
+  type GoldExtendedCurrency,
   type CurrencyMeta,
 } from "@/lib/currency/constants";
 

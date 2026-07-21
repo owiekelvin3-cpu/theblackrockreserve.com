@@ -7,6 +7,7 @@ const CURRENCY_FLAGS: Record<string, string> = {
   JPY: "🇯🇵",
   CNY: "🇨🇳",
   AED: "🇦🇪",
+  NGN: "🇳🇬",
 };
 
 export function currencyFlag(currency: string) {
