@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, Wallet, ArrowUpFromLine, LineChart, Menu,
+  LayoutDashboard, Users, Landmark, CreditCard, Menu,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDashboardLayout } from "@/components/dashboard/DashboardLayoutContext";
@@ -11,9 +11,24 @@ import { useI18n } from "@/components/providers/I18nProvider";
 
 const tabs = [
   { href: "/dashboard", labelKey: "nav.home", icon: LayoutDashboard, match: (p: string) => p === "/dashboard" },
-  { href: "/dashboard/deposit", labelKey: "nav.deposit", icon: Wallet, match: (p: string) => p.startsWith("/dashboard/deposit") },
-  { href: "/dashboard/withdrawals", labelKey: "nav.withdraw", icon: ArrowUpFromLine, match: (p: string) => p.startsWith("/dashboard/withdrawals") },
-  { href: "/dashboard/capital-markets", labelKey: "nav.markets", icon: LineChart, match: (p: string) => p.startsWith("/dashboard/capital-markets") },
+  {
+    href: "/dashboard/joint-accounts",
+    labelKey: "nav.jointAccounts",
+    icon: Users,
+    match: (p: string) => p.startsWith("/dashboard/joint-accounts"),
+  },
+  {
+    href: "/dashboard/analytics",
+    labelKey: "nav.loans",
+    icon: Landmark,
+    match: (p: string) => p.startsWith("/dashboard/analytics") || p.startsWith("/dashboard/loans"),
+  },
+  {
+    href: "/dashboard/cards",
+    labelKey: "nav.cards",
+    icon: CreditCard,
+    match: (p: string) => p.startsWith("/dashboard/cards"),
+  },
 ] as const;
 
 export default function DashboardMobileNav() {
