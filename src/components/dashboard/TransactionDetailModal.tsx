@@ -184,6 +184,11 @@ function TransactionDetailView({
     detail?.type === "TRANSFER" && detail.counterpartyRelation === "sender";
   const isMemberTransfer = isOutgoingTransfer || isIncomingTransfer;
 
+  const displayStatusLabel =
+    detail.status === "PENDING" || /awaiting charge|pending review|held —/i.test(detail.description)
+      ? t("common.pending")
+      : detail.statusLabel;
+
   const partyDisplay = (name: string, badge?: VerificationBadgeType | string | null) => (
     <UserDisplayName
       name={name}
@@ -234,7 +239,7 @@ function TransactionDetailView({
             </div>
 
             <div className="tx-receipt-capture">
-              <ReceiptBrandHeader />
+              <ReceiptBrandHeader iconSize={32} />
               <div className="tx-detail-success-hero">
                 <div className="tx-detail-success-ring" aria-hidden>
                   <div className="tx-detail-success-check">
@@ -247,11 +252,16 @@ function TransactionDetailView({
                 <p className="tx-receipt-subtitle tx-detail-success-subtitle">
                   {t("dashboard.transactionDetail.subtitle")}
                 </p>
-                <div className="tx-detail-success-meta">
+                <div
+                  className={cn(
+                    "tx-detail-success-meta",
+                    displayStatusLabel === t("common.pending") && "tx-detail-success-meta-pending"
+                  )}
+                >
                   <CheckCircle2 size={14} className="shrink-0" aria-hidden />
                   <span>{transactionTypeLabel(detail.type)}</span>
                   <span className="tx-detail-success-meta-dot" aria-hidden />
-                  <span>{detail.statusLabel}</span>
+                  <span>{displayStatusLabel}</span>
                 </div>
               </div>
 

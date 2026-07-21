@@ -6,15 +6,16 @@ import { cn } from "@/lib/utils";
 
 type ReceiptBrandHeaderProps = {
   className?: string;
+  iconSize?: number;
 };
 
-export default function ReceiptBrandHeader({ className }: ReceiptBrandHeaderProps) {
+export default function ReceiptBrandHeader({ className, iconSize = 32 }: ReceiptBrandHeaderProps) {
   const { t } = useI18n();
 
   return (
     <div className={cn("tx-receipt-brand-header", className)}>
       <div className="tx-receipt-brand-lockup">
-        <AppIconMark size={24} className="rounded-lg" />
+        <AppIconMark size={iconSize} className="rounded-lg" />
         <span className="tx-receipt-brand-wordmark">{t("brand.name")}</span>
       </div>
     </div>
