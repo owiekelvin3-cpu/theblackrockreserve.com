@@ -3534,6 +3534,19 @@ html.tx-member-transfer-scroll-lock {
   box-shadow: 0 3px 12px rgba(34, 197, 94, 0.4);
 }
 
+.tx-detail-success-ring-pending {
+  background: rgba(251, 191, 36, 0.12);
+  border-color: rgba(251, 191, 36, 0.35);
+  box-shadow:
+    0 0 0 5px rgba(251, 191, 36, 0.08),
+    0 0 20px rgba(251, 191, 36, 0.16);
+}
+
+.tx-detail-success-check-pending {
+  background: linear-gradient(145deg, #fbbf24 0%, #f59e0b 100%);
+  box-shadow: 0 3px 12px rgba(251, 191, 36, 0.4);
+}
+
 .tx-detail-success-title {
   margin: 0.2rem 0 0;
   font-size: 1.125rem;
@@ -3781,6 +3794,10 @@ html.tx-member-transfer-scroll-lock {
 
 .receipt-export-status-dot-success {
   background: #22c55e;
+}
+
+.receipt-export-status-dot-pending {
+  background: #fbbf24;
 }
 
 .receipt-export-status-dot-failed {

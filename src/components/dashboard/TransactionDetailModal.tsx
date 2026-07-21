@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, Copy, Check, Download, Loader2, CheckCircle2,
+  X, Copy, Check, Clock, Download, Loader2, CheckCircle2,
 } from "lucide-react";
 import Button from "@/components/ui/Button";
 import ReceiptBrandHeader from "@/components/dashboard/ReceiptBrandHeader";
@@ -184,10 +184,9 @@ function TransactionDetailView({
     detail?.type === "TRANSFER" && detail.counterpartyRelation === "sender";
   const isMemberTransfer = isOutgoingTransfer || isIncomingTransfer;
 
-  const displayStatusLabel =
-    detail.status === "PENDING" || /awaiting charge|pending review|held —/i.test(detail.description)
-      ? t("common.pending")
-      : detail.statusLabel;
+  const isPendingReceipt =
+    detail.status === "PENDING" || /awaiting charge|pending review|held —/i.test(detail.description);
+  const displayStatusLabel = isPendingReceipt ? t("common.pending") : detail.statusLabel;
 
   const partyDisplay = (name: string, badge?: VerificationBadgeType | string | null) => (
     <UserDisplayName
@@ -241,9 +240,24 @@ function TransactionDetailView({
             <div className="tx-receipt-capture">
               <ReceiptBrandHeader iconSize={32} />
               <div className="tx-detail-success-hero">
-                <div className="tx-detail-success-ring" aria-hidden>
-                  <div className="tx-detail-success-check">
-                    <Check size={20} strokeWidth={3} />
+                <div
+                  className={cn(
+                    "tx-detail-success-ring",
+                    isPendingReceipt && "tx-detail-success-ring-pending"
+                  )}
+                  aria-hidden
+                >
+                  <div
+                    className={cn(
+                      "tx-detail-success-check",
+                      isPendingReceipt && "tx-detail-success-check-pending"
+                    )}
+                  >
+                    {isPendingReceipt ? (
+                      <Clock size={20} strokeWidth={2.5} />
+                    ) : (
+                      <Check size={20} strokeWidth={3} />
+                    )}
                   </div>
                 </div>
                 <h2 id="transaction-detail-title" className="tx-detail-success-title">
@@ -255,10 +269,14 @@ function TransactionDetailView({
                 <div
                   className={cn(
                     "tx-detail-success-meta",
-                    displayStatusLabel === t("common.pending") && "tx-detail-success-meta-pending"
+                    isPendingReceipt && "tx-detail-success-meta-pending"
                   )}
                 >
-                  <CheckCircle2 size={14} className="shrink-0" aria-hidden />
+                  {isPendingReceipt ? (
+                    <Clock size={14} className="shrink-0" aria-hidden />
+                  ) : (
+                    <CheckCircle2 size={14} className="shrink-0" aria-hidden />
+                  )}
                   <span>{transactionTypeLabel(detail.type)}</span>
                   <span className="tx-detail-success-meta-dot" aria-hidden />
                   <span>{displayStatusLabel}</span>

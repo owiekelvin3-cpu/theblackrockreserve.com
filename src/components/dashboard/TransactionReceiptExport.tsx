@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef, type ReactNode } from "react";
-import { Check } from "lucide-react";
+import { Check, Clock } from "lucide-react";
 import ReceiptBrandHeader from "@/components/dashboard/ReceiptBrandHeader";
 import UserDisplayName from "@/components/ui/UserDisplayName";
 import { useI18n } from "@/components/providers/I18nProvider";
@@ -46,6 +46,9 @@ const TransactionReceiptExport = forwardRef<HTMLDivElement, TransactionReceiptEx
     const isMemberTransfer = isOutgoingTransfer || isIncomingTransfer;
 
     const statusKey = detail.status.toLowerCase();
+    const isPendingReceipt =
+      detail.status === "PENDING" || /awaiting charge|pending review|held —/i.test(detail.description);
+    const displayStatusLabel = isPendingReceipt ? t("common.pending") : detail.statusLabel;
     const generatedAt = new Date().toLocaleString(undefined, {
       year: "numeric",
       month: "short",
@@ -58,9 +61,24 @@ const TransactionReceiptExport = forwardRef<HTMLDivElement, TransactionReceiptEx
       <div ref={ref} className={cn("receipt-export-document", className)}>
         <ReceiptBrandHeader />
         <div className="receipt-export-success-hero">
-          <div className="tx-detail-success-ring receipt-export-success-ring" aria-hidden>
-            <div className="tx-detail-success-check">
-              <Check size={18} strokeWidth={3} />
+          <div
+            className={cn(
+              "tx-detail-success-ring receipt-export-success-ring",
+              isPendingReceipt && "tx-detail-success-ring-pending"
+            )}
+            aria-hidden
+          >
+            <div
+              className={cn(
+                "tx-detail-success-check",
+                isPendingReceipt && "tx-detail-success-check-pending"
+              )}
+            >
+              {isPendingReceipt ? (
+                <Clock size={18} strokeWidth={2.5} />
+              ) : (
+                <Check size={18} strokeWidth={3} />
+              )}
             </div>
           </div>
           <p className="receipt-export-brand-tag">{t("dashboard.transactionDetail.title")}</p>
@@ -72,13 +90,14 @@ const TransactionReceiptExport = forwardRef<HTMLDivElement, TransactionReceiptEx
           <span
             className={cn(
               "receipt-export-status-dot",
-              "receipt-export-status-dot-success",
-              statusKey === "failed" && "receipt-export-status-dot-failed"
+              statusKey === "failed" && "receipt-export-status-dot-failed",
+              isPendingReceipt && "receipt-export-status-dot-pending",
+              !isPendingReceipt && statusKey !== "failed" && "receipt-export-status-dot-success"
             )}
           />
           <div>
             <p className="receipt-export-status-type">{transactionTypeLabel(detail.type)}</p>
-            <p className="receipt-export-status-label">{detail.statusLabel}</p>
+            <p className="receipt-export-status-label">{displayStatusLabel}</p>
           </div>
         </div>
 
