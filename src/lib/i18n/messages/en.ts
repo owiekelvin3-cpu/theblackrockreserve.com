@@ -1029,7 +1029,7 @@ const enBase = {
     languagePreferenceDesc: "Choose your preferred language for the entire platform.",
     currencyPreference: "Currency preference",
     currencyPreferenceDesc: "Choose how monetary amounts are displayed across your account.",
-    currencyPreferenceGoldNote: "As a Gold verified member, you can also display amounts in Nigerian Naira (NGN).",
+    currencyPreferenceGoldNote: "As a Gold verified member, you can also display amounts in Nigerian Naira (₦).",
     notifyTransaction: "Transaction alerts",
     notifyTransactionDesc: "Deposits, transfers, and withdrawals",
     notifyInvestment: "Investment updates",

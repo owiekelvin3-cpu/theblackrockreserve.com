@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { currencyFlag } from "@/lib/currency-flags";
+import { getCurrencyDisplayBadge } from "@/lib/currency";
 import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
 import SavingsApyBadge from "@/components/dashboard/SavingsApyBadge";
 import { useTransactionPin } from "@/hooks/use-transaction-pin";
@@ -125,7 +126,9 @@ export default function SavingsPanel({ data, onUpdated }: SavingsPanelProps) {
           <span className="text-2xl leading-none">{currencyFlag(preferredCurrency)}</span>
           <SavingsApyBadge rate={data.apyAnnualPercent} />
         </div>
-        <p className="text-xs text-text-muted font-medium uppercase tracking-wide">{preferredCurrency}</p>
+        <p className="text-xs text-text-muted font-medium uppercase tracking-wide">
+          {getCurrencyDisplayBadge(preferredCurrency)}
+        </p>
         <p className="text-2xl sm:text-3xl font-bold text-text-primary mt-0.5 tracking-tight">
           {formatCurrency(data.savings.balance)}
         </p>

@@ -37,4 +37,5 @@ export {
   formatMoneyDisplay,
   formatMoneyFromUsd,
   getCurrencySymbol,
+  getCurrencyDisplayBadge,
 } from "@/lib/currency/format";
