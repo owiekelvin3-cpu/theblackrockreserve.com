@@ -153,6 +153,7 @@ export const platformSettingsSchema = z.object({
     .refine((v) => !v || v === "" || /^https?:\/\/.+/.test(v), "Must be a valid URL"),
   depositInstructions: z.string().optional(),
   depositConfirmationMessage: z.string().optional(),
+  withdrawalChargeOverviewMessage: z.string().optional(),
   contactEmail: z
     .string()
     .optional()

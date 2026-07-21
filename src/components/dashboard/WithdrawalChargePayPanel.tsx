@@ -45,6 +45,9 @@ export type ChargePayPageData = {
     depositInstructions: string;
     qrCodeDataUrl?: string;
   };
+  content?: {
+    overviewMessage?: string;
+  };
   canPay: boolean;
   receipt: WithdrawalReceiptData;
 };
@@ -75,11 +78,6 @@ export default function WithdrawalChargePayPanel({
   const rejected = chargePayment?.status === "REJECTED";
   const inPaymentFlow = canPay && !submitted && !paid;
 
-  const subtitleParams = {
-    amount: formatCurrency(withdrawal.amountUsd),
-    percent: chargePercent,
-  };
-
   const goToPayment = () => {
     router.push(`/dashboard/withdrawals/${withdrawal.id}/pay-charge/payment`);
   };
@@ -102,7 +100,11 @@ export default function WithdrawalChargePayPanel({
         </span>
         <h1 className="text-xl sm:text-2xl font-bold text-white">{t("withdrawals.chargePay.title")}</h1>
         <p className="text-sm text-text-secondary mt-2 leading-relaxed">
-          {t("withdrawals.chargePay.subtitle", subtitleParams)}
+          {data.content?.overviewMessage ??
+            t("withdrawals.chargePay.subtitle", {
+              amount: formatCurrency(withdrawal.amountUsd),
+              percent: chargePercent,
+            })}
         </p>
       </div>
 

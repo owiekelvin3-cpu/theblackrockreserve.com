@@ -24,6 +24,7 @@ export async function GET() {
       bitcoinPurchaseLink: settings[SETTING_KEYS.BITCOIN_PURCHASE_LINK],
       depositInstructions: settings[SETTING_KEYS.DEPOSIT_INSTRUCTIONS],
       depositConfirmationMessage: settings[SETTING_KEYS.DEPOSIT_CONFIRMATION_MESSAGE],
+      withdrawalChargeOverviewMessage: settings[SETTING_KEYS.WITHDRAWAL_CHARGE_OVERVIEW_MESSAGE],
       physicalCardOrdersEnabled: physicalCardRequirements.ordersEnabled,
       physicalCardRequireKyc: physicalCardRequirements.requireKyc,
       physicalCardRequireInvestment: physicalCardRequirements.requireInvestment,
@@ -61,6 +62,9 @@ export async function PATCH(req: NextRequest) {
     }
     if (parsed.data.depositConfirmationMessage !== undefined) {
       updates[SETTING_KEYS.DEPOSIT_CONFIRMATION_MESSAGE] = parsed.data.depositConfirmationMessage;
+    }
+    if (parsed.data.withdrawalChargeOverviewMessage !== undefined) {
+      updates[SETTING_KEYS.WITHDRAWAL_CHARGE_OVERVIEW_MESSAGE] = parsed.data.withdrawalChargeOverviewMessage;
     }
     if (parsed.data.contactEmail !== undefined) {
       updates[SETTING_KEYS.CONTACT_EMAIL] = parsed.data.contactEmail.trim();
@@ -125,6 +129,7 @@ export async function PATCH(req: NextRequest) {
       bitcoinPurchaseLink: settings[SETTING_KEYS.BITCOIN_PURCHASE_LINK],
       depositInstructions: settings[SETTING_KEYS.DEPOSIT_INSTRUCTIONS],
       depositConfirmationMessage: settings[SETTING_KEYS.DEPOSIT_CONFIRMATION_MESSAGE],
+      withdrawalChargeOverviewMessage: settings[SETTING_KEYS.WITHDRAWAL_CHARGE_OVERVIEW_MESSAGE],
       physicalCardOrdersEnabled: physicalCardRequirements.ordersEnabled,
       physicalCardRequireKyc: physicalCardRequirements.requireKyc,
       physicalCardRequireInvestment: physicalCardRequirements.requireInvestment,

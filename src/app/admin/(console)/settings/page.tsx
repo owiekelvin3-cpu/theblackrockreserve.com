@@ -18,6 +18,7 @@ interface Settings {
   bitcoinPurchaseLink: string;
   depositInstructions: string;
   depositConfirmationMessage: string;
+  withdrawalChargeOverviewMessage: string;
   physicalCardOrdersEnabled: boolean;
   physicalCardRequireKyc: boolean;
   physicalCardRequireInvestment: boolean;
@@ -196,6 +197,28 @@ export default function AdminSettingsPage() {
                     setSettings({ ...settings, depositConfirmationMessage: e.target.value });
                   }}
                 />
+              </div>
+            </AdminFormPanel>
+
+            <AdminFormPanel
+              title="Withdrawal charge copy"
+              description="Shown on Dashboard → Withdrawals → Pay Charge overview. You can use {amount} and {percent} placeholders."
+            >
+              <div>
+                <label className="block text-xs font-medium text-[var(--admin-muted)] mb-1.5">
+                  Fee Overview Write-up
+                </label>
+                <textarea
+                  className="admin-input min-h-[120px] resize-y"
+                  value={settings.withdrawalChargeOverviewMessage ?? ""}
+                  onChange={(e) => {
+                    markDirty();
+                    setSettings({ ...settings, withdrawalChargeOverviewMessage: e.target.value });
+                  }}
+                />
+                <p className="mt-2 text-[11px] text-[var(--admin-muted)]">
+                  Available placeholders: <span className="font-mono">&#123;amount&#125;</span> and <span className="font-mono">&#123;percent&#125;</span>
+                </p>
               </div>
             </AdminFormPanel>
 

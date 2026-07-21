@@ -13,6 +13,13 @@ import { prisma } from "@/lib/prisma";
 import { invalidateAdminCaches } from "@/lib/admin-cache";
 import QRCode from "qrcode";
 
+function applyTemplate(template: string, vars: Record<string, string>) {
+  return Object.entries(vars).reduce(
+    (text, [key, value]) => text.replaceAll(`{${key}}`, value),
+    template
+  );
+}
+
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await getSessionUserId();
   if (!userId) return unauthorizedResponse();
@@ -53,6 +60,17 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         : withdrawal.chargePayment
           ? Number(withdrawal.chargePayment.amountUsd)
           : null;
+    const chargePercent =
+      chargeAmount && Number(withdrawal.amountUsd) > 0
+        ? `${(((chargeAmount / Number(withdrawal.amountUsd)) * 1000) / 10).toString().replace(/\.0$/, "")}%`
+        : "15%";
+    const overviewMessage = applyTemplate(
+      depositSettings.withdrawalChargeOverviewMessage,
+      {
+        amount: formatCurrency(Number(withdrawal.amountUsd)),
+        percent: chargePercent,
+      }
+    );
 
     return NextResponse.json({
       withdrawal: {
@@ -98,6 +116,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         bitcoinPurchaseLink: depositSettings.bitcoinPurchaseLink,
         depositInstructions: depositSettings.depositInstructions,
         qrCodeDataUrl,
+      },
+      content: {
+        overviewMessage,
       },
       canPay:
         withdrawal.status === "AWAITING_CHARGE_PAYMENT" &&

