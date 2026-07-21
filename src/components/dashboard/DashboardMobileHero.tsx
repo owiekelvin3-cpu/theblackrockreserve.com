@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, ArrowUpRight, Landmark, Coins } from "lucide-react";
+import { Eye, EyeOff, ArrowUpRight, Landmark, Coins, Plus } from "lucide-react";
 import ProfileAvatar from "@/components/ui/ProfileAvatar";
 import SavingsApyBadge from "@/components/dashboard/SavingsApyBadge";
 import ProfitWithdrawButton from "@/components/dashboard/ProfitWithdrawButton";
@@ -112,9 +112,11 @@ export default function DashboardMobileHero({
               </p>
             </div>
           </div>
-          <Link href="/dashboard/deposit" className="dash-mobile-balance-link">
-            {t("dashboard.seeDetails")}
-            <ArrowUpRight size={14} />
+          <Link href="/dashboard/deposit" className="dash-mobile-balance-add-btn">
+            <span className="dash-mobile-balance-add-btn-icon" aria-hidden>
+              <Plus size={12} strokeWidth={2.5} />
+            </span>
+            {t("dashboard.addFunds")}
           </Link>
         </div>
       </motion.div>

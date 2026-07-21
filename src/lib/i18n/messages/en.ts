@@ -126,6 +126,7 @@ const enBase = {
     profitBalance: "Profit balance",
     profitWithdraw: "Withdraw",
     seeDetails: "See details",
+    addFunds: "Add funds",
     viewPortfolio: "View portfolio",
     cashFlow: "Cash Flow",
     revenueFlow: "Revenue Flow",
