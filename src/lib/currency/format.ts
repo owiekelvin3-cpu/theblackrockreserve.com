@@ -10,10 +10,9 @@ export function getCurrencySymbol(currency: SupportedCurrency): string {
   return CURRENCY_META[currency].symbol;
 }
 
-/** Short badge shown in selectors and balance tiles (₦ instead of NGN). */
+/** Short badge shown in selectors and balance tiles. */
 export function getCurrencyDisplayBadge(currency: string | SupportedCurrency): string {
   const code = parseCurrencyCode(typeof currency === "string" ? currency : currency);
-  if (code === "NGN") return CURRENCY_META.NGN.symbol;
   return code;
 }
 

@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { ChevronDown, Coins, Check } from "lucide-react";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { useHydrated } from "@/hooks/use-hydrated";
-import { getCurrencyOptionsForBadge, getCurrencyDisplayBadge } from "@/lib/currency";
+import { getCurrencyOptionsForBadge } from "@/lib/currency";
 import { useProfileImage } from "@/components/providers/ProfileImageProvider";
 import { cn } from "@/lib/utils";
 
@@ -139,10 +139,11 @@ export default function CurrencySelector({ variant = "compact", className }: Cur
                         : "text-text-primary hover:bg-bg-tertiary"
                     )}
                   >
-                    <span className="font-mono text-xs w-10 shrink-0">
-                      {getCurrencyDisplayBadge(option.code)}
+                    <span className="font-mono text-xs w-10 shrink-0">{option.code}</span>
+                    <span className="flex-1 min-w-0 truncate">
+                      {option.name}
+                      <span className="text-text-muted ml-1">({option.symbol})</span>
                     </span>
-                    <span className="flex-1 min-w-0 truncate">{option.name}</span>
                     {selected && <Check size={16} className="shrink-0" />}
                   </button>
                 </li>
@@ -181,10 +182,8 @@ export default function CurrencySelector({ variant = "compact", className }: Cur
       >
         <span className="flex items-center gap-2 min-w-0">
           <Coins size={16} className="text-text-muted shrink-0" />
-          <span className="truncate font-medium">{getCurrencyDisplayBadge(current.code)}</span>
-          {current.code !== "NGN" && (
-            <span className="text-text-muted truncate hidden sm:inline">{current.symbol}</span>
-          )}
+          <span className="truncate font-medium">{current.code}</span>
+          <span className="text-text-muted truncate hidden sm:inline">{current.symbol}</span>
         </span>
         <ChevronDown
           size={16}

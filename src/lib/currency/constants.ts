@@ -50,10 +50,9 @@ export const CURRENCY_META: Record<SupportedCurrency, CurrencyMeta> = {
 function toCurrencyOptions(codes: readonly SupportedCurrency[]) {
   return codes.map((code) => {
     const meta = CURRENCY_META[code];
-    const badge = code === "NGN" ? meta.symbol : code;
     return {
       ...meta,
-      label: `${badge} – ${meta.name}`,
+      label: `${code} – ${meta.name} (${meta.symbol})`,
     };
   });
 }
