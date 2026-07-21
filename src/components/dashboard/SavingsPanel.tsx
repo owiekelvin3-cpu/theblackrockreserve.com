@@ -126,7 +126,7 @@ export default function SavingsPanel({ data, onUpdated }: SavingsPanelProps) {
           <span className="text-2xl leading-none">{currencyFlag(preferredCurrency)}</span>
           <SavingsApyBadge rate={data.apyAnnualPercent} />
         </div>
-        <p className="text-xs text-text-muted font-medium uppercase tracking-wide">
+        <p className="text-xs text-text-muted font-medium tracking-wide">
           {getCurrencyDisplayBadge(preferredCurrency)}
         </p>
         <p className="text-2xl sm:text-3xl font-bold text-text-primary mt-0.5 tracking-tight">

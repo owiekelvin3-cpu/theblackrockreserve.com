@@ -26,6 +26,14 @@ export function formatMoneyDisplay(
   const meta = CURRENCY_META[code];
   const bcp47 = locale ?? meta.bcp47;
 
+  if (code === "NGN") {
+    const formatted = new Intl.NumberFormat(bcp47, {
+      minimumFractionDigits: meta.decimals,
+      maximumFractionDigits: meta.decimals,
+    }).format(amount);
+    return `${meta.symbol}${formatted}`;
+  }
+
   try {
     return new Intl.NumberFormat(bcp47, {
       style: "currency",

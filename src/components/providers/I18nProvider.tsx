@@ -31,7 +31,8 @@ import {
   convertFromUsd as convertUsdAmount,
   convertToUsd as convertDisplayToUsd,
   formatMoneyDisplay,
-  getCurrencySymbol,
+  getCurrencyDisplayBadge,
+  CURRENCY_META,
   parseCurrencyCode,
   type ExchangeRates,
   type SupportedCurrency,
@@ -143,7 +144,7 @@ function createFallbackContext(locale: LocaleCode): I18nContextValue {
     dir: def.dir,
     setLocale: () => {},
     preferredCurrency: DEFAULT_CURRENCY,
-    currencySymbol: getCurrencySymbol(DEFAULT_CURRENCY),
+    currencySymbol: getCurrencyDisplayBadge(DEFAULT_CURRENCY),
     exchangeRates: rates,
     ratesLoading: false,
     setPreferredCurrency: () => {},
@@ -258,7 +259,7 @@ export function I18nProvider({
     const formatCurrencyFn = (amountUsd: number, currencyOverride?: string) => {
       const target = parseCurrencyCode(currencyOverride ?? preferredCurrency);
       const converted = convertUsdAmount(amountUsd, target, exchangeRates);
-      return formatMoneyDisplay(converted, target, def.bcp47);
+      return formatMoneyDisplay(converted, target, CURRENCY_META[target].bcp47);
     };
 
     return {
@@ -267,7 +268,7 @@ export function I18nProvider({
       dir: def.dir,
       setLocale,
       preferredCurrency,
-      currencySymbol: getCurrencySymbol(preferredCurrency),
+      currencySymbol: getCurrencyDisplayBadge(preferredCurrency),
       exchangeRates,
       ratesLoading,
       setPreferredCurrency,

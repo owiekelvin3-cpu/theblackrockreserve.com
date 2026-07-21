@@ -1,5 +1,5 @@
 /* BlackrockReserve service worker — static precache + safe runtime caching */
-const CACHE_VERSION = "br-pwa-v10";
+const CACHE_VERSION = "br-pwa-v11";
 const ICON_QUERY = "?v=9";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;

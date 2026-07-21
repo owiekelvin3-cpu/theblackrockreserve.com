@@ -65,7 +65,7 @@ export default function DashboardTopBar() {
         )}
 
         <div className="flex items-center gap-0.5 sm:gap-1.5 shrink-0">
-          <CurrencySelector className="hidden md:block" />
+          <CurrencySelector className="shrink-0" />
           <LanguageSelector className="hidden sm:block" />
           <ThemeToggle size="sm" />
           <Link
