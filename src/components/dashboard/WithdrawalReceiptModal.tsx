@@ -16,6 +16,7 @@ import {
 } from "@/lib/transaction-receipt";
 import { downloadReceiptAsImage } from "@/lib/receipt-image";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import type { WithdrawalReceiptData } from "@/lib/withdrawal-receipt";
 
 export type { WithdrawalReceiptData };
@@ -49,6 +50,9 @@ export default function WithdrawalReceiptModal({
   const confirmationMessage = receipt.requiresChargePayment
     ? t("withdrawals.receipt.confirmationCharge")
     : t("withdrawals.receipt.confirmation");
+
+  const isRejectedReceipt = receipt.status === "REJECTED";
+  const isCompletedReceipt = receipt.status === "APPROVED";
 
   const handleCopy = async () => {
     try {
@@ -115,8 +119,21 @@ export default function WithdrawalReceiptModal({
               </div>
             </div>
 
-            <div className="tx-receipt-status-banner">
-              <span className="tx-receipt-status-dot" aria-hidden />
+            <div
+              className={cn(
+                "tx-receipt-status-banner",
+                isCompletedReceipt && "tx-receipt-status-banner-success",
+                isRejectedReceipt && "tx-receipt-status-banner-failed"
+              )}
+            >
+              <span
+                className={cn(
+                  "tx-receipt-status-dot",
+                  isCompletedReceipt && "tx-receipt-status-dot-success",
+                  isRejectedReceipt && "tx-receipt-status-dot-failed"
+                )}
+                aria-hidden
+              />
               <div>
                 <p className="tx-receipt-status-label">{receipt.displayStatus}</p>
                 <p className="tx-receipt-status-hint">{receipt.currentStatus}</p>
@@ -143,7 +160,7 @@ export default function WithdrawalReceiptModal({
               {receipt.destinationExtra && (
                 <ReceiptRow label={t("withdrawals.receipt.destinationDetails")} value={receipt.destinationExtra} full />
               )}
-              <ReceiptRow label={t("withdrawals.receipt.currentStatus")} value={receipt.currentStatus} />
+              <ReceiptRow label={t("withdrawals.receipt.currentStatus")} value={receipt.statusLabel} />
               {receipt.estimatedProcessingTime && (
                 <ReceiptRow
                   label={t("withdrawals.receipt.estimatedTime")}

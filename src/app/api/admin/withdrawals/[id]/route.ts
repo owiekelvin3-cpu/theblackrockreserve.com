@@ -99,6 +99,21 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
               status: "COMPLETED",
             },
           });
+        } else {
+          await tx.transaction.updateMany({
+            where: {
+              userId: withdrawal.userId,
+              accountId: withdrawal.accountId,
+              type: "WITHDRAWAL",
+              status: "PENDING",
+              amount,
+              createdAt: { gte: withdrawal.createdAt },
+            },
+            data: {
+              status: "COMPLETED",
+              description: `${getWithdrawalMethodLabel(withdrawal.method)} withdrawal to ${withdrawal.destination.slice(0, 20)}…`,
+            },
+          });
         }
 
         await tx.withdrawalRequest.update({
@@ -143,6 +158,18 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
           await tx.bankAccount.update({
             where: { id: withdrawal.accountId },
             data: { balance: Math.round((balanceBefore + amount) * 100) / 100 },
+          });
+
+          await tx.transaction.updateMany({
+            where: {
+              userId: withdrawal.userId,
+              accountId: withdrawal.accountId,
+              type: "WITHDRAWAL",
+              status: "PENDING",
+              amount,
+              createdAt: { gte: withdrawal.createdAt },
+            },
+            data: { status: "FAILED" },
           });
 
           await tx.transaction.create({

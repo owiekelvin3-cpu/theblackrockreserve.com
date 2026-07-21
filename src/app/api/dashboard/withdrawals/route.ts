@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUserId, unauthorizedResponse } from "@/lib/api-auth";
 import { getFundSourceAccounts } from "@/lib/fund-source-accounts";
 import { getAvailableBalancesMap } from "@/lib/withdrawal-balance";
-import { getWithdrawalMethod, getWithdrawalMethodLabel } from "@/lib/withdrawal-methods";
+import { getWithdrawalMethodLabel } from "@/lib/withdrawal-methods";
 import {
   computeWithdrawalChargeAmount,
   formatWithdrawalChargeSummary,
@@ -21,8 +21,9 @@ import {
   isWithdrawalBlocked,
   FREEZE_TYPE_LABELS,
 } from "@/lib/account-freeze";
-import QRCode from "qrcode";
+import { buildWithdrawalReceiptData } from "@/lib/withdrawal-receipt";
 import { invalidateAdminCaches } from "@/lib/admin-cache";
+import QRCode from "qrcode";
 
 export async function GET() {
   const userId = await getSessionUserId();
@@ -264,7 +265,7 @@ export async function POST(req: NextRequest) {
           description: hasCharge
             ? `${getWithdrawalMethodLabel(parsed.data.method)} withdrawal held — awaiting charge payment`
             : `${getWithdrawalMethodLabel(parsed.data.method)} withdrawal held — pending review`,
-          status: "COMPLETED",
+          status: "PENDING",
         },
       });
 
@@ -302,11 +303,6 @@ export async function POST(req: NextRequest) {
 
     invalidateAdminCaches();
 
-    const methodDef = getWithdrawalMethod(parsed.data.method);
-    const statusLabel = formatWithdrawalStatus(withdrawal.status);
-    const displayStatus = hasCharge ? "Withdrawal Initiated" : "Withdrawal Initiated";
-    const currentStatus = hasCharge ? "Awaiting Charge Payment" : "Awaiting Confirmation";
-
     return NextResponse.json({
       success: true,
       requiresChargePayment: hasCharge,
@@ -318,28 +314,22 @@ export async function POST(req: NextRequest) {
         id: withdrawal.id,
         method: withdrawal.method,
         status: withdrawal.status,
-        statusLabel,
+        statusLabel: formatWithdrawalStatus(withdrawal.status),
         assignedChargeAmount: withdrawal.assignedChargeAmount != null ? Number(withdrawal.assignedChargeAmount) : null,
         createdAt: withdrawal.createdAt.toISOString(),
       },
-      receipt: {
+      receipt: buildWithdrawalReceiptData({
         id: withdrawal.id,
         amountUsd: parsed.data.amountUsd,
         method: withdrawal.method,
-        methodLabel: getWithdrawalMethodLabel(withdrawal.method),
         destination: parsed.data.destination.trim(),
         destinationExtra: parsed.data.destinationExtra?.trim() || null,
         accountName: account.name,
         status: withdrawal.status,
-        statusLabel,
-        displayStatus,
-        currentStatus,
-        createdAt: withdrawal.createdAt.toISOString(),
-        estimatedProcessingTime: methodDef?.timing,
-        requiresChargePayment: hasCharge,
-        chargeAmount,
+        createdAt: withdrawal.createdAt,
+        assignedChargeAmount: chargeAmount,
         note: parsed.data.note?.trim() || null,
-      },
+      }),
     });
   } catch (error) {
     console.error("Withdrawals POST error:", error);

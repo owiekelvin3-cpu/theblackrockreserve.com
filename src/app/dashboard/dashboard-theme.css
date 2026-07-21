@@ -3320,6 +3320,11 @@ html.tx-member-transfer-scroll-lock {
   border-color: rgba(34, 197, 94, 0.25);
 }
 
+.tx-receipt-status-banner-failed {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
 .tx-receipt-status-dot {
   width: 0.625rem;
   height: 0.625rem;
