@@ -3,7 +3,7 @@ import { prisma, runInteractiveTransaction } from "@/lib/prisma";
 import { getPlatformSettings, SETTING_KEYS } from "@/lib/platform-settings";
 import { ensureUserBankAccounts } from "@/lib/dashboard-data";
 import { deductFromUserAccounts, getSpendableBalance } from "@/lib/spendable-balance";
-import { getAvailableProfitBalance, getPendingProfitWithdrawalReserve } from "@/lib/user-balances";
+import { getPendingProfitWithdrawalReserve, getProfitBalance } from "@/lib/user-balances";
 import { createUserNotification, sendUserNotificationEmail } from "@/lib/user-notifications";
 import { formatCurrency } from "@/lib/utils";
 
@@ -131,6 +131,21 @@ export function formatProfitWithdrawalStatus(status: string) {
   }
 }
 
+/** Cancel abandoned attempts so a fresh withdrawal can use the full profit balance. */
+async function cancelReplaceablePendingProfitWithdrawals(
+  tx: Prisma.TransactionClient,
+  userId: string
+) {
+  await tx.profitWithdrawalRequest.updateMany({
+    where: {
+      userId,
+      status: "AWAITING_TAX_PAYMENT",
+      taxPayment: { status: { in: ["UNPAID", "REJECTED"] } },
+    },
+    data: { status: "CANCELLED" },
+  });
+}
+
 /** Create tax payment request without reducing profit until tax is confirmed. */
 export async function createProfitTaxGatedWithdrawal(userId: string, amount: number) {
   if (!Number.isFinite(amount) || amount <= 0) {
@@ -148,13 +163,15 @@ export async function createProfitTaxGatedWithdrawal(userId: string, amount: num
   if (!bankAccounts.length) throw new Error("No bank account found for user");
 
   const result = await runInteractiveTransaction(async (tx) => {
-    const available = await getAvailableProfitBalance(userId, tx);
-    if (available < rounded) {
+    await cancelReplaceablePendingProfitWithdrawals(tx, userId);
+
+    const balance = await getProfitBalance(userId, tx);
+    if (balance < rounded) {
       const reserved = await getPendingProfitWithdrawalReserve(userId, tx);
       throw new Error(
         reserved > 0
-          ? `Insufficient available profit balance (${formatCurrency(available)} available after pending tax requests)`
-          : `Insufficient profit balance (${formatCurrency(available)} available)`
+          ? `Part of your profit (${formatCurrency(reserved)}) is awaiting tax verification. Try again after it is approved, or withdraw up to ${formatCurrency(Math.max(0, balance - reserved))}.`
+          : `Insufficient profit balance (${formatCurrency(balance)} available)`
       );
     }
 

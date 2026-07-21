@@ -103,7 +103,7 @@ export default function ProfitWithdrawPanel({
           })
         );
       } catch (err) {
-        throw err instanceof Error ? err : new Error(t("investments.profitWithdrawFailed"));
+        toast.error(err instanceof Error ? err.message : t("investments.profitWithdrawFailed"));
       } finally {
         setLoading(false);
       }
@@ -135,6 +135,7 @@ export default function ProfitWithdrawPanel({
           <p className={cn("profit-withdraw-balance-value", availableIsLarge && "is-compact")}>
             {formattedAvailable}
           </p>
+          <p className="profit-withdraw-tax-note">{t("investments.profitWithdrawTaxNote")}</p>
         </div>
       )}
 

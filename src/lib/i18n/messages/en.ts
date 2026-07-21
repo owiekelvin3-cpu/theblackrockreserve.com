@@ -285,6 +285,11 @@ const enBase = {
     profitWithdrawInvalidAmount: "Enter a valid amount",
     profitWithdrawExceedsBalance: "Amount exceeds your profit balance",
     profitWithdrawNoBalance: "No profit available to withdraw yet",
+    profitWithdrawCompleteTax: "Complete tax payment",
+    profitWithdrawCompleteTaxHint: "Pay the required tax to release your profit withdrawal",
+    profitWithdrawHeldNote: "{amount} is awaiting tax verification",
+    profitWithdrawHeldAmount: "{amount} of your profit is awaiting tax verification. Wait for approval or withdraw a smaller amount.",
+    profitWithdrawTaxNote: "If profit tax applies on your account, you will pay tax before funds move to your main balance.",
     profitWithdrawPreview: "You will withdraw",
     profitWithdrawQuickAmounts: "Quick amounts",
     profitTax: {

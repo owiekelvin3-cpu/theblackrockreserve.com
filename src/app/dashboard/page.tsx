@@ -16,6 +16,11 @@ interface OverviewData {
   investedBalance: number;
   profitBalance: number;
   availableProfitBalance?: number;
+  pendingProfitWithdrawal?: {
+    id: string;
+    amountUsd: number;
+    taxPaymentUrl: string;
+  } | null;
   bitcoinWalletAddress: string;
   depositsEnabled: boolean;
   savings: SavingsData;
@@ -56,7 +61,6 @@ export default function DashboardPage() {
             totalBalance={data.totalBalance}
             investedBalance={data.investedBalance}
             profitBalance={data.profitBalance}
-            availableProfitBalance={data.availableProfitBalance}
             savingsBalance={data.savings.savingsBalance}
             savingsApy={data.savings.apyAnnualPercent}
             onProfitWithdraw={loadData}
