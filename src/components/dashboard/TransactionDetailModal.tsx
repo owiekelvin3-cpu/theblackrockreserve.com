@@ -185,8 +185,11 @@ function TransactionDetailView({
   const isMemberTransfer = isOutgoingTransfer || isIncomingTransfer;
 
   const isPendingReceipt =
-    detail.status === "PENDING" || /awaiting charge|pending review|held —/i.test(detail.description);
-  const displayStatusLabel = isPendingReceipt ? t("common.pending") : detail.statusLabel;
+    detail?.status === "PENDING" ||
+    /awaiting charge|pending review|held —/i.test(detail?.description ?? "");
+  const displayStatusLabel = isPendingReceipt
+    ? t("common.pending")
+    : (detail?.statusLabel ?? "");
 
   const partyDisplay = (name: string, badge?: VerificationBadgeType | string | null) => (
     <UserDisplayName
