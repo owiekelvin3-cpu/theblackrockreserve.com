@@ -9,6 +9,7 @@ import { useI18n } from "@/components/providers/I18nProvider";
 
 interface ProfitWithdrawButtonProps {
   profitBalance: number;
+  withdrawableProfitBalance?: number;
   onSuccess: () => void;
   className?: string;
   /** Full-width trigger on mobile (investments card) */
@@ -17,6 +18,7 @@ interface ProfitWithdrawButtonProps {
 
 export default function ProfitWithdrawButton({
   profitBalance,
+  withdrawableProfitBalance,
   onSuccess,
   className = "",
   block = false,
@@ -24,7 +26,8 @@ export default function ProfitWithdrawButton({
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const canWithdraw = profitBalance > 0;
+  const maxWithdrawable = withdrawableProfitBalance ?? profitBalance;
+  const canWithdraw = maxWithdrawable > 0;
 
   useEffect(() => {
     setMounted(true);
@@ -89,7 +92,7 @@ export default function ProfitWithdrawButton({
               </div>
 
               <ProfitWithdrawPanel
-                profitBalance={profitBalance}
+                profitBalance={maxWithdrawable}
                 onSuccess={handleSuccess}
                 embedded
               />

@@ -18,6 +18,7 @@ type DashboardMobileHeroProps = {
   totalBalance: number;
   investedBalance: number;
   profitBalance: number;
+  availableProfitBalance?: number;
   savingsBalance: number;
   savingsApy?: number;
   onProfitWithdraw?: () => void;
@@ -31,6 +32,7 @@ export default function DashboardMobileHero({
   totalBalance,
   investedBalance,
   profitBalance,
+  availableProfitBalance,
   savingsBalance,
   savingsApy = 20,
   onProfitWithdraw,
@@ -144,6 +146,7 @@ export default function DashboardMobileHero({
           {onProfitWithdraw && (
             <ProfitWithdrawButton
               profitBalance={profitBalance}
+              withdrawableProfitBalance={availableProfitBalance}
               onSuccess={onProfitWithdraw}
             />
           )}

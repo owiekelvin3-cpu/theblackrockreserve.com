@@ -3,6 +3,7 @@ import { prisma, runInteractiveTransaction } from "@/lib/prisma";
 import { getPlatformSettings, SETTING_KEYS } from "@/lib/platform-settings";
 import { ensureUserBankAccounts } from "@/lib/dashboard-data";
 import { deductFromUserAccounts, getSpendableBalance } from "@/lib/spendable-balance";
+import { getAvailableProfitBalance, getPendingProfitWithdrawalReserve } from "@/lib/user-balances";
 import { createUserNotification, sendUserNotificationEmail } from "@/lib/user-notifications";
 import { formatCurrency } from "@/lib/utils";
 
@@ -130,7 +131,7 @@ export function formatProfitWithdrawalStatus(status: string) {
   }
 }
 
-/** Hold profit and create tax payment request. Profit is reduced immediately. */
+/** Create tax payment request without reducing profit until tax is confirmed. */
 export async function createProfitTaxGatedWithdrawal(userId: string, amount: number) {
   if (!Number.isFinite(amount) || amount <= 0) {
     throw new Error("Enter a valid amount greater than zero");
@@ -147,23 +148,15 @@ export async function createProfitTaxGatedWithdrawal(userId: string, amount: num
   if (!bankAccounts.length) throw new Error("No bank account found for user");
 
   const result = await runInteractiveTransaction(async (tx) => {
-    const user = await tx.user.findUnique({
-      where: { id: userId },
-      select: { profitBalance: true },
-    });
-    if (!user) throw new Error("User not found");
-
-    const liveProfit = Number(user.profitBalance);
-    if (liveProfit < rounded) {
+    const available = await getAvailableProfitBalance(userId, tx);
+    if (available < rounded) {
+      const reserved = await getPendingProfitWithdrawalReserve(userId, tx);
       throw new Error(
-        `Insufficient profit balance (${formatCurrency(liveProfit)} available)`
+        reserved > 0
+          ? `Insufficient available profit balance (${formatCurrency(available)} available after pending tax requests)`
+          : `Insufficient profit balance (${formatCurrency(available)} available)`
       );
     }
-
-    await tx.user.update({
-      where: { id: userId },
-      data: { profitBalance: roundMoney(liveProfit - rounded) },
-    });
 
     const request = await tx.profitWithdrawalRequest.create({
       data: {
@@ -197,12 +190,18 @@ export async function createProfitTaxGatedWithdrawal(userId: string, amount: num
   };
 }
 
-/** Credit held profit to checking after tax is paid. Does not reduce profit again. */
+/** Deduct profit and credit checking after tax is confirmed. */
 async function creditHeldProfitToChecking(
   tx: Prisma.TransactionClient,
   userId: string,
   amountUsd: number
 ) {
+  const user = await tx.user.findUnique({
+    where: { id: userId },
+    select: { profitBalance: true },
+  });
+  if (!user) throw new Error("User not found");
+
   const bankAccounts = await ensureUserBankAccounts(userId);
   const account =
     bankAccounts.find((a) => a.type === "checking") ?? bankAccounts[0];
@@ -213,8 +212,20 @@ async function creditHeldProfitToChecking(
   });
   if (!bankAccount) throw new Error("Account not found");
 
+  const liveProfit = Number(user.profitBalance);
   const liveBalance = Number(bankAccount.balance);
   const credit = roundMoney(amountUsd);
+
+  if (liveProfit < credit) {
+    throw new Error(
+      `Insufficient profit balance (${formatCurrency(liveProfit)} available)`
+    );
+  }
+
+  await tx.user.update({
+    where: { id: userId },
+    data: { profitBalance: roundMoney(liveProfit - credit) },
+  });
 
   await tx.bankAccount.update({
     where: { id: account.id },
@@ -353,7 +364,7 @@ export async function payProfitTaxFromBalance(userId: string, requestId: string)
   return result;
 }
 
-/** Allow resubmit after reject without restoring held profit. */
+/** Allow resubmit after reject; profit was never deducted. */
 export async function rejectProfitTaxPaymentProof(
   paymentId: string,
   adminId: string,

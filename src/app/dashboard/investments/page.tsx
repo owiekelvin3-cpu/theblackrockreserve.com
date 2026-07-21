@@ -26,6 +26,7 @@ export default function InvestmentsPage() {
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [investedBalance, setInvestedBalance] = useState(0);
   const [profitBalance, setProfitBalance] = useState(0);
+  const [availableProfitBalance, setAvailableProfitBalance] = useState(0);
   const [tradingRealizedProfit, setTradingRealizedProfit] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -35,12 +36,14 @@ export default function InvestmentsPage() {
       holdings: Holding[];
       investedBalance: number;
       profitBalance: number;
+      availableProfitBalance: number;
       tradingRealizedProfit: number;
     }>("/api/dashboard/investments")
       .then((json) => {
         setHoldings(json?.holdings ?? []);
         setInvestedBalance(json?.investedBalance ?? 0);
         setProfitBalance(json?.profitBalance ?? 0);
+        setAvailableProfitBalance(json?.availableProfitBalance ?? json?.profitBalance ?? 0);
         setTradingRealizedProfit(json?.tradingRealizedProfit ?? 0);
       })
       .finally(() => setLoading(false));
@@ -76,7 +79,12 @@ export default function InvestmentsPage() {
             <p className="text-2xl font-bold text-accent-green mt-1">{formatCurrency(profitBalance)}</p>
             <p className="text-xs text-text-muted mt-1">{t("investments.profitBalanceDesc")}</p>
             <div className="mt-3">
-              <ProfitWithdrawButton profitBalance={profitBalance} onSuccess={loadData} block />
+              <ProfitWithdrawButton
+                profitBalance={profitBalance}
+                withdrawableProfitBalance={availableProfitBalance}
+                onSuccess={loadData}
+                block
+              />
             </div>
           </Card>
           <Card>

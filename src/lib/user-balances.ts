@@ -1,5 +1,10 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getAccounts } from "@/lib/dashboard-data";
+
+function roundMoney(n: number) {
+  return Math.round(n * 100) / 100;
+}
 
 /** Capital currently deployed in open holdings (cost basis), excluding sold positions. */
 export async function getInvestedBalance(userId: string): Promise<number> {
@@ -22,7 +27,35 @@ export async function getProfitBalance(userId: string): Promise<number> {
     where: { id: userId },
     select: { profitBalance: true },
   });
-  return Math.round(Number(user?.profitBalance ?? 0) * 100) / 100;
+  return roundMoney(Number(user?.profitBalance ?? 0));
+}
+
+/** Profit reserved by withdrawals awaiting tax confirmation. */
+export async function getPendingProfitWithdrawalReserve(
+  userId: string,
+  tx?: Prisma.TransactionClient
+): Promise<number> {
+  const db = tx ?? prisma;
+  const agg = await db.profitWithdrawalRequest.aggregate({
+    where: { userId, status: "AWAITING_TAX_PAYMENT" },
+    _sum: { amountUsd: true },
+  });
+  return roundMoney(Number(agg._sum.amountUsd ?? 0));
+}
+
+/** Spendable profit for new withdrawals (full balance minus pending tax requests). */
+export async function getAvailableProfitBalance(
+  userId: string,
+  tx?: Prisma.TransactionClient
+): Promise<number> {
+  const db = tx ?? prisma;
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { profitBalance: true },
+  });
+  const balance = roundMoney(Number(user?.profitBalance ?? 0));
+  const reserved = await getPendingProfitWithdrawalReserve(userId, tx);
+  return Math.max(0, roundMoney(balance - reserved));
 }
 
 /** Sum of realized P&L from completed sell orders. */

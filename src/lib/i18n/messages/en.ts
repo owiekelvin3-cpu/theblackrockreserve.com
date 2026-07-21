@@ -301,7 +301,7 @@ const enBase = {
       payStep2: "Submit proof",
       payStep3: "Release",
       profitAmount: "Profit amount",
-      heldNote: "Held pending tax payment",
+      heldNote: "Stays in profit balance until tax is confirmed",
       reference: "Reference",
       taxRate: "tax rate",
       taxDue: "Tax due",

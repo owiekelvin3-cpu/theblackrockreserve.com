@@ -2,6 +2,7 @@ import { prisma, runInteractiveTransaction } from "@/lib/prisma";
 import { logAdminAction } from "@/lib/admin-audit";
 import { createUserNotification, sendUserNotificationEmail } from "@/lib/user-notifications";
 import { ensureUserBankAccounts } from "@/lib/dashboard-data";
+import { getAvailableProfitBalance } from "@/lib/user-balances";
 import { formatCurrency } from "@/lib/utils";
 import { profitAddedEmail, profitRemovedEmail } from "@/lib/email-templates";
 import { sendEmail } from "@/lib/email";
@@ -250,6 +251,12 @@ export async function withdrawProfitToMain(userId: string, amount: number) {
   if (!user) throw new Error("User not found");
 
   const profitBefore = Number(user.profitBalance);
+  const availableProfit = await getAvailableProfitBalance(userId);
+  if (availableProfit < rounded) {
+    throw new Error(
+      `Insufficient profit balance (${formatCurrency(availableProfit)} available)`
+    );
+  }
   if (profitBefore < rounded) {
     throw new Error(
       `Insufficient profit balance (${formatCurrency(profitBefore)} available)`
@@ -266,6 +273,13 @@ export async function withdrawProfitToMain(userId: string, amount: number) {
   const balanceAfter = Math.round((balanceBefore + rounded) * 100) / 100;
 
   const result = await runInteractiveTransaction(async (tx) => {
+    const availableInTx = await getAvailableProfitBalance(userId, tx);
+    if (availableInTx < rounded) {
+      throw new Error(
+        `Insufficient profit balance (${formatCurrency(availableInTx)} available)`
+      );
+    }
+
     const freshUser = await tx.user.findUnique({
       where: { id: userId },
       select: { profitBalance: true },
