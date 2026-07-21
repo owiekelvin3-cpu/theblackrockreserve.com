@@ -17,6 +17,7 @@ import {
 } from "@/lib/notification-sound";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import LanguageSelector from "@/components/ui/LanguageSelector";
+import AdminGlobalSearch from "@/components/admin/AdminGlobalSearch";
 import { useI18n } from "@/components/providers/I18nProvider";
 
 type AlertCountKey =
@@ -273,17 +274,21 @@ export default function AdminTopBar() {
   ].filter((q) => q.count > 0);
 
   return (
-    <div className="sticky top-0 z-30 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 mb-6 border-b border-white/5 bg-[var(--admin-bg)]/80 backdrop-blur-md flex items-center justify-between gap-3 pl-12 lg:pl-6">
-      <div className="flex items-center gap-2 min-w-0">
+    <div className="sticky top-0 z-30 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 mb-6 border-b border-white/5 bg-[var(--admin-bg)]/80 backdrop-blur-md flex items-center gap-3 pl-12 lg:pl-6">
+      <div className="flex items-center gap-2 min-w-0 shrink-0">
         <span className="relative flex h-2 w-2">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
           <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
         </span>
-        <span className="text-xs text-[var(--admin-muted)] truncate hidden sm:inline">{t("adminFetch.liveSyncShort")}</span>
-        <span className="text-xs text-[var(--admin-muted)] sm:hidden">{t("adminFetch.live")}</span>
+        <span className="text-xs text-[var(--admin-muted)] truncate hidden xl:inline">{t("adminFetch.liveSyncShort")}</span>
+        <span className="text-xs text-[var(--admin-muted)] hidden sm:inline xl:hidden">{t("adminFetch.live")}</span>
       </div>
 
-      <div className="flex items-center gap-3 sm:gap-4">
+      <div className="flex-1 min-w-0 flex justify-center px-1 sm:px-2">
+        <AdminGlobalSearch />
+      </div>
+
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         <LanguageSelector variant="compact" />
         <ThemeToggle size="sm" />
         {lastUpdated && (
