@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, Coins, Check } from "lucide-react";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { useHydrated } from "@/hooks/use-hydrated";
-import { getCurrencyOptionsForBadge } from "@/lib/currency";
+import { CURRENCY_META, getCurrencyOptionsForBadge } from "@/lib/currency";
 import { useProfileImage } from "@/components/providers/ProfileImageProvider";
 import { cn } from "@/lib/utils";
 
@@ -38,7 +38,24 @@ export default function CurrencySelector({ variant = "compact", className }: Cur
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLUListElement>(null);
 
-  const currencyOptions = getCurrencyOptionsForBadge(verificationBadge);
+  const currencyOptions = useMemo(() => {
+    const options = getCurrencyOptionsForBadge(verificationBadge);
+    if (
+      preferredCurrency &&
+      !options.some((option) => option.code === preferredCurrency) &&
+      CURRENCY_META[preferredCurrency]
+    ) {
+      const meta = CURRENCY_META[preferredCurrency];
+      return [
+        ...options,
+        {
+          ...meta,
+          label: `${meta.code} – ${meta.name} (${meta.symbol})`,
+        },
+      ];
+    }
+    return options;
+  }, [verificationBadge, preferredCurrency]);
   const current = currencyOptions.find((c) => c.code === preferredCurrency) ?? currencyOptions[0];
 
   useEffect(() => {

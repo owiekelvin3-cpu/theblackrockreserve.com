@@ -93,7 +93,35 @@ export function isSupportedCurrency(value: string | null | undefined): value is 
   return !!value && (SUPPORTED_CURRENCIES as readonly string[]).includes(value.toUpperCase());
 }
 
-export function parseCurrencyCode(value: string | null | undefined): SupportedCurrency {
+export function parseCurrencyOrNull(value: string | null | undefined): SupportedCurrency | null {
   const upper = value?.toUpperCase();
-  return isSupportedCurrency(upper) ? upper : DEFAULT_CURRENCY;
+  return isSupportedCurrency(upper) ? upper : null;
+}
+
+export function parseCurrencyCode(value: string | null | undefined): SupportedCurrency {
+  return parseCurrencyOrNull(value) ?? DEFAULT_CURRENCY;
+}
+
+/** Pick a currency that is valid for the member badge, preferring server then local storage. */
+export function resolvePreferredCurrency(
+  serverCurrency: string | null | undefined,
+  localCurrency: string | null | undefined,
+  verificationBadge: string | null | undefined
+): SupportedCurrency {
+  const server = parseCurrencyOrNull(serverCurrency);
+  const local = parseCurrencyOrNull(localCurrency);
+
+  const serverAllowed = server && isCurrencyAllowedForBadge(server, verificationBadge);
+  const localAllowed = local && isCurrencyAllowedForBadge(local, verificationBadge);
+
+  if (serverAllowed && localAllowed) {
+    // Server may still be USD if a prior save failed; keep the user's local choice.
+    if (server === DEFAULT_CURRENCY && local !== DEFAULT_CURRENCY) {
+      return local;
+    }
+    return server;
+  }
+  if (serverAllowed) return server;
+  if (localAllowed) return local;
+  return DEFAULT_CURRENCY;
 }

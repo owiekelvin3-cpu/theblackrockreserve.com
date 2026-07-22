@@ -6,10 +6,12 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 import {
   DEFAULT_LOCALE,
   LOCALE_COOKIE,
@@ -34,6 +36,8 @@ import {
   getCurrencySymbol,
   CURRENCY_META,
   parseCurrencyCode,
+  parseCurrencyOrNull,
+  resolvePreferredCurrency,
   type ExchangeRates,
   type SupportedCurrency,
 } from "@/lib/currency";
@@ -175,6 +179,11 @@ export function I18nProvider({
   const [preferredCurrency, setPreferredCurrencyState] = useState<SupportedCurrency>(DEFAULT_CURRENCY);
   const [exchangeRates, setExchangeRates] = useState<ExchangeRates>(FALLBACK_RATES);
   const [ratesLoading, setRatesLoading] = useState(true);
+  const preferredCurrencyRef = useRef<SupportedCurrency>(DEFAULT_CURRENCY);
+
+  useEffect(() => {
+    preferredCurrencyRef.current = preferredCurrency;
+  }, [preferredCurrency]);
 
   useEffect(() => {
     const resolved = resolveClientLocale(initialLocale);
@@ -205,19 +214,41 @@ export function I18nProvider({
     if (status !== "authenticated") return;
     fetch("/api/dashboard/preferences")
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { preferredLocale?: string; preferredCurrency?: string } | null) => {
-        const code = parseLocaleCode(data?.preferredLocale ?? null);
-        if (code) {
-          setLocaleState(code);
-          persistLocale(code);
-          applyDocumentLocale(code);
+      .then(
+        (
+          data: {
+            preferredLocale?: string;
+            preferredCurrency?: string;
+            verificationBadge?: string;
+          } | null
+        ) => {
+          if (!data) return;
+
+          const code = parseLocaleCode(data.preferredLocale ?? null);
+          if (code) {
+            setLocaleState(code);
+            persistLocale(code);
+            applyDocumentLocale(code);
+          }
+
+          const badge = data.verificationBadge ?? "NONE";
+          const local = readStoredCurrency();
+          const resolved = resolvePreferredCurrency(data.preferredCurrency, local, badge);
+          setPreferredCurrencyState(resolved);
+          persistCurrency(resolved);
+
+          const serverCurrency = parseCurrencyOrNull(data.preferredCurrency);
+          if (resolved !== serverCurrency && session?.user) {
+            fetch("/api/dashboard/preferences", {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ preferredCurrency: resolved }),
+            }).catch(() => {});
+          }
         }
-        const currency = parseCurrencyCode(data?.preferredCurrency ?? null);
-        setPreferredCurrencyState(currency);
-        persistCurrency(currency);
-      })
+      )
       .catch(() => {});
-  }, [status]);
+  }, [status, session?.user]);
 
   const setLocale = useCallback(
     (code: LocaleCode) => {
@@ -237,15 +268,29 @@ export function I18nProvider({
 
   const setPreferredCurrency = useCallback(
     (code: SupportedCurrency) => {
+      const previous = preferredCurrencyRef.current;
       setPreferredCurrencyState(code);
       persistCurrency(code);
-      if (session?.user) {
-        fetch("/api/dashboard/preferences", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ preferredCurrency: code }),
-        }).catch(() => {});
-      }
+
+      if (!session?.user) return;
+
+      void fetch("/api/dashboard/preferences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ preferredCurrency: code }),
+      })
+        .then(async (res) => {
+          if (res.ok) return;
+          const body = (await res.json().catch(() => ({}))) as { error?: string };
+          setPreferredCurrencyState(previous);
+          persistCurrency(previous);
+          toast.error(body.error ?? "Could not save currency preference. Please try again.");
+        })
+        .catch(() => {
+          setPreferredCurrencyState(previous);
+          persistCurrency(previous);
+          toast.error("Could not save currency preference. Please try again.");
+        });
     },
     [session?.user]
   );

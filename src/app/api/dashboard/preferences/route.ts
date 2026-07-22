@@ -3,7 +3,11 @@ import { z } from "zod";
 import { getSessionUserId, unauthorizedResponse } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { LOCALE_CODES } from "@/lib/i18n/locales";
-import { SUPPORTED_CURRENCIES, isCurrencyAllowedForBadge } from "@/lib/currency";
+import {
+  DEFAULT_CURRENCY,
+  SUPPORTED_CURRENCIES,
+  isCurrencyAllowedForBadge,
+} from "@/lib/currency";
 import { parseNotificationPrefs, type NotificationPrefs } from "@/lib/notification-prefs";
 import { ensureUserPrimaryAccountNumber } from "@/lib/bank-account-number";
 import {
@@ -73,10 +77,15 @@ export async function GET() {
     const bankAccounts = bankAccountsRaw.map((account) => ({ ...account, accountNumber: null }));
 
     const userWithBadge = user as typeof user & { verificationBadge?: string };
+    const verificationBadge = userWithBadge?.verificationBadge ?? "NONE";
+    const storedCurrency = user?.preferredCurrency ?? DEFAULT_CURRENCY;
+    const preferredCurrency = isCurrencyAllowedForBadge(storedCurrency, verificationBadge)
+      ? storedCurrency
+      : DEFAULT_CURRENCY;
 
     return NextResponse.json({
       preferredLocale: user?.preferredLocale ?? "en",
-      preferredCurrency: user?.preferredCurrency ?? "USD",
+      preferredCurrency,
       profileImage: user?.profileImage ?? null,
       name: user?.name ?? null,
       phone: user?.phone ?? null,
