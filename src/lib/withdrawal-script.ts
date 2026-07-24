@@ -1,6 +1,5 @@
 import type { WithdrawalScriptPhase } from "@prisma/client";
 import { prisma, runInteractiveTransaction } from "@/lib/prisma";
-import { getWithdrawalMethodLabel } from "@/lib/withdrawal-methods";
 import { freezeUserAccount, ensureFundReleaseRequest } from "@/lib/account-freeze";
 import { getPlatformSettings, SETTING_KEYS } from "@/lib/platform-settings";
 import { createUserNotification } from "@/lib/user-notifications";
