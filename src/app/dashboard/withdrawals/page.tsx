@@ -190,7 +190,7 @@ export default function WithdrawalsPage() {
     return null;
   };
 
-  const submitWithdrawal = async (transactionPin: string) => {
+  const submitWithdrawal = async (transactionPin: string, isRetry = false) => {
     setSubmitting(true);
     try {
       const res = await fetch("/api/dashboard/withdrawals", {
@@ -200,6 +200,11 @@ export default function WithdrawalsPage() {
         body: JSON.stringify(buildPayload(transactionPin)),
       });
       const json = await res.json();
+
+      if (res.status === 409 && !isRetry && json.error) {
+        await submitWithdrawal(transactionPin, true);
+        return;
+      }
 
       if (!res.ok) {
         if (json.accountFrozen) {

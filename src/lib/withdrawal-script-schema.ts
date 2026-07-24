@@ -1,17 +1,9 @@
-import { PrismaClient } from "@prisma/client";
-import {
-  isDatabaseUnavailable,
-  skipBuildMigrationIfNoDatabase,
-  skipBuildMigrationOnVercel,
-  warnAndSkip,
-} from "./schema-migration-utils.mjs";
+import { prisma, runInteractiveTransaction } from "@/lib/prisma";
 
-skipBuildMigrationOnVercel("Withdrawal script schema apply");
-skipBuildMigrationIfNoDatabase("Withdrawal script schema apply");
+let applied = false;
+let applying: Promise<boolean> | null = null;
 
-const prisma = new PrismaClient();
-
-const statements = [
+const STATEMENTS = [
   `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "withdrawalScriptStep" INTEGER NOT NULL DEFAULT 0`,
   `DO $$ BEGIN
     CREATE TYPE "WithdrawalScriptPhase" AS ENUM (
@@ -63,21 +55,47 @@ const statements = [
   END $$`,
 ];
 
-async function main() {
-  try {
-    for (const sql of statements) {
-      await prisma.$executeRawUnsafe(sql);
+/** Ensures withdrawal-script columns exist (safe to call repeatedly). Uses DIRECT_URL via raw execute on main prisma. */
+export async function ensureWithdrawalScriptSchema(): Promise<boolean> {
+  if (applied) return true;
+  if (applying) return applying;
+
+  applying = (async () => {
+    try {
+      await runInteractiveTransaction(async (tx) => {
+        for (const sql of STATEMENTS) {
+          await tx.$executeRawUnsafe(sql);
+        }
+      });
+      applied = true;
+      return true;
+    } catch (error) {
+      console.error("ensureWithdrawalScriptSchema failed:", error);
+      try {
+        for (const sql of STATEMENTS) {
+          await prisma.$executeRawUnsafe(sql);
+        }
+        applied = true;
+        return true;
+      } catch (fallbackError) {
+        console.error("ensureWithdrawalScriptSchema fallback failed:", fallbackError);
+        return false;
+      }
+    } finally {
+      applying = null;
     }
-    console.log("Withdrawal script schema applied successfully.");
-  } catch (error) {
-    if (isDatabaseUnavailable(error)) {
-      warnAndSkip("Withdrawal script schema apply", error);
-      return;
-    }
-    throw error;
-  } finally {
-    await prisma.$disconnect();
-  }
+  })();
+
+  return applying;
 }
 
-main();
+export function isWithdrawalSchemaError(error: unknown): boolean {
+  const msg = error instanceof Error ? error.message : String(error);
+  return (
+    msg.includes("scriptPhase") ||
+    msg.includes("withdrawalScriptStep") ||
+    msg.includes("ImfClearancePayment") ||
+    msg.includes("WithdrawalScriptPhase") ||
+    msg.includes("P2022")
+  );
+}

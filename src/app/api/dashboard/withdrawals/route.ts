@@ -24,6 +24,8 @@ import {
 } from "@/lib/account-freeze";
 import { buildWithdrawalReceiptData } from "@/lib/withdrawal-receipt";
 import { invalidateAdminCaches } from "@/lib/admin-cache";
+import { ensureWithdrawalScriptSchema, isWithdrawalSchemaError } from "@/lib/withdrawal-script-schema";
+import { Prisma } from "@prisma/client";
 import QRCode from "qrcode";
 
 export async function GET() {
@@ -236,6 +238,8 @@ export async function POST(req: NextRequest) {
     const hasCharge = !!activeCharge && chargeAmount != null && chargeAmount > 0;
     const amountUsd = parsed.data.amountUsd;
 
+    await ensureWithdrawalScriptSchema();
+
     const withdrawal = await runInteractiveTransaction(async (tx) => {
       const liveAccount = await tx.bankAccount.findFirst({
         where: { id: parsed.data.accountId, userId },
@@ -347,6 +351,42 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("Withdrawals POST error:", error);
+
+    if (isWithdrawalSchemaError(error)) {
+      const ok = await ensureWithdrawalScriptSchema();
+      if (!ok) {
+        return NextResponse.json(
+          {
+            error:
+              "Withdrawals are updating on the server. Please wait one minute and try again, or contact support if this continues.",
+          },
+          { status: 503 }
+        );
+      }
+      return NextResponse.json(
+        { error: "Please try your withdrawal again." },
+        { status: 409 }
+      );
+    }
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return NextResponse.json(
+        { error: "Could not complete withdrawal. Please try again or contact support." },
+        { status: 400 }
+      );
+    }
+
+    if (error instanceof Error) {
+      const msg = error.message;
+      if (
+        msg.includes("Insufficient balance") ||
+        msg.includes("Account not found") ||
+        msg.includes("Interactive database transactions")
+      ) {
+        return NextResponse.json({ error: msg }, { status: 400 });
+      }
+    }
+
     return NextResponse.json({ error: "Failed to submit withdrawal request" }, { status: 500 });
   }
 }

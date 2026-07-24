@@ -1,7 +1,7 @@
 import type { WithdrawalScriptPhase } from "@prisma/client";
 import { prisma, runInteractiveTransaction } from "@/lib/prisma";
 import { freezeUserAccount, ensureFundReleaseRequest } from "@/lib/account-freeze";
-import { getPlatformSettings, SETTING_KEYS } from "@/lib/platform-settings";
+import { getPlatformSettings, SETTING_KEYS, ensureDefaultSettings } from "@/lib/platform-settings";
 import { createUserNotification } from "@/lib/user-notifications";
 import { formatCurrency } from "@/lib/utils";
 import { invalidateAdminCaches } from "@/lib/admin-cache";
@@ -20,6 +20,7 @@ export type WithdrawalScriptSettings = {
 };
 
 export async function getWithdrawalScriptSettings(): Promise<WithdrawalScriptSettings> {
+  await ensureDefaultSettings();
   const settings = await getPlatformSettings([
     SETTING_KEYS.WITHDRAWAL_SCRIPT_ENABLED,
     SETTING_KEYS.MIN_BANK_WITHDRAWAL_USD,
