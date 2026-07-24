@@ -2,20 +2,22 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  AlertTriangle,
-  Building2,
-  Loader2,
-  MessageCircle,
-  ShieldAlert,
-  ArrowRight,
-  Landmark,
-} from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Loader2, MessageCircle } from "lucide-react";
 import DashboardGate from "@/components/dashboard/DashboardGate";
 import Button from "@/components/ui/Button";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { fetchDashboardJson } from "@/lib/fetch-json";
 import { useChat } from "@/components/providers/ChatProvider";
+import {
+  ScriptCard,
+  PendingTimerRing,
+  TransferFlowAnimation,
+  BankRejectedIllustration,
+  SecurityHoldIllustration,
+  ImfHoldIllustration,
+  StaggerIn,
+} from "@/components/dashboard/WithdrawalScriptAnimations";
 
 type ScriptData = {
   withdrawal: {
@@ -50,6 +52,8 @@ export default function WithdrawalScriptView({
   const [secondsLeft, setSecondsLeft] = useState(30);
   const [completing, setCompleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const totalSeconds = data?.pendingSecondsTotal ?? 30;
 
   const load = useCallback(() => {
     setLoading(true);
@@ -110,80 +114,92 @@ export default function WithdrawalScriptView({
   return (
     <DashboardGate isLoading={loading}>
       <div className="max-w-xl mx-auto space-y-6">
-        {error && (
-          <div className="dash-card border border-accent-red/30 bg-accent-red/5 p-4 text-sm text-white">
-            {error}
-          </div>
-        )}
+        <AnimatePresence mode="wait">
+          {error && (
+            <motion.div
+              key="error"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="dash-card border border-accent-red/30 bg-accent-red/5 p-4 text-sm text-white"
+            >
+              {error}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {view === "pending" && data && (
-          <div className="dash-card p-6 sm:p-8 text-center space-y-6">
-            <div className="relative mx-auto h-24 w-24">
-              <div className="absolute inset-0 rounded-full border-2 border-accent-gold/30 animate-ping" />
-              <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-accent-gold/10 border border-accent-gold/40">
-                <Loader2 className="h-10 w-10 text-accent-gold animate-spin" />
-              </div>
-            </div>
-            <div>
+          <ScriptCard className="text-center space-y-6 relative overflow-hidden">
+            <AnimatePresence>
+              {completing && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-bg-primary/80 backdrop-blur-sm rounded-[inherit]"
+                >
+                  <Loader2 className="h-8 w-8 text-accent-gold animate-spin" />
+                  <p className="text-sm text-text-muted">Finalizing secure handoff…</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <PendingTimerRing secondsLeft={secondsLeft} totalSeconds={totalSeconds} />
+
+            <StaggerIn delay={0.1}>
               <p className="text-xs uppercase tracking-widest text-accent-gold font-semibold">Transaction pending</p>
               <h1 className="text-xl font-bold text-white mt-2">Confirming with receiving bank</h1>
-              <p className="text-sm text-text-muted mt-2 leading-relaxed">
+              <p className="text-sm text-text-muted mt-2 leading-relaxed max-w-sm mx-auto">
                 Your {formatCurrency(data.withdrawal.amountUsd)} {data.withdrawal.methodLabel} withdrawal is being
-                verified. Estimated confirmation:{" "}
-                <span className="text-white font-mono">{secondsLeft}s</span>
+                verified securely.
               </p>
-            </div>
-            <div className="flex items-center justify-center gap-3 text-sm text-text-secondary">
-              <span className="px-3 py-1 rounded-full bg-bg-tertiary">Your account</span>
-              <ArrowRight size={16} className="text-accent-gold animate-pulse" />
-              <span className="px-3 py-1 rounded-full bg-bg-tertiary">Receiving bank</span>
-            </div>
-            {completing && (
-              <p className="text-xs text-text-muted">Finalizing secure handoff…</p>
-            )}
-          </div>
+            </StaggerIn>
+
+            <StaggerIn delay={0.22}>
+              <TransferFlowAnimation />
+            </StaggerIn>
+          </ScriptCard>
         )}
 
         {view === "bank-rejected" && data && (
-          <div className="dash-card p-6 sm:p-8 space-y-5">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="text-accent-red shrink-0 mt-1" size={24} />
-              <div>
-                <h1 className="text-xl font-bold text-white">Transfer rejected by receiving bank</h1>
-                <p className="text-sm text-text-muted mt-2 leading-relaxed">
-                  The receiving institution returned a temporary system error. Your withdrawal amount
-                  {data.chargeAmountUsd ? " and processing fee have" : " has"} been credited back to your account
-                  balance.
-                </p>
-              </div>
-            </div>
-            <p className="text-sm text-text-secondary">
-              You can try another withdrawal later or use a different payout account.
-            </p>
-            <Button className="w-full" onClick={() => router.push("/dashboard/withdrawals")}>
-              Back to withdrawals
-            </Button>
-          </div>
+          <ScriptCard className="space-y-5">
+            <BankRejectedIllustration />
+            <StaggerIn delay={0.15}>
+              <h1 className="text-xl font-bold text-white text-center">Transfer rejected by receiving bank</h1>
+              <p className="text-sm text-text-muted mt-3 leading-relaxed text-center">
+                The receiving institution returned a temporary system error. Your withdrawal amount
+                {data.chargeAmountUsd ? " and processing fee have" : " has"} been credited back to your account
+                balance.
+              </p>
+            </StaggerIn>
+            <StaggerIn delay={0.28}>
+              <p className="text-sm text-text-secondary text-center">
+                You can try another withdrawal later or use a different payout account.
+              </p>
+              <Button className="w-full mt-4" onClick={() => router.push("/dashboard/withdrawals")}>
+                Back to withdrawals
+              </Button>
+            </StaggerIn>
+          </ScriptCard>
         )}
 
         {view === "security-hold" && data && (
-          <div className="dash-card p-6 sm:p-8 space-y-5">
-            <div className="flex items-center justify-center">
-              <div className="h-20 w-20 rounded-full bg-accent-red/10 border border-accent-red/30 flex items-center justify-center">
-                <ShieldAlert className="h-10 w-10 text-accent-red" />
+          <ScriptCard className="space-y-5">
+            <SecurityHoldIllustration />
+            <StaggerIn delay={0.12}>
+              <h1 className="text-xl font-bold text-white text-center">Security hold — AML verification required</h1>
+              <p className="text-sm text-text-secondary leading-relaxed mt-3">{data.securityMessage}</p>
+            </StaggerIn>
+            <StaggerIn delay={0.24}>
+              <div className="rounded-xl border border-border bg-bg-tertiary/50 p-4 flex items-center gap-3 text-sm overflow-hidden relative">
+                <Loader2 className="animate-spin text-accent-gold shrink-0" size={18} />
+                <span className="text-text-muted">Identity and transaction verification in progress</span>
               </div>
-            </div>
-            <h1 className="text-xl font-bold text-white text-center">Security hold — AML verification required</h1>
-            <p className="text-sm text-text-secondary leading-relaxed">{data.securityMessage}</p>
-            <div className="rounded-xl border border-border bg-bg-tertiary/50 p-4 flex items-center gap-3 text-sm">
-              <Loader2 className="animate-spin text-accent-gold shrink-0" size={18} />
-              <span className="text-text-muted">Identity and transaction verification in progress</span>
-            </div>
-            <Button variant="outline" className="w-full gap-2" type="button" onClick={() => openHumanSupport()}>
-              <MessageCircle size={18} />
-              Contact support
-            </Button>
-          </div>
+              <Button variant="outline" className="w-full gap-2 mt-4" type="button" onClick={() => openHumanSupport()}>
+                <MessageCircle size={18} />
+                Contact support
+              </Button>
+            </StaggerIn>
+          </ScriptCard>
         )}
 
         {view === "imf-clearance" && (
@@ -220,38 +236,41 @@ function ImfClearancePanel({
 
   if (loading) {
     return (
-      <div className="dash-card p-8 flex justify-center">
-        <Loader2 className="animate-spin text-accent-gold" />
-      </div>
+      <ScriptCard className="flex flex-col items-center justify-center py-12 gap-3">
+        <Loader2 className="animate-spin text-accent-gold h-8 w-8" />
+        <p className="text-xs text-text-muted">Loading clearance details…</p>
+      </ScriptCard>
     );
   }
 
   return (
-    <div className="dash-card p-6 sm:p-8 space-y-5">
-      <div className="flex items-center justify-center gap-3">
-        <Landmark className="text-accent-gold" size={28} />
-        <Building2 className="text-text-muted" size={28} />
-      </div>
-      <h1 className="text-xl font-bold text-white text-center">Central Bank / IMF clearance fee</h1>
-      <p className="text-sm text-text-secondary leading-relaxed text-center">
-        Regulatory clearance is required before your {formatCurrency(withdrawalAmount)} transfer can be released.
-        Pay the clearance fee below to continue.
-      </p>
-      <div className="rounded-xl border border-accent-gold/30 bg-accent-gold/5 p-4 text-center">
-        <p className="text-xs uppercase text-text-muted">Clearance fee due</p>
-        <p className="text-2xl font-bold text-accent-gold mt-1">{formatCurrency(imfAmount)}</p>
-      </div>
-      <div className="flex items-center justify-center gap-2 text-xs text-text-muted">
-        <span className="px-2 py-1 rounded bg-bg-tertiary">Funds held</span>
-        <ArrowRight size={14} />
-        <span className="px-2 py-1 rounded bg-bg-tertiary">Regulatory review</span>
-      </div>
-      <Button className="w-full" onClick={() => router.push(`/dashboard/withdrawals/${withdrawalId}/imf-clearance/pay`)}>
-        Pay clearance fee
-      </Button>
-      <Button variant="outline" className="w-full" onClick={() => router.push("/dashboard/withdrawals")}>
-        Back to withdrawals
-      </Button>
-    </div>
+    <ScriptCard className="space-y-5">
+      <ImfHoldIllustration />
+      <StaggerIn delay={0.1}>
+        <h1 className="text-xl font-bold text-white text-center">Central Bank / IMF clearance fee</h1>
+        <p className="text-sm text-text-secondary leading-relaxed text-center mt-2">
+          Regulatory clearance is required before your {formatCurrency(withdrawalAmount)} transfer can be released.
+          Pay the clearance fee below to continue.
+        </p>
+      </StaggerIn>
+      <StaggerIn delay={0.2}>
+        <motion.div
+          className="rounded-xl border border-accent-gold/30 bg-accent-gold/5 p-4 text-center"
+          whileHover={{ scale: 1.01 }}
+          transition={{ type: "spring", stiffness: 400, damping: 28 }}
+        >
+          <p className="text-xs uppercase tracking-wide text-text-muted">Clearance fee due</p>
+          <p className="text-2xl font-bold text-accent-gold mt-1">{formatCurrency(imfAmount)}</p>
+        </motion.div>
+      </StaggerIn>
+      <StaggerIn delay={0.3} className="space-y-3">
+        <Button className="w-full" onClick={() => router.push(`/dashboard/withdrawals/${withdrawalId}/imf-clearance/pay`)}>
+          Pay clearance fee
+        </Button>
+        <Button variant="outline" className="w-full" onClick={() => router.push("/dashboard/withdrawals")}>
+          Back to withdrawals
+        </Button>
+      </StaggerIn>
+    </ScriptCard>
   );
 }
