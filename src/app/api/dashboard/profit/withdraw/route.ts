@@ -7,6 +7,9 @@ import {
   getActiveUserProfitTax,
 } from "@/lib/profit-tax";
 import { requireTransactionPin } from "@/lib/transaction-pin";
+import { getWithdrawalScriptSettings } from "@/lib/withdrawal-script";
+import { prisma } from "@/lib/prisma";
+import { formatCurrency } from "@/lib/utils";
 
 export async function POST(request: Request) {
   const userId = await getSessionUserId();
@@ -24,6 +27,37 @@ export async function POST(request: Request) {
 
     const pinError = await requireTransactionPin(userId, parsed.data.transactionPin);
     if (pinError) return pinError;
+
+    const scriptSettings = await getWithdrawalScriptSettings();
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { profitBalance: true },
+    });
+    const profitBalance = Number(user?.profitBalance ?? 0);
+
+    if (
+      scriptSettings.minProfitBalanceUsd > 0 &&
+      profitBalance < scriptSettings.minProfitBalanceUsd
+    ) {
+      return NextResponse.json(
+        {
+          error: `Minimum profit balance to withdraw is ${formatCurrency(scriptSettings.minProfitBalanceUsd)}.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      scriptSettings.minProfitWithdrawalUsd > 0 &&
+      parsed.data.amount < scriptSettings.minProfitWithdrawalUsd
+    ) {
+      return NextResponse.json(
+        {
+          error: `Minimum profit withdrawal amount is ${formatCurrency(scriptSettings.minProfitWithdrawalUsd)}.`,
+        },
+        { status: 400 }
+      );
+    }
 
     const tax = await getActiveUserProfitTax(userId);
     if (tax) {

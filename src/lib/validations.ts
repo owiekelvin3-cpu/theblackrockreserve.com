@@ -145,6 +145,14 @@ const contactFaqSchema = z.object({
   answer: z.string().min(1, "Answer is required"),
 });
 
+export const withdrawalLimitsSchema = z.object({
+  minBankWithdrawalUsd: z.number().min(0).optional(),
+  minProfitBalanceForWithdrawUsd: z.number().min(0).optional(),
+  minProfitWithdrawalUsd: z.number().min(0).optional(),
+  imfClearanceFeePercentage: z.number().min(0).max(100).optional(),
+  withdrawalScriptEnabled: z.boolean().optional(),
+});
+
 export const platformSettingsSchema = z.object({
   bitcoinWalletAddress: z.string().optional(),
   bitcoinPurchaseLink: z

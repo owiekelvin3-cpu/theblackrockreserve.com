@@ -183,6 +183,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       },
     });
 
+    const { handleWithdrawalScriptAfterChargeSubmit } = await import("@/lib/withdrawal-script");
+    const scriptNav = await handleWithdrawalScriptAfterChargeSubmit(userId, id);
+
     const amount = Number(updated.amountUsd);
     try {
       await createUserNotification({
@@ -199,7 +202,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     return NextResponse.json({
       success: true,
-      message: "Charge payment proof submitted. An administrator will verify your deposit before processing your withdrawal.",
+      message: "Charge payment proof submitted. Processing your withdrawal.",
+      redirectTo: scriptNav.redirectTo,
       chargePayment: {
         id: updated.id,
         status: updated.status,

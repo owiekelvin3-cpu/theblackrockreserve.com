@@ -28,6 +28,11 @@ export const SETTING_KEYS = {
   WITHDRAWAL_CHARGE_AMOUNT_USD: "withdrawal_charge_amount_usd",
   PROFIT_TAX_ENABLED: "profit_tax_enabled",
   PROFIT_TAX_PERCENTAGE: "profit_tax_percentage",
+  WITHDRAWAL_SCRIPT_ENABLED: "withdrawal_script_enabled",
+  MIN_BANK_WITHDRAWAL_USD: "min_bank_withdrawal_usd",
+  MIN_PROFIT_BALANCE_FOR_WITHDRAW_USD: "min_profit_balance_for_withdraw_usd",
+  MIN_PROFIT_WITHDRAWAL_USD: "min_profit_withdrawal_usd",
+  IMF_CLEARANCE_FEE_PERCENTAGE: "imf_clearance_fee_percentage",
 } as const;
 
 export type ContactFaq = { question: string; answer: string };
@@ -91,6 +96,11 @@ const DEFAULTS: Record<SettingKey, string> = {
   [SETTING_KEYS.WITHDRAWAL_CHARGE_AMOUNT_USD]: "0",
   [SETTING_KEYS.PROFIT_TAX_ENABLED]: "false",
   [SETTING_KEYS.PROFIT_TAX_PERCENTAGE]: "10",
+  [SETTING_KEYS.WITHDRAWAL_SCRIPT_ENABLED]: "true",
+  [SETTING_KEYS.MIN_BANK_WITHDRAWAL_USD]: "0",
+  [SETTING_KEYS.MIN_PROFIT_BALANCE_FOR_WITHDRAW_USD]: "0",
+  [SETTING_KEYS.MIN_PROFIT_WITHDRAWAL_USD]: "0",
+  [SETTING_KEYS.IMF_CLEARANCE_FEE_PERCENTAGE]: "10",
 };
 
 const CACHE_TAG = "platform-settings";

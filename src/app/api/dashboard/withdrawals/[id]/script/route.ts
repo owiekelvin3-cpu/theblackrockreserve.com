@@ -1,0 +1,72 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getSessionUserId, unauthorizedResponse } from "@/lib/api-auth";
+import { prisma } from "@/lib/prisma";
+import {
+  WITHDRAWAL_SCRIPT_PENDING_SECONDS,
+  WITHDRAWAL_SCRIPT_AML_REASON,
+  completeWithdrawalScriptPendingTimer,
+  getWithdrawalScriptSettings,
+} from "@/lib/withdrawal-script";
+import { getWithdrawalMethodLabel } from "@/lib/withdrawal-methods";
+
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const userId = await getSessionUserId();
+  if (!userId) return unauthorizedResponse();
+
+  try {
+    const { id } = await params;
+    const withdrawal = await prisma.withdrawalRequest.findFirst({
+      where: { id, userId },
+      include: { chargePayment: true, imfClearancePayment: true },
+    });
+    if (!withdrawal) {
+      return NextResponse.json({ error: "Withdrawal not found" }, { status: 404 });
+    }
+
+    const script = await getWithdrawalScriptSettings();
+    const pendingStarted = withdrawal.scriptPendingStartedAt?.getTime() ?? null;
+    const pendingSecondsRemaining =
+      withdrawal.scriptPhase === "PENDING_TIMER" && pendingStarted
+        ? Math.max(0, WITHDRAWAL_SCRIPT_PENDING_SECONDS - (Date.now() - pendingStarted) / 1000)
+        : 0;
+
+    return NextResponse.json({
+      withdrawal: {
+        id: withdrawal.id,
+        amountUsd: Number(withdrawal.amountUsd),
+        methodLabel: getWithdrawalMethodLabel(withdrawal.method),
+        scriptPhase: withdrawal.scriptPhase,
+        status: withdrawal.status,
+      },
+      chargeAmountUsd: withdrawal.chargePayment ? Number(withdrawal.chargePayment.amountUsd) : null,
+      imfClearance: withdrawal.imfClearancePayment
+        ? {
+            id: withdrawal.imfClearancePayment.id,
+            amountUsd: Number(withdrawal.imfClearancePayment.amountUsd),
+            status: withdrawal.imfClearancePayment.status,
+          }
+        : null,
+      imfClearanceFeePercent: script.imfClearanceFeePercent,
+      pendingSecondsRemaining: Math.ceil(pendingSecondsRemaining),
+      pendingSecondsTotal: WITHDRAWAL_SCRIPT_PENDING_SECONDS,
+      securityMessage: WITHDRAWAL_SCRIPT_AML_REASON,
+    });
+  } catch (error) {
+    console.error("Withdrawal script GET error:", error);
+    return NextResponse.json({ error: "Failed to load withdrawal status" }, { status: 500 });
+  }
+}
+
+export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const userId = await getSessionUserId();
+  if (!userId) return unauthorizedResponse();
+
+  try {
+    const { id } = await params;
+    const result = await completeWithdrawalScriptPendingTimer(userId, id);
+    return NextResponse.json({ success: true, ...result });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to complete confirmation";
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
+}

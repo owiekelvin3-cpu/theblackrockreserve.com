@@ -110,7 +110,11 @@ export default function WithdrawalChargePaymentPanel({
         if (!res.ok) throw new Error(json.error || t("withdrawals.errors.submitFailed"));
         toast.success(json.message);
         clearProofImage();
-        router.push(overviewUrl);
+        if (typeof json.redirectTo === "string" && json.redirectTo) {
+          router.push(json.redirectTo);
+        } else {
+          router.push(overviewUrl);
+        }
         onRefresh();
       } finally {
         setSubmitting(false);

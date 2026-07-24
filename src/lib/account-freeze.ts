@@ -185,6 +185,9 @@ export async function unfreezeUserAccount(params: {
     params.ipAddress
   );
 
+  const { markWithdrawalScriptStepAfterUnfreeze } = await import("@/lib/withdrawal-script");
+  await markWithdrawalScriptStepAfterUnfreeze(params.userId);
+
   try {
     await createUserNotification({
       userId: params.userId,

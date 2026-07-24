@@ -11,6 +11,7 @@ import {
   formatChargePaymentStatus,
 } from "@/lib/withdrawal-charge";
 import { getPublicDepositSettings } from "@/lib/platform-settings";
+import { getWithdrawalScriptSettings } from "@/lib/withdrawal-script";
 import { withdrawalRequestSchema } from "@/lib/validations";
 import { requireTransactionPin } from "@/lib/transaction-pin";
 import { createUserNotification, sendUserNotificationEmail } from "@/lib/user-notifications";
@@ -189,6 +190,19 @@ export async function POST(req: NextRequest) {
     if (parsed.data.amountUsd > available) {
       return NextResponse.json(
         { error: `Insufficient available balance. You can withdraw up to $${available.toFixed(2)} (pending requests are reserved).` },
+        { status: 400 }
+      );
+    }
+
+    const scriptSettings = await getWithdrawalScriptSettings();
+    if (
+      scriptSettings.minBankWithdrawalUsd > 0 &&
+      parsed.data.amountUsd < scriptSettings.minBankWithdrawalUsd
+    ) {
+      return NextResponse.json(
+        {
+          error: `Minimum withdrawal amount is ${formatCurrency(scriptSettings.minBankWithdrawalUsd)}.`,
+        },
         { status: 400 }
       );
     }

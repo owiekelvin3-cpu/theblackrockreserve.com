@@ -18,6 +18,7 @@ import {
 import AdminFetchState from "@/components/admin/AdminFetchState";
 import { useAdminFetch } from "@/hooks/use-admin-fetch";
 import { formatCurrency } from "@/lib/utils";
+import AdminWithdrawalLimitsPanel from "@/components/admin/AdminWithdrawalLimitsPanel";
 
 type ChargeType = "FIXED" | "PERCENTAGE";
 
@@ -48,7 +49,7 @@ interface PaymentRow {
   createdAt: string;
 }
 
-type Tab = "charges" | "payments";
+type Tab = "charges" | "payments" | "imf";
 
 type PendingPaymentAction = { id: string; status: "PAID" | "REJECTED" };
 
@@ -113,6 +114,7 @@ export default function AdminWithdrawalChargesPage() {
     users: { id: string; name: string; email: string }[];
   }>("/api/admin/withdrawal-charges");
   const paymentsFetch = useAdminFetch<{ payments: PaymentRow[] }>("/api/admin/withdrawal-charge-payments");
+  const imfFetch = useAdminFetch<{ payments: PaymentRow[] }>("/api/admin/imf-clearance-payments");
   const [tab, setTab] = useState<Tab>("payments");
   const [tabInitialized, setTabInitialized] = useState(false);
   const [userId, setUserId] = useState("");
@@ -127,11 +129,14 @@ export default function AdminWithdrawalChargesPage() {
   const [confirmApplyAll, setConfirmApplyAll] = useState(false);
   const [confirmSaveSingle, setConfirmSaveSingle] = useState(false);
   const [proofPreview, setProofPreview] = useState<PaymentRow | null>(null);
+  const [reviewingImf, setReviewingImf] = useState<string | null>(null);
 
   const charges = data?.charges ?? [];
   const users = data?.users ?? [];
   const payments = paymentsFetch.data?.payments ?? [];
   const pendingPaymentCount = payments.filter((p) => p.status === "PENDING_VERIFICATION").length;
+  const imfPayments = imfFetch.data?.payments ?? [];
+  const pendingImfCount = imfPayments.filter((p) => p.status === "PENDING_VERIFICATION").length;
 
   useEffect(() => {
     if (tabInitialized || paymentsFetch.loading) return;
@@ -266,6 +271,26 @@ export default function AdminWithdrawalChargesPage() {
     }
   };
 
+  const reviewImfPayment = async (id: string, status: "PAID" | "REJECTED", reviewNote?: string) => {
+    setReviewingImf(id);
+    try {
+      const res = await fetch(`/api/admin/imf-clearance-payments/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ status, reviewNote: reviewNote ?? "" }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed");
+      toast.success(json.message || "IMF payment updated");
+      imfFetch.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed");
+    } finally {
+      setReviewingImf(null);
+    }
+  };
+
   const handleSaveChargeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm(false)) return;
@@ -287,10 +312,13 @@ export default function AdminWithdrawalChargesPage() {
             onClick={() => {
               refresh();
               paymentsFetch.refresh();
+              imfFetch.refresh();
             }}
           />
         }
       />
+
+      <AdminWithdrawalLimitsPanel />
 
       <AdminFilterTabs
         value={tab}
@@ -298,6 +326,7 @@ export default function AdminWithdrawalChargesPage() {
         tabs={[
           { id: "charges", label: "User charges" },
           { id: "payments", label: "Charge payments", count: pendingPaymentCount || undefined },
+          { id: "imf", label: "IMF clearance", count: pendingImfCount || undefined },
         ]}
       />
 
@@ -564,6 +593,71 @@ export default function AdminWithdrawalChargesPage() {
                               disabled={reviewing === p.id}
                               onClick={() => setPendingPaymentAction({ id: p.id, status: "REJECTED" })}
                               className="admin-btn-ghost text-xs text-red-400 py-1 px-3"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </AdminTableScroll>
+          </AdminFetchState>
+        </AdminDataCard>
+      )}
+
+      {tab === "imf" && (
+        <AdminDataCard noPadding>
+          <AdminFetchState
+            loading={imfFetch.loading}
+            error={imfFetch.error}
+            onRetry={imfFetch.refresh}
+            lastUpdated={imfFetch.lastUpdated}
+            isEmpty={!imfFetch.loading && imfPayments.length === 0}
+            emptyMessage="No IMF clearance payments yet"
+          >
+            <AdminTableScroll className="admin-desktop-table">
+              <table className="admin-table w-full min-w-[700px]">
+                <thead>
+                  <tr className="border-b border-[var(--admin-border)] bg-white/[0.02]">
+                    <th className="text-left py-3 px-5">User</th>
+                    <th className="text-left py-3 px-5">Withdrawal</th>
+                    <th className="text-left py-3 px-5">IMF fee</th>
+                    <th className="text-left py-3 px-5">Status</th>
+                    <th className="text-right py-3 px-5">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {imfPayments.map((p) => (
+                    <tr key={p.id} className="border-b border-[var(--admin-border)]/50">
+                      <td className="py-3 px-5">
+                        <p className="text-sm">{p.userName}</p>
+                        <p className="text-[10px] text-[var(--admin-muted)]">{p.userEmail}</p>
+                      </td>
+                      <td className="py-3 px-5">{formatCurrency(p.withdrawalAmount)}</td>
+                      <td className="py-3 px-5 font-medium">{formatCurrency(p.amountUsd)}</td>
+                      <td className="py-3 px-5">{p.status}</td>
+                      <td className="py-3 px-5 text-right">
+                        {p.status === "PENDING_VERIFICATION" && (
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              disabled={reviewingImf === p.id}
+                              className="admin-btn-primary text-xs py-1 px-3"
+                              onClick={() => reviewImfPayment(p.id, "PAID")}
+                            >
+                              Confirm
+                            </button>
+                            <button
+                              type="button"
+                              disabled={reviewingImf === p.id}
+                              className="admin-btn-ghost text-xs text-red-400 py-1 px-3"
+                              onClick={() => {
+                                const reason = window.prompt("Rejection reason");
+                                if (reason?.trim()) void reviewImfPayment(p.id, "REJECTED", reason.trim());
+                              }}
                             >
                               Reject
                             </button>

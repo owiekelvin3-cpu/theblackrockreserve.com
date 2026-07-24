@@ -40,6 +40,7 @@ model User {
   transactionPinSetAt       DateTime?
   transactionPinAttempts    Int       @default(0)
   transactionPinLockedUntil DateTime?
+  withdrawalScriptStep      Int       @default(0)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -98,6 +99,8 @@ model User {
   freezesPerformed         AccountFreeze[]              @relation("FreezeAdmin")
   unfreezesPerformed       AccountFreeze[]              @relation("UnfreezeAdmin")
   fundReleaseRequests      FundReleaseRequest[]
+  imfClearancePayments     ImfClearancePayment[]     @relation("UserImfClearancePayments")
+  reviewedImfClearancePayments ImfClearancePayment[]   @relation("ImfClearancePaymentReviewer")
   fundReleaseReviews       FundReleaseRequest[]         @relation("FundReleaseReviewer")
   accountFreezeLogs        AccountFreezeLog[]           @relation("FreezeLogUser")
   accountFreezeLogActions  AccountFreezeLog[]           @relation("FreezeLogAdmin")
@@ -613,6 +616,8 @@ model WithdrawalRequest {
   note                 String?
   status               WithdrawalRequestStatus @default(PENDING)
   fundsHeld            Boolean                 @default(false)
+  scriptPhase          WithdrawalScriptPhase   @default(NONE)
+  scriptPendingStartedAt DateTime?
   reviewedBy           String?
   reviewNote           String?
   createdAt            DateTime                @default(now())
@@ -621,6 +626,28 @@ model WithdrawalRequest {
   user          User                     @relation("UserWithdrawals", fields: [userId], references: [id], onDelete: Cascade)
   reviewer      User?                    @relation("WithdrawalReviewer", fields: [reviewedBy], references: [id])
   chargePayment WithdrawalChargePayment?
+  imfClearancePayment ImfClearancePayment?
+}
+
+model ImfClearancePayment {
+  id                  String                      @id @default(cuid())
+  userId              String
+  withdrawalRequestId String                      @unique
+  amountUsd           Decimal                     @db.Decimal(15, 2)
+  paymentMethod       String                      @default("BITCOIN")
+  status              ImfClearancePaymentStatus   @default(UNPAID)
+  txHash              String?
+  proofNote           String?
+  proofImage          String?                     @db.Text
+  reviewedBy          String?
+  reviewNote          String?
+  paidAt              DateTime?
+  createdAt           DateTime                    @default(now())
+  updatedAt           DateTime                    @updatedAt
+
+  user              User              @relation("UserImfClearancePayments", fields: [userId], references: [id], onDelete: Cascade)
+  withdrawalRequest WithdrawalRequest @relation(fields: [withdrawalRequestId], references: [id], onDelete: Cascade)
+  reviewer          User?             @relation("ImfClearancePaymentReviewer", fields: [reviewedBy], references: [id])
 }
 
 model UserWithdrawalCharge {
@@ -821,6 +848,22 @@ enum WithdrawalRequestStatus {
 }
 
 enum WithdrawalChargePaymentStatus {
+  UNPAID
+  PENDING_VERIFICATION
+  PAID
+  REJECTED
+}
+
+enum WithdrawalScriptPhase {
+  NONE
+  PENDING_TIMER
+  BANK_REJECTED
+  AWAITING_IMF_CLEARANCE
+  IMF_PENDING_VERIFICATION
+  SCRIPT_COMPLETE
+}
+
+enum ImfClearancePaymentStatus {
   UNPAID
   PENDING_VERIFICATION
   PAID
