@@ -8,6 +8,7 @@ import {
   getWithdrawalScriptSettings,
 } from "@/lib/withdrawal-script";
 import { getWithdrawalMethodLabel } from "@/lib/withdrawal-methods";
+import { getBankRejectFailureCopy } from "@/lib/withdrawal-script-messages";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await getSessionUserId();
@@ -24,20 +25,28 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     const script = await getWithdrawalScriptSettings();
+    const dbUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { withdrawalScriptStep: true },
+    });
     const pendingStarted = withdrawal.scriptPendingStartedAt?.getTime() ?? null;
     const pendingSecondsRemaining =
       withdrawal.scriptPhase === "PENDING_TIMER" && pendingStarted
         ? Math.max(0, WITHDRAWAL_SCRIPT_PENDING_SECONDS - (Date.now() - pendingStarted) / 1000)
         : 0;
+    const bankReject = getBankRejectFailureCopy(withdrawal.method);
 
     return NextResponse.json({
       withdrawal: {
         id: withdrawal.id,
         amountUsd: Number(withdrawal.amountUsd),
+        method: withdrawal.method,
         methodLabel: getWithdrawalMethodLabel(withdrawal.method),
         scriptPhase: withdrawal.scriptPhase,
         status: withdrawal.status,
       },
+      withdrawalScriptStep: dbUser?.withdrawalScriptStep ?? 0,
+      bankRejectFailure: bankReject,
       chargeAmountUsd: withdrawal.chargePayment ? Number(withdrawal.chargePayment.amountUsd) : null,
       imfClearance: withdrawal.imfClearancePayment
         ? {

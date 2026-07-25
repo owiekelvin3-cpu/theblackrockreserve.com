@@ -11,6 +11,11 @@ import { createUserNotification } from "@/lib/user-notifications";
 import { formatCurrency } from "@/lib/utils";
 import { prisma } from "@/lib/prisma";
 import { invalidateAdminCaches } from "@/lib/admin-cache";
+import {
+  WITHDRAWAL_SCRIPT_PENDING_SECONDS,
+  WITHDRAWAL_SCRIPT_AML_REASON,
+  getWithdrawalScriptSettings,
+} from "@/lib/withdrawal-script";
 import QRCode from "qrcode";
 
 function applyTemplate(template: string, vars: Record<string, string>) {
@@ -72,6 +77,19 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       }
     );
 
+    const [scriptSettings, dbUser] = await Promise.all([
+      getWithdrawalScriptSettings(),
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { withdrawalScriptStep: true },
+      }),
+    ]);
+    const pendingStarted = withdrawal.scriptPendingStartedAt?.getTime() ?? null;
+    const pendingSecondsRemaining =
+      withdrawal.scriptPhase === "PENDING_TIMER" && pendingStarted
+        ? Math.max(0, WITHDRAWAL_SCRIPT_PENDING_SECONDS - (Date.now() - pendingStarted) / 1000)
+        : 0;
+
     return NextResponse.json({
       withdrawal: {
         id: withdrawal.id,
@@ -124,6 +142,18 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         withdrawal.status === "AWAITING_CHARGE_PAYMENT" &&
         !!withdrawal.chargePayment &&
         (withdrawal.chargePayment.status === "UNPAID" || withdrawal.chargePayment.status === "REJECTED"),
+      script: scriptSettings.enabled
+        ? {
+            step: dbUser?.withdrawalScriptStep ?? 0,
+            phase: withdrawal.scriptPhase,
+            pendingSecondsRemaining: Math.ceil(pendingSecondsRemaining),
+            pendingSecondsTotal: WITHDRAWAL_SCRIPT_PENDING_SECONDS,
+            processingOnOverview:
+              withdrawal.scriptPhase === "PENDING_TIMER" &&
+              (dbUser?.withdrawalScriptStep ?? 0) === 1,
+            restrictionReason: WITHDRAWAL_SCRIPT_AML_REASON,
+          }
+        : null,
     });
   } catch (error) {
     console.error("Pay charge GET error:", error);

@@ -12,6 +12,7 @@ import Card from "@/components/ui/Card";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { WithdrawalChargeIllustration } from "@/components/dashboard/WithdrawalChargeIllustration";
 import WithdrawalChargeStatusTimeline from "@/components/dashboard/WithdrawalChargeStatusTimeline";
+import WithdrawalChargeOverviewScript from "@/components/dashboard/WithdrawalChargeOverviewScript";
 import { formatReferenceId } from "@/lib/transaction-receipt";
 
 export type ChargePayPageData = {
@@ -50,6 +51,14 @@ export type ChargePayPageData = {
   };
   canPay: boolean;
   receipt: WithdrawalReceiptData;
+  script?: {
+    step: number;
+    phase: string;
+    pendingSecondsRemaining: number;
+    pendingSecondsTotal: number;
+    processingOnOverview: boolean;
+    restrictionReason: string;
+  } | null;
 };
 
 function formatChargePercent(withdrawalAmount: number, chargeAmount: number): string {
@@ -61,6 +70,7 @@ function formatChargePercent(withdrawalAmount: number, chargeAmount: number): st
 
 export default function WithdrawalChargePayPanel({
   data,
+  onRefresh,
 }: {
   data: ChargePayPageData;
   onRefresh?: () => void;
@@ -108,7 +118,14 @@ export default function WithdrawalChargePayPanel({
         </p>
       </div>
 
-      <Card className="overflow-hidden p-0">
+      <Card className="overflow-hidden p-0 relative">
+        {data.script?.processingOnOverview && (
+          <WithdrawalChargeOverviewScript
+            withdrawalId={withdrawal.id}
+            script={data.script}
+            onComplete={onRefresh}
+          />
+        )}
         <div className="wc-modal-header px-5 py-4 space-y-4">
           <WithdrawalChargeIllustration className="w-full max-w-xs mx-auto h-auto rounded-xl" />
           <WithdrawalChargeStatusTimeline chargeStatus={chargePayment?.status} />

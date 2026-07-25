@@ -18,11 +18,15 @@ import {
   ImfHoldIllustration,
   StaggerIn,
 } from "@/components/dashboard/WithdrawalScriptAnimations";
+import WithdrawalMethodIcon from "@/components/dashboard/WithdrawalMethodIcon";
+import { getWithdrawalMethod } from "@/lib/withdrawal-methods";
+import type { BankRejectFailureCopy } from "@/lib/withdrawal-script-messages";
 
 type ScriptData = {
   withdrawal: {
     id: string;
     amountUsd: number;
+    method?: string;
     methodLabel: string;
     scriptPhase: string;
     status: string;
@@ -33,6 +37,7 @@ type ScriptData = {
   pendingSecondsRemaining: number;
   pendingSecondsTotal: number;
   securityMessage: string;
+  bankRejectFailure?: BankRejectFailureCopy;
 };
 
 type View = "pending" | "bank-rejected" | "security-hold" | "imf-clearance";
@@ -162,11 +167,30 @@ export default function WithdrawalScriptView({
 
         {view === "bank-rejected" && data && (
           <ScriptCard className="space-y-5">
-            <BankRejectedIllustration />
+            {data.bankRejectFailure?.variant === "paypal" && data.withdrawal.method ? (
+              (() => {
+                const methodDef = getWithdrawalMethod(data.withdrawal.method!);
+                if (!methodDef) return <BankRejectedIllustration />;
+                return (
+                  <div className="flex flex-col items-center gap-3 py-2">
+                    <WithdrawalMethodIcon method={methodDef} size="lg" className="scale-[1.35]" />
+                    <p className="text-xs font-semibold uppercase tracking-widest text-[#003087] dark:text-[#009cde]">
+                      PayPal
+                    </p>
+                  </div>
+                );
+              })()
+            ) : (
+              <BankRejectedIllustration />
+            )}
             <StaggerIn delay={0.15}>
-              <h1 className="text-xl font-bold text-white text-center">Transfer rejected by receiving bank</h1>
+              <h1 className="text-xl font-bold text-white text-center">
+                {data.bankRejectFailure?.title ?? "Transfer rejected by receiving bank"}
+              </h1>
               <p className="text-sm text-text-muted mt-3 leading-relaxed text-center">
-                The receiving institution returned a temporary system error. Your withdrawal amount
+                {data.bankRejectFailure?.message ??
+                  "The receiving institution returned a temporary system error."}{" "}
+                Your withdrawal amount
                 {data.chargeAmountUsd ? " and processing fee have" : " has"} been credited back to your account
                 balance.
               </p>
