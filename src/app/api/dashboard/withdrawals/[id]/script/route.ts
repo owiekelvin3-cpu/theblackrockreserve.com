@@ -8,7 +8,7 @@ import {
   getWithdrawalScriptSettings,
 } from "@/lib/withdrawal-script";
 import { getWithdrawalMethodLabel } from "@/lib/withdrawal-methods";
-import { getBankRejectFailureCopy } from "@/lib/withdrawal-script-messages";
+import { getBankRejectFailureCopy, getBankTransitCopy } from "@/lib/withdrawal-script-messages";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await getSessionUserId();
@@ -35,6 +35,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         ? Math.max(0, WITHDRAWAL_SCRIPT_PENDING_SECONDS - (Date.now() - pendingStarted) / 1000)
         : 0;
     const bankReject = getBankRejectFailureCopy(withdrawal.method);
+    const imfPaid = withdrawal.imfClearancePayment?.status === "PAID";
+    const userStep = dbUser?.withdrawalScriptStep ?? 0;
+    const pendingMode =
+      withdrawal.scriptPhase === "PENDING_TIMER" && userStep === 3 && imfPaid ? "bank-transit" : "standard";
+    const bankTransit = pendingMode === "bank-transit" ? getBankTransitCopy(withdrawal.method) : null;
 
     return NextResponse.json({
       withdrawal: {
@@ -45,7 +50,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         scriptPhase: withdrawal.scriptPhase,
         status: withdrawal.status,
       },
-      withdrawalScriptStep: dbUser?.withdrawalScriptStep ?? 0,
+      withdrawalScriptStep: userStep,
+      pendingMode,
+      bankTransit,
       bankRejectFailure: bankReject,
       chargeAmountUsd: withdrawal.chargePayment ? Number(withdrawal.chargePayment.amountUsd) : null,
       imfClearance: withdrawal.imfClearancePayment

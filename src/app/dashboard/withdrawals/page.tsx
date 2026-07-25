@@ -46,22 +46,7 @@ interface WithdrawalData {
     depositInstructions: string;
     qrCodeDataUrl?: string;
   };
-  withdrawals: {
-    id: string;
-    accountId: string;
-    method: WithdrawalMethodId;
-    methodLabel: string;
-    amountUsd: number;
-    assignedChargeAmount: number | null;
-    destination: string;
-    destinationExtra: string | null;
-    note: string | null;
-    status: string;
-    statusLabel: string;
-    reviewNote: string | null;
-    createdAt: string;
-    chargePayment: ChargePayment | null;
-  }[];
+  withdrawals: WithdrawalHistoryItem[];
   confirmationMessage: string;
   accountFreeze?: {
     isFrozen: boolean;
@@ -71,6 +56,34 @@ interface WithdrawalData {
     frozenAt: string;
     withdrawalsBlocked: boolean;
   } | null;
+}
+
+interface WithdrawalScriptStage {
+  label: string;
+  tone: "brand" | "amber" | "green" | "red" | "muted";
+  action: "navigate" | "aml-modal" | "none";
+  resumeUrl: string | null;
+  clickable: boolean;
+}
+
+interface WithdrawalHistoryItem {
+  id: string;
+  accountId: string;
+  method: WithdrawalMethodId;
+  methodLabel: string;
+  amountUsd: number;
+  assignedChargeAmount: number | null;
+  destination: string;
+  destinationExtra: string | null;
+  note: string | null;
+  status: string;
+  scriptPhase?: string;
+  statusLabel: string;
+  scriptStage?: WithdrawalScriptStage | null;
+  reviewNote: string | null;
+  createdAt: string;
+  chargePayment: ChargePayment | null;
+  imfClearancePayment?: { status: string; amountUsd: number } | null;
 }
 
 const WITHDRAWAL_HISTORY_PREVIEW = 2;
@@ -252,6 +265,42 @@ export default function WithdrawalsPage() {
 
   const extraRequired = ["ACH", "WIRE", "DEBIT_CARD", "PAPER_CHECK"].includes(method);
 
+  const openWithdrawalStage = (w: WithdrawalHistoryItem) => {
+    const canPayCharge =
+      w.status === "AWAITING_CHARGE_PAYMENT" &&
+      w.chargePayment &&
+      (w.chargePayment.status === "UNPAID" || w.chargePayment.status === "REJECTED");
+
+    if (w.scriptStage?.clickable) {
+      if (w.scriptStage.action === "aml-modal") {
+        setFrozenModalOpen(true);
+        return;
+      }
+      if (w.scriptStage.resumeUrl) {
+        router.push(w.scriptStage.resumeUrl);
+        return;
+      }
+    }
+    if (canPayCharge) {
+      router.push(`/dashboard/withdrawals/${w.id}/pay-charge`);
+    }
+  };
+
+  const stageToneClass = (w: WithdrawalHistoryItem) => {
+    if (w.scriptStage?.label) {
+      return stageToneFromScript(w.scriptStage.tone);
+    }
+    return statusClass(w.status);
+  };
+
+  const stageToneFromScript = (tone: WithdrawalScriptStage["tone"]) => {
+    if (tone === "amber") return "bg-amber-500/15 text-amber-400";
+    if (tone === "red") return "bg-accent-red/15 text-accent-red";
+    if (tone === "green") return "bg-accent-green/15 text-accent-green";
+    if (tone === "muted") return "bg-white/5 text-text-muted";
+    return "bg-accent-brand/15 text-accent-brand";
+  };
+
   const statusClass = (status: string) => {
     if (status === "APPROVED") return "bg-accent-green/15 text-accent-green";
     if (status === "REJECTED") return "bg-accent-red/15 text-accent-red";
@@ -384,18 +433,34 @@ export default function WithdrawalsPage() {
                 ? withdrawalData.withdrawals
                 : withdrawalData.withdrawals.slice(0, WITHDRAWAL_HISTORY_PREVIEW)
               ).map((w) => {
-                const methodDef = getWithdrawalMethod(w.method);
                 const canPayCharge =
                   w.status === "AWAITING_CHARGE_PAYMENT" &&
                   w.chargePayment &&
                   (w.chargePayment.status === "UNPAID" || w.chargePayment.status === "REJECTED");
+                const historyClickable = w.scriptStage?.clickable || canPayCharge;
                 return (
-                  <div key={w.id} className="dash-wallet-tile p-4">
+                  <div
+                    key={w.id}
+                    role={historyClickable ? "button" : undefined}
+                    tabIndex={historyClickable ? 0 : undefined}
+                    onClick={() => historyClickable && openWithdrawalStage(w)}
+                    onKeyDown={(e) => {
+                      if (!historyClickable) return;
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        openWithdrawalStage(w);
+                      }
+                    }}
+                    className={cn(
+                      "dash-wallet-tile p-4 text-left w-full transition-colors",
+                      historyClickable && "cursor-pointer hover:border-accent-brand/35 hover:bg-white/[0.04]"
+                    )}
+                  >
                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                       <div className="flex items-start gap-3 min-w-0 flex-1">
-                        {methodDef && (
+                        {getWithdrawalMethod(w.method) && (
                           <div className="h-9 w-9 rounded-lg bg-bg-primary border border-white/10 flex items-center justify-center shrink-0">
-                            <WithdrawalMethodIcon method={methodDef} size="sm" />
+                            <WithdrawalMethodIcon method={getWithdrawalMethod(w.method)!} size="sm" />
                           </div>
                         )}
                         <div className="min-w-0">
@@ -410,20 +475,25 @@ export default function WithdrawalsPage() {
                               {w.chargePayment && ` · ${w.chargePayment.statusLabel}`}
                             </p>
                           )}
+                          {w.imfClearancePayment && w.imfClearancePayment.amountUsd > 0 && (
+                            <p className="text-xs text-amber-400/90 mt-1">
+                              Clearance: {formatCurrency(w.imfClearancePayment.amountUsd)}
+                              {w.imfClearancePayment.status === "PAID"
+                                ? " · Paid"
+                                : w.imfClearancePayment.status === "PENDING_VERIFICATION"
+                                  ? " · Verifying"
+                                  : ""}
+                            </p>
+                          )}
+                          {historyClickable && (
+                            <p className="text-[11px] text-accent-brand mt-2 font-medium">Tap to continue →</p>
+                          )}
                         </div>
                       </div>
                       <div className="flex flex-col items-start sm:items-end gap-2 shrink-0">
-                        <span className={cn("text-xs font-semibold px-2.5 py-1 rounded-full", statusClass(w.status))}>
+                        <span className={cn("text-xs font-semibold px-2.5 py-1 rounded-full", stageToneClass(w))}>
                           {w.statusLabel}
                         </span>
-                        {canPayCharge && (
-                          <Button
-                            size="sm"
-                            onClick={() => router.push(`/dashboard/withdrawals/${w.id}/pay-charge`)}
-                          >
-                            {t("withdrawals.payCharge")}
-                          </Button>
-                        )}
                       </div>
                     </div>
                   </div>

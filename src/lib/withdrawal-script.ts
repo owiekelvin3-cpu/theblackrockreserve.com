@@ -263,6 +263,26 @@ export async function completeWithdrawalScriptPendingTimer(userId: string, withd
   }
 
   if (user.withdrawalScriptStep === 3) {
+    const imfAlreadyPaid = withdrawal.imfClearancePayment?.status === "PAID";
+
+    if (imfAlreadyPaid) {
+      const rejectCopy = getBankRejectFailureCopy(withdrawal.method);
+      await scriptRefundWithdrawalAndCreditFee(withdrawalId, rejectCopy.reviewNote);
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: { withdrawalScriptStep: 0 },
+      });
+
+      await prisma.withdrawalRequest.update({
+        where: { id: withdrawalId },
+        data: { scriptPhase: "BANK_REJECTED" },
+      });
+
+      invalidateAdminCaches();
+      return { next: "bank-rejected" as const, cycleReset: true };
+    }
+
     const script = await getWithdrawalScriptSettings();
     const withdrawalAmount = Number(withdrawal.amountUsd);
     const imfAmount =
@@ -340,7 +360,8 @@ export async function markImfClearancePaymentPaid(paymentId: string, adminId: st
       where: { id: payment.withdrawalRequestId },
       data: {
         status: "PENDING",
-        scriptPhase: "SCRIPT_COMPLETE",
+        scriptPhase: "PENDING_TIMER",
+        scriptPendingStartedAt: new Date(),
       },
     });
 
@@ -348,8 +369,8 @@ export async function markImfClearancePaymentPaid(paymentId: string, adminId: st
       {
         userId: payment.userId,
         type: "WITHDRAWAL_SUBMITTED",
-        title: "Clearance fee verified",
-        message: `Your IMF clearance fee of ${formatCurrency(Number(payment.amountUsd))} was verified. Your ${formatCurrency(Number(payment.withdrawalRequest.amountUsd))} withdrawal is now pending final review.`,
+        title: "Clearance verified — sending to bank",
+        message: `Your clearance fee of ${formatCurrency(Number(payment.amountUsd))} was verified. Your ${formatCurrency(Number(payment.withdrawalRequest.amountUsd))} withdrawal is being sent to the receiving bank — open Withdrawal History to track progress.`,
       },
       tx
     );

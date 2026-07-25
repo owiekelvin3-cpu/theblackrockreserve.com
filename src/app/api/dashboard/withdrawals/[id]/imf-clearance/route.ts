@@ -20,11 +20,13 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       where: { id, userId },
       include: { imfClearancePayment: true },
     });
-    if (!withdrawal || withdrawal.scriptPhase !== "AWAITING_IMF_CLEARANCE") {
-      return NextResponse.json({ error: "IMF clearance is not required for this withdrawal" }, { status: 400 });
+    if (!withdrawal?.imfClearancePayment) {
+      return NextResponse.json({ error: "IMF clearance not found" }, { status: 404 });
     }
-    if (!withdrawal.imfClearancePayment) {
-      return NextResponse.json({ error: "IMF clearance record not found" }, { status: 404 });
+
+    const allowedPhases = ["AWAITING_IMF_CLEARANCE", "IMF_PENDING_VERIFICATION"];
+    if (!allowedPhases.includes(withdrawal.scriptPhase)) {
+      return NextResponse.json({ error: "IMF clearance is not required for this withdrawal" }, { status: 400 });
     }
 
     const depositSettings = await getPublicDepositSettings();
@@ -59,6 +61,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         qrCodeDataUrl,
       },
       canPay: payment.status === "UNPAID" || payment.status === "REJECTED",
+      submitted: payment.status === "PENDING_VERIFICATION",
+      scriptPhase: withdrawal.scriptPhase,
     });
   } catch (error) {
     console.error("IMF clearance GET error:", error);

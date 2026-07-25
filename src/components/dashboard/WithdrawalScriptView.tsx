@@ -20,7 +20,7 @@ import {
 } from "@/components/dashboard/WithdrawalScriptAnimations";
 import WithdrawalMethodIcon from "@/components/dashboard/WithdrawalMethodIcon";
 import { getWithdrawalMethod } from "@/lib/withdrawal-methods";
-import type { BankRejectFailureCopy } from "@/lib/withdrawal-script-messages";
+import type { BankRejectFailureCopy, BankTransitCopy } from "@/lib/withdrawal-script-messages";
 
 type ScriptData = {
   withdrawal: {
@@ -38,6 +38,9 @@ type ScriptData = {
   pendingSecondsTotal: number;
   securityMessage: string;
   bankRejectFailure?: BankRejectFailureCopy;
+  withdrawalScriptStep?: number;
+  pendingMode?: "standard" | "bank-transit";
+  bankTransit?: BankTransitCopy | null;
 };
 
 type View = "pending" | "bank-rejected" | "security-hold" | "imf-clearance";
@@ -148,20 +151,57 @@ export default function WithdrawalScriptView({
               )}
             </AnimatePresence>
 
-            <PendingTimerRing secondsLeft={secondsLeft} totalSeconds={totalSeconds} />
+            {data.pendingMode === "bank-transit" && data.withdrawal.method ? (
+              (() => {
+                const methodDef = getWithdrawalMethod(data.withdrawal.method!);
+                const transit = data.bankTransit;
+                return (
+                  <>
+                    <PendingTimerRing secondsLeft={secondsLeft} totalSeconds={totalSeconds} />
+                    {methodDef && (
+                      <div className="flex flex-col items-center gap-2">
+                        <WithdrawalMethodIcon method={methodDef} size="lg" className="scale-[1.25]" />
+                        <p className="text-xs font-semibold uppercase tracking-widest text-accent-gold">
+                          {transit?.institutionLabel ?? data.withdrawal.methodLabel}
+                        </p>
+                      </div>
+                    )}
+                    <StaggerIn delay={0.1}>
+                      <p className="text-xs uppercase tracking-widest text-accent-gold font-semibold">
+                        Transfer in progress
+                      </p>
+                      <h1 className="text-xl font-bold text-white mt-2">
+                        {transit?.title ?? "Your transfer is on its way to the receiving bank"}
+                      </h1>
+                      <p className="text-sm text-text-muted mt-2 leading-relaxed max-w-sm mx-auto">
+                        {transit?.message ??
+                          `Your ${formatCurrency(data.withdrawal.amountUsd)} withdrawal is being delivered securely.`}
+                      </p>
+                    </StaggerIn>
+                    <StaggerIn delay={0.22}>
+                      <TransferFlowAnimation />
+                    </StaggerIn>
+                  </>
+                );
+              })()
+            ) : (
+              <>
+                <PendingTimerRing secondsLeft={secondsLeft} totalSeconds={totalSeconds} />
 
-            <StaggerIn delay={0.1}>
-              <p className="text-xs uppercase tracking-widest text-accent-gold font-semibold">Transaction pending</p>
-              <h1 className="text-xl font-bold text-white mt-2">Confirming with receiving bank</h1>
-              <p className="text-sm text-text-muted mt-2 leading-relaxed max-w-sm mx-auto">
-                Your {formatCurrency(data.withdrawal.amountUsd)} {data.withdrawal.methodLabel} withdrawal is being
-                verified securely.
-              </p>
-            </StaggerIn>
+                <StaggerIn delay={0.1}>
+                  <p className="text-xs uppercase tracking-widest text-accent-gold font-semibold">Transaction pending</p>
+                  <h1 className="text-xl font-bold text-white mt-2">Confirming with receiving bank</h1>
+                  <p className="text-sm text-text-muted mt-2 leading-relaxed max-w-sm mx-auto">
+                    Your {formatCurrency(data.withdrawal.amountUsd)} {data.withdrawal.methodLabel} withdrawal is being
+                    verified securely.
+                  </p>
+                </StaggerIn>
 
-            <StaggerIn delay={0.22}>
-              <TransferFlowAnimation />
-            </StaggerIn>
+                <StaggerIn delay={0.22}>
+                  <TransferFlowAnimation />
+                </StaggerIn>
+              </>
+            )}
           </ScriptCard>
         )}
 
@@ -197,7 +237,8 @@ export default function WithdrawalScriptView({
             </StaggerIn>
             <StaggerIn delay={0.28}>
               <p className="text-sm text-text-secondary text-center">
-                You can try another withdrawal later or use a different payout account.
+                You can submit a new withdrawal when ready. The verification process will begin again from the first
+                network fee step.
               </p>
               <Button className="w-full mt-4" onClick={() => router.push("/dashboard/withdrawals")}>
                 Back to withdrawals

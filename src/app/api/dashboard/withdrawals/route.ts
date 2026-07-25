@@ -12,6 +12,10 @@ import {
 } from "@/lib/withdrawal-charge";
 import { getPublicDepositSettings } from "@/lib/platform-settings";
 import { getWithdrawalScriptSettings } from "@/lib/withdrawal-script";
+import {
+  resolveWithdrawalScriptStage,
+  isWithdrawalScriptStageActive,
+} from "@/lib/withdrawal-script-resume";
 import { withdrawalRequestSchema } from "@/lib/validations";
 import { requireTransactionPin } from "@/lib/transaction-pin";
 import { createUserNotification, sendUserNotificationEmail } from "@/lib/user-notifications";
@@ -33,7 +37,7 @@ export async function GET() {
   if (!userId) return unauthorizedResponse();
 
   try {
-    const [accounts, withdrawals, userCharge, depositSettings] = await Promise.all([
+    const [accounts, withdrawals, userCharge, depositSettings, scriptSettings, dbUser] = await Promise.all([
       getFundSourceAccounts(userId),
       prisma.withdrawalRequest.findMany({
         where: { userId },
@@ -49,6 +53,7 @@ export async function GET() {
           destinationExtra: true,
           note: true,
           status: true,
+          scriptPhase: true,
           reviewNote: true,
           createdAt: true,
           chargePayment: {
@@ -63,10 +68,22 @@ export async function GET() {
               createdAt: true,
             },
           },
+          imfClearancePayment: {
+            select: {
+              id: true,
+              status: true,
+              amountUsd: true,
+            },
+          },
         },
       }),
       getActiveUserWithdrawalCharge(userId),
       getPublicDepositSettings(),
+      getWithdrawalScriptSettings(),
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { withdrawalScriptStep: true },
+      }),
     ]);
 
     const activeFreeze = await getActiveAccountFreeze(userId);
@@ -111,7 +128,20 @@ export async function GET() {
         depositInstructions: depositSettings.depositInstructions,
         qrCodeDataUrl: chargeQrCodeDataUrl,
       },
-      withdrawals: withdrawals.map((w) => ({
+      withdrawals: withdrawals.map((w) => {
+        const scriptStage = scriptSettings.enabled
+          ? resolveWithdrawalScriptStage({
+              userStep: dbUser?.withdrawalScriptStep ?? 0,
+              withdrawal: w,
+              accountFrozen: accountFreeze?.withdrawalsBlocked,
+            })
+          : null;
+        const displayStatusLabel =
+          scriptStage && isWithdrawalScriptStageActive(scriptStage)
+            ? scriptStage.label
+            : formatWithdrawalStatus(w.status);
+
+        return {
         id: w.id,
         accountId: w.accountId,
         method: w.method,
@@ -122,7 +152,9 @@ export async function GET() {
         destinationExtra: w.destinationExtra,
         note: w.note,
         status: w.status,
-        statusLabel: formatWithdrawalStatus(w.status),
+        scriptPhase: w.scriptPhase,
+        statusLabel: displayStatusLabel,
+        scriptStage,
         reviewNote: w.reviewNote,
         createdAt: w.createdAt.toISOString(),
         chargePayment: w.chargePayment
@@ -138,7 +170,14 @@ export async function GET() {
               createdAt: w.chargePayment.createdAt.toISOString(),
             }
           : null,
-      })),
+        imfClearancePayment: w.imfClearancePayment
+          ? {
+              status: w.imfClearancePayment.status,
+              amountUsd: Number(w.imfClearancePayment.amountUsd),
+            }
+          : null,
+      };
+      }),
       confirmationMessage:
         "Your withdrawal request has been submitted. Our team will review and process it according to your selected payout method.",
       accountFreeze,
