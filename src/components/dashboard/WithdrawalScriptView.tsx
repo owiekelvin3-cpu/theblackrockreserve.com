@@ -241,22 +241,10 @@ export default function WithdrawalScriptView({
               {data.intermediateBankReject ? (
                 <>
                   <p className="text-sm text-text-secondary text-center">
-                    You can submit a new payment to continue this withdrawal request.
+                    Return to your withdrawals list to continue this request when you are ready.
                   </p>
-                  <Button
-                    className="w-full mt-4"
-                    onClick={() =>
-                      router.push(`/dashboard/withdrawals/${withdrawalId}/pay-charge/payment`)
-                    }
-                  >
+                  <Button className="w-full mt-4" onClick={() => router.push("/dashboard/withdrawals")}>
                     Continue
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full mt-3"
-                    onClick={() => router.push("/dashboard/withdrawals")}
-                  >
-                    Back to withdrawals
                   </Button>
                 </>
               ) : (
