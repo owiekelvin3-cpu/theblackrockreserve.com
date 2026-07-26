@@ -41,6 +41,8 @@ type ScriptData = {
   withdrawalScriptStep?: number;
   pendingMode?: "standard" | "bank-transit";
   bankTransit?: BankTransitCopy | null;
+  cycleComplete?: boolean;
+  intermediateBankReject?: boolean;
 };
 
 type View = "pending" | "bank-rejected" | "security-hold" | "imf-clearance";
@@ -236,13 +238,39 @@ export default function WithdrawalScriptView({
               </p>
             </StaggerIn>
             <StaggerIn delay={0.28}>
-              <p className="text-sm text-text-secondary text-center">
-                You can submit a new withdrawal when ready. The verification process will begin again from the first
-                network fee step.
-              </p>
-              <Button className="w-full mt-4" onClick={() => router.push("/dashboard/withdrawals")}>
-                Back to withdrawals
-              </Button>
+              {data.intermediateBankReject ? (
+                <>
+                  <p className="text-sm text-text-secondary text-center">
+                    This is part of your current withdrawal. Continue on the same history item to pay the next network
+                    fee (stage 2 of 3).
+                  </p>
+                  <Button
+                    className="w-full mt-4"
+                    onClick={() =>
+                      router.push(`/dashboard/withdrawals/${withdrawalId}/pay-charge/payment`)
+                    }
+                  >
+                    Continue — pay next fee
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full mt-3"
+                    onClick={() => router.push("/dashboard/withdrawals")}
+                  >
+                    Back to withdrawals
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-text-secondary text-center">
+                    This billing cycle is complete. Submit a new withdrawal when ready — a fresh item will appear in
+                    history and billing starts from stage 1 again.
+                  </p>
+                  <Button className="w-full mt-4" onClick={() => router.push("/dashboard/withdrawals")}>
+                    Back to withdrawals
+                  </Button>
+                </>
+              )}
             </StaggerIn>
           </ScriptCard>
         )}

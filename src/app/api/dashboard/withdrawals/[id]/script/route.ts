@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUserId, unauthorizedResponse } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import {
+  getWithdrawalScriptSettings,
   WITHDRAWAL_SCRIPT_PENDING_SECONDS,
   WITHDRAWAL_SCRIPT_AML_REASON,
   completeWithdrawalScriptPendingTimer,
-  getWithdrawalScriptSettings,
+  isWithdrawalScriptCycleComplete,
 } from "@/lib/withdrawal-script";
 import { getWithdrawalMethodLabel } from "@/lib/withdrawal-methods";
 import { getBankRejectFailureCopy, getBankTransitCopy } from "@/lib/withdrawal-script-messages";
@@ -40,6 +41,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const pendingMode =
       withdrawal.scriptPhase === "PENDING_TIMER" && userStep === 3 && imfPaid ? "bank-transit" : "standard";
     const bankTransit = pendingMode === "bank-transit" ? getBankTransitCopy(withdrawal.method) : null;
+    const cycleComplete = isWithdrawalScriptCycleComplete(withdrawal, userStep);
 
     return NextResponse.json({
       withdrawal: {
@@ -66,6 +68,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       pendingSecondsRemaining: Math.ceil(pendingSecondsRemaining),
       pendingSecondsTotal: WITHDRAWAL_SCRIPT_PENDING_SECONDS,
       securityMessage: WITHDRAWAL_SCRIPT_AML_REASON,
+      cycleComplete,
+      intermediateBankReject: withdrawal.scriptPhase === "BANK_REJECTED" && !cycleComplete,
     });
   } catch (error) {
     console.error("Withdrawal script GET error:", error);

@@ -56,6 +56,8 @@ interface WithdrawalData {
     frozenAt: string;
     withdrawalsBlocked: boolean;
   } | null;
+  activeCycleWithdrawalId?: string | null;
+  canStartNewWithdrawal?: boolean;
 }
 
 interface WithdrawalScriptStage {
@@ -84,6 +86,9 @@ interface WithdrawalHistoryItem {
   createdAt: string;
   chargePayment: ChargePayment | null;
   imfClearancePayment?: { status: string; amountUsd: number } | null;
+  cycleComplete?: boolean;
+  isActiveCycle?: boolean;
+  billingStageLabel?: string | null;
 }
 
 const WITHDRAWAL_HISTORY_PREVIEW = 2;
@@ -214,7 +219,13 @@ export default function WithdrawalsPage() {
       });
       const json = await res.json();
 
-      if (res.status === 409 && !isRetry && json.error) {
+      if (res.status === 409 && json.resumeUrl) {
+        toast.message(json.error || "Continue your in-progress withdrawal.");
+        router.push(json.resumeUrl);
+        return;
+      }
+
+      if (res.status === 409 && !isRetry && json.error?.includes("try your withdrawal again")) {
         await submitWithdrawal(transactionPin, true);
         return;
       }
@@ -416,9 +427,21 @@ export default function WithdrawalsPage() {
                 <Button
                   type="submit"
                   className="w-full sm:w-auto"
-                  disabled={submitting || !accountId || !amountUsd || !destination || (extraRequired && !destinationExtra) || (selectedAccount?.availableBalance ?? 0) <= 0}
+                  disabled={
+                    submitting ||
+                    withdrawalData.canStartNewWithdrawal === false ||
+                    !accountId ||
+                    !amountUsd ||
+                    !destination ||
+                    (extraRequired && !destinationExtra) ||
+                    (selectedAccount?.availableBalance ?? 0) <= 0
+                  }
                 >
-                  {submitting ? t("withdrawals.submitting") : t("withdrawals.confirmWithdrawal")}
+                  {withdrawalData.canStartNewWithdrawal === false
+                    ? "Continue in-progress withdrawal below"
+                    : submitting
+                      ? t("withdrawals.submitting")
+                      : t("withdrawals.confirmWithdrawal")}
                 </Button>
               </form>
             </Card>
@@ -428,6 +451,12 @@ export default function WithdrawalsPage() {
         {withdrawalData.withdrawals.length > 0 && (
           <Card>
             <h2 className="font-semibold text-white mb-4">{t("withdrawals.history")}</h2>
+            {withdrawalData.canStartNewWithdrawal === false && (
+              <p className="text-xs text-amber-400/90 mb-4 leading-relaxed rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5">
+                Your current withdrawal uses one history row for all 3 billing stages. Tap that item to continue — a new
+                row appears only after the cycle finishes as Rejected.
+              </p>
+            )}
             <div className="space-y-3">
               {(historyExpanded
                 ? withdrawalData.withdrawals
@@ -453,7 +482,8 @@ export default function WithdrawalsPage() {
                     }}
                     className={cn(
                       "dash-wallet-tile p-4 text-left w-full transition-colors",
-                      historyClickable && "cursor-pointer hover:border-accent-brand/35 hover:bg-white/[0.04]"
+                      historyClickable && "cursor-pointer hover:border-accent-brand/35 hover:bg-white/[0.04]",
+                      w.isActiveCycle && !w.cycleComplete && "border-accent-brand/40 ring-1 ring-accent-brand/20"
                     )}
                   >
                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
@@ -469,6 +499,9 @@ export default function WithdrawalsPage() {
                           </p>
                           <p className="text-xs text-text-muted truncate">{w.destination}</p>
                           <p className="text-xs text-text-muted">{new Date(w.createdAt).toLocaleString()}</p>
+                          {w.billingStageLabel && (
+                            <p className="text-[11px] text-accent-gold/90 mt-1 font-medium">{w.billingStageLabel}</p>
+                          )}
                           {w.assignedChargeAmount != null && w.assignedChargeAmount > 0 && (
                             <p className="text-xs text-amber-400 mt-1">
                               Charge: {formatCurrency(w.assignedChargeAmount)}

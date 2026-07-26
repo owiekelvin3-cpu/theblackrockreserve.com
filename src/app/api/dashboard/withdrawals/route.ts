@@ -11,11 +11,16 @@ import {
   formatChargePaymentStatus,
 } from "@/lib/withdrawal-charge";
 import { getPublicDepositSettings } from "@/lib/platform-settings";
-import { getWithdrawalScriptSettings } from "@/lib/withdrawal-script";
+import {
+  getWithdrawalScriptSettings,
+  findActiveScriptCycleWithdrawal,
+  isWithdrawalScriptCycleComplete,
+} from "@/lib/withdrawal-script";
 import {
   resolveWithdrawalScriptStage,
   isWithdrawalScriptStageActive,
 } from "@/lib/withdrawal-script-resume";
+import { getScriptBillingStageLabel } from "@/lib/withdrawal-script-billing-label";
 import { withdrawalRequestSchema } from "@/lib/validations";
 import { requireTransactionPin } from "@/lib/transaction-pin";
 import { createUserNotification, sendUserNotificationEmail } from "@/lib/user-notifications";
@@ -98,6 +103,10 @@ export async function GET() {
         }
       : null;
 
+    const activeCycle = scriptSettings.enabled
+      ? await findActiveScriptCycleWithdrawal(userId)
+      : null;
+
     let chargeQrCodeDataUrl = "";
     if (depositSettings.bitcoinWalletAddress) {
       try {
@@ -129,13 +138,16 @@ export async function GET() {
         qrCodeDataUrl: chargeQrCodeDataUrl,
       },
       withdrawals: withdrawals.map((w) => {
+        const userStep = dbUser?.withdrawalScriptStep ?? 0;
         const scriptStage = scriptSettings.enabled
           ? resolveWithdrawalScriptStage({
-              userStep: dbUser?.withdrawalScriptStep ?? 0,
+              userStep,
               withdrawal: w,
               accountFrozen: accountFreeze?.withdrawalsBlocked,
             })
           : null;
+        const cycleComplete = scriptSettings.enabled && isWithdrawalScriptCycleComplete(w, userStep);
+        const isActiveCycleRow = activeCycle?.id === w.id;
         const displayStatusLabel =
           scriptStage && isWithdrawalScriptStageActive(scriptStage)
             ? scriptStage.label
@@ -155,6 +167,12 @@ export async function GET() {
         scriptPhase: w.scriptPhase,
         statusLabel: displayStatusLabel,
         scriptStage,
+        cycleComplete,
+        isActiveCycle: isActiveCycleRow,
+        billingStageLabel:
+          isActiveCycleRow && !cycleComplete
+            ? getScriptBillingStageLabel(userStep, w.scriptPhase)
+            : null,
         reviewNote: w.reviewNote,
         createdAt: w.createdAt.toISOString(),
         chargePayment: w.chargePayment
@@ -181,6 +199,8 @@ export async function GET() {
       confirmationMessage:
         "Your withdrawal request has been submitted. Our team will review and process it according to your selected payout method.",
       accountFreeze,
+      activeCycleWithdrawalId: activeCycle?.id ?? null,
+      canStartNewWithdrawal: scriptSettings.enabled ? !activeCycle : true,
     });
   } catch (error) {
     console.error("Withdrawals GET error:", error);
@@ -272,6 +292,28 @@ export async function POST(req: NextRequest) {
         message:
           "A withdrawal processing charge applies to your account. Acknowledge the charge to continue.",
       });
+    }
+
+    const activeCycle = scriptSettings.enabled ? await findActiveScriptCycleWithdrawal(userId) : null;
+    if (activeCycle) {
+      const userStepRow = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { withdrawalScriptStep: true },
+      });
+      const stage = resolveWithdrawalScriptStage({
+        userStep: userStepRow?.withdrawalScriptStep ?? 0,
+        withdrawal: activeCycle,
+        accountFrozen: false,
+      });
+      return NextResponse.json(
+        {
+          error:
+            "You already have a withdrawal in progress (all 3 billing stages stay on one history item). Open Withdrawal History and tap it to continue.",
+          activeWithdrawalId: activeCycle.id,
+          resumeUrl: stage.resumeUrl ?? `/dashboard/withdrawals/${activeCycle.id}/pay-charge`,
+        },
+        { status: 409 }
+      );
     }
 
     const hasCharge = !!activeCharge && chargeAmount != null && chargeAmount > 0;
