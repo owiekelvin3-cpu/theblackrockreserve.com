@@ -34,6 +34,7 @@ export default function WithdrawalChargePaymentPanel({
   const [proofFileName, setProofFileName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [altBankHint, setAltBankHint] = useState(false);
   const { open: pinOpen, loading: pinLoading, error: pinError, requestPin, closePin, confirmPin } =
     useTransactionPin();
 
@@ -49,6 +50,18 @@ export default function WithdrawalChargePaymentPanel({
       router.replace(overviewUrl);
     }
   }, [canPay, submitted, paid, router, overviewUrl]);
+
+  useEffect(() => {
+    try {
+      const id = sessionStorage.getItem("br-withdrawal-alt-bank");
+      if (id === withdrawal.id) {
+        setAltBankHint(true);
+        sessionStorage.removeItem("br-withdrawal-alt-bank");
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [withdrawal.id]);
 
   const copyAddress = async () => {
     if (!chargePaymentMethods.bitcoinWalletAddress) return;
@@ -140,6 +153,11 @@ export default function WithdrawalChargePaymentPanel({
           <Wallet size={11} />
           {flowStep === 1 ? t("withdrawals.chargePay.paymentBadge") : t("withdrawals.chargePay.step2Badge")}
         </span>
+        {altBankHint && (
+          <p className="text-sm text-text-secondary mb-3 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 leading-relaxed">
+            Use a different receiving bank or payout account when you submit your payment proof.
+          </p>
+        )}
         <h1 className="text-xl sm:text-2xl font-bold text-white">
           {flowStep === 1 ? t("withdrawals.chargePay.paymentTitle") : t("withdrawals.chargePay.step2Title")}
         </h1>

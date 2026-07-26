@@ -16,6 +16,7 @@ import {
   findActiveScriptCycleWithdrawal,
   isWithdrawalScriptCycleComplete,
   repairScriptCycleWithdrawalState,
+  allowsNewWithdrawalAfterBankDecline,
 } from "@/lib/withdrawal-script";
 import {
   resolveWithdrawalScriptStage,
@@ -203,7 +204,10 @@ export async function GET() {
         "Your withdrawal request has been submitted. Our team will review and process it according to your selected payout method.",
       accountFreeze,
       activeCycleWithdrawalId: activeCycle?.id ?? null,
-      canStartNewWithdrawal: scriptSettings.enabled ? !activeCycle : true,
+      canStartNewWithdrawal: scriptSettings.enabled
+        ? !activeCycle ||
+          allowsNewWithdrawalAfterBankDecline(activeCycle, dbUser?.withdrawalScriptStep ?? 0)
+        : true,
     });
   } catch (error) {
     console.error("Withdrawals GET error:", error);
@@ -298,13 +302,17 @@ export async function POST(req: NextRequest) {
     }
 
     const activeCycle = scriptSettings.enabled ? await findActiveScriptCycleWithdrawal(userId) : null;
-    if (activeCycle) {
-      const userStepRow = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { withdrawalScriptStep: true },
-      });
+    const userStepRow = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { withdrawalScriptStep: true },
+    });
+    const userStepForPost = userStepRow?.withdrawalScriptStep ?? 0;
+    if (
+      activeCycle &&
+      !allowsNewWithdrawalAfterBankDecline(activeCycle, userStepForPost)
+    ) {
       const stage = resolveWithdrawalScriptStage({
-        userStep: userStepRow?.withdrawalScriptStep ?? 0,
+        userStep: userStepForPost,
         withdrawal: activeCycle,
         accountFrozen: false,
       });

@@ -63,6 +63,18 @@ export function isWithdrawalScriptCycleComplete(
   return false;
 }
 
+/** After a mid-cycle bank decline, user may start a fresh withdrawal while the prior row awaits fee payment. */
+export function allowsNewWithdrawalAfterBankDecline(
+  withdrawal: { scriptPhase: WithdrawalScriptPhase | string; status: string },
+  userStep: number
+): boolean {
+  return (
+    userStep >= 1 &&
+    withdrawal.scriptPhase === "BANK_REJECTED" &&
+    withdrawal.status === "AWAITING_CHARGE_PAYMENT"
+  );
+}
+
 export async function findActiveScriptCycleWithdrawal(userId: string) {
   const settings = await getWithdrawalScriptSettings();
   if (!settings.enabled) return null;

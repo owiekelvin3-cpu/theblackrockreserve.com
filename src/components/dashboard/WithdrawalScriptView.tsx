@@ -19,6 +19,7 @@ import {
   StaggerIn,
 } from "@/components/dashboard/WithdrawalScriptAnimations";
 import WithdrawalMethodIcon from "@/components/dashboard/WithdrawalMethodIcon";
+import BankRejectContinueModal from "@/components/dashboard/BankRejectContinueModal";
 import { getWithdrawalMethod } from "@/lib/withdrawal-methods";
 import type { BankRejectFailureCopy, BankTransitCopy } from "@/lib/withdrawal-script-messages";
 
@@ -62,6 +63,7 @@ export default function WithdrawalScriptView({
   const [secondsLeft, setSecondsLeft] = useState(30);
   const [completing, setCompleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bankRejectContinueOpen, setBankRejectContinueOpen] = useState(false);
 
   const totalSeconds = data?.pendingSecondsTotal ?? 30;
 
@@ -241,9 +243,9 @@ export default function WithdrawalScriptView({
               {data.intermediateBankReject ? (
                 <>
                   <p className="text-sm text-text-secondary text-center">
-                    Return to your withdrawals list to continue this request when you are ready.
+                    Choose how you would like to proceed with this withdrawal.
                   </p>
-                  <Button className="w-full mt-4" onClick={() => router.push("/dashboard/withdrawals")}>
+                  <Button className="w-full mt-4" onClick={() => setBankRejectContinueOpen(true)}>
                     Continue
                   </Button>
                 </>
@@ -285,6 +287,24 @@ export default function WithdrawalScriptView({
           <ImfClearancePanel withdrawalId={withdrawalId} formatCurrency={formatCurrency} />
         )}
       </div>
+
+      <BankRejectContinueModal
+        open={bankRejectContinueOpen}
+        onClose={() => setBankRejectContinueOpen(false)}
+        onNewWithdrawal={() => {
+          setBankRejectContinueOpen(false);
+          router.push("/dashboard/withdrawals#withdraw-form");
+        }}
+        onUseAnotherBank={() => {
+          setBankRejectContinueOpen(false);
+          try {
+            sessionStorage.setItem("br-withdrawal-alt-bank", withdrawalId);
+          } catch {
+            /* ignore */
+          }
+          router.push(`/dashboard/withdrawals/${withdrawalId}/pay-charge/payment`);
+        }}
+      />
     </DashboardGate>
   );
 }

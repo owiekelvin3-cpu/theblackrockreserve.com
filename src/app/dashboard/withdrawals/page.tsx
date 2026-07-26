@@ -151,6 +151,16 @@ export default function WithdrawalsPage() {
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined" || window.location.hash !== "#withdraw-form") return;
+    const el = document.getElementById("withdraw-form");
+    if (el) {
+      window.requestAnimationFrame(() => {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+  }, [loading, data]);
+
+  useEffect(() => {
     const refresh = () => {
       if (document.visibilityState === "visible") load(true);
     };
@@ -387,6 +397,7 @@ export default function WithdrawalsPage() {
               );
             })}
 
+            <div id="withdraw-form" className="scroll-mt-24">
             <Card>
               <div className="flex items-center gap-2 mb-6">
                 <ArrowUpFromLine size={20} className="text-accent-brand" />
@@ -438,6 +449,7 @@ export default function WithdrawalsPage() {
                 </Button>
               </form>
             </Card>
+            </div>
           </>
         )}
 
