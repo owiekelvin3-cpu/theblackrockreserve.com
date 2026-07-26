@@ -119,8 +119,39 @@ export async function findActiveScriptCycleWithdrawal(userId: string) {
   return null;
 }
 
+/** Users unfrozen before step-3 fix may still be at step 0 on the post-freeze (3rd) charge. */
+export async function repairPostUnfreezeThirdChargeStep(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { withdrawalScriptStep: true },
+  });
+  if ((user?.withdrawalScriptStep ?? 0) !== 0) return;
+
+  const closedAfterVerify = await prisma.withdrawalRequest.findFirst({
+    where: {
+      userId,
+      reviewNote: { contains: "Closed after account verification" },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  if (!closedAfterVerify) return;
+
+  const latest = await prisma.withdrawalRequest.findFirst({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+  });
+  if (!latest || latest.id === closedAfterVerify.id) return;
+  if (latest.createdAt <= closedAfterVerify.createdAt) return;
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { withdrawalScriptStep: 3 },
+  });
+}
+
 /** Fix rows that were marked REJECTED mid-cycle before single-segment billing shipped. */
 export async function repairScriptCycleWithdrawalState(userId: string) {
+  await repairPostUnfreezeThirdChargeStep(userId);
   const settings = await getWithdrawalScriptSettings();
   if (!settings.enabled) return;
 
@@ -517,7 +548,7 @@ export async function closeScriptCycleAfterUnfreeze(userId: string) {
 
   await prisma.user.update({
     where: { id: userId },
-    data: { withdrawalScriptStep: 0 },
+    data: { withdrawalScriptStep: step >= 2 ? 3 : 0 },
   });
 
   invalidateAdminCaches();

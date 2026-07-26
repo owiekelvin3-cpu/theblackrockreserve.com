@@ -62,8 +62,16 @@ export function getBankRejectFailureCopy(method: WithdrawalMethod): BankRejectFa
         reviewNote:
           "PayPal could not accept the transaction due to a system error. Try again later or use another payout account.",
       };
-    case "VENMO":
     case "CASH_APP":
+      return {
+        variant: "bank",
+        title: "Cash App could not accept the transaction",
+        message:
+          "Cash App could not accept the transaction due to a system error. Try again later or use another payout account.",
+        reviewNote:
+          "Cash App could not accept the transaction due to a system error. Try again later or use another payout account.",
+      };
+    case "VENMO":
       return {
         variant: "bank",
         title: "Your bank could not accept the transaction",
@@ -73,13 +81,5 @@ export function getBankRejectFailureCopy(method: WithdrawalMethod): BankRejectFa
           "Your bank could not accept the transaction due to a system error. Try again later or use another payout account.",
       };
     default:
-      return {
-        variant: "receiving-bank",
-        title: "Transfer rejected by receiving bank",
-        message:
-          "The receiving bank rejected the transfer due to a temporary system error. Try again later or use another payout account.",
-        reviewNote:
-          "Receiving bank rejected the transfer due to a temporary system error. Try again later or use another payout account.",
-      };
   }
 }

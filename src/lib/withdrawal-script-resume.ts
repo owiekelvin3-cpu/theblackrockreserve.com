@@ -69,7 +69,7 @@ export function resolveWithdrawalScriptStage(input: ResumeInput): WithdrawalScri
     if (userStep === 1) {
       return navigate("Processing payment", payChargeUrl(id), "amber");
     }
-    if (userStep === 3 && imf === "PAID") {
+    if (userStep === 3) {
       return navigate("Sending to receiving bank", `/dashboard/withdrawals/${id}/script/pending`, "amber");
     }
     return navigate("Confirming with bank", `/dashboard/withdrawals/${id}/script/pending`, "amber");
