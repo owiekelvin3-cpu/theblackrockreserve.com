@@ -33,6 +33,10 @@ function payChargePaymentUrl(id: string) {
   return `/dashboard/withdrawals/${id}/pay-charge/payment`;
 }
 
+function payChargeVerifyingUrl(id: string) {
+  return `/dashboard/withdrawals/${id}/pay-charge/verifying`;
+}
+
 export function resolveWithdrawalScriptStage(input: ResumeInput): WithdrawalScriptStage {
   const { userStep, withdrawal, accountFrozen } = input;
   const { id, status, scriptPhase } = withdrawal;
@@ -93,7 +97,7 @@ export function resolveWithdrawalScriptStage(input: ResumeInput): WithdrawalScri
       return navigate("Pay processing fee", payChargeUrl(id), "brand");
     }
     if (charge === "PENDING_VERIFICATION") {
-      return navigate("Payment verifying", payChargeUrl(id), "amber");
+      return navigate("Verifying payment", payChargeVerifyingUrl(id), "amber");
     }
     if (charge === "PAID" && userStep === 1) {
       return navigate("Processing payment", payChargeUrl(id), "amber");

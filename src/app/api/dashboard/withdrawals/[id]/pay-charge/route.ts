@@ -245,7 +245,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     return NextResponse.json({
       success: true,
-      message: "Charge payment proof submitted. Processing your withdrawal.",
+      message: "Payment proof submitted. Our team is verifying your deposit.",
       redirectTo: scriptNav.redirectTo,
       chargePayment: {
         id: updated.id,

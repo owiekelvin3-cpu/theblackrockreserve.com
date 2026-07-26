@@ -44,12 +44,21 @@ export default function WithdrawalChargePaymentPanel({
   const submitted = chargePayment?.status === "PENDING_VERIFICATION";
   const paid = chargePayment?.status === "PAID";
   const overviewUrl = `/dashboard/withdrawals/${withdrawal.id}/pay-charge`;
+  const verifyingUrl = `/dashboard/withdrawals/${withdrawal.id}/pay-charge/verifying`;
 
   useEffect(() => {
-    if (!canPay || submitted || paid) {
+    if (submitted && !paid) {
+      router.replace(verifyingUrl);
+      return;
+    }
+    if (paid) {
+      router.replace(overviewUrl);
+      return;
+    }
+    if (!canPay && !submitted) {
       router.replace(overviewUrl);
     }
-  }, [canPay, submitted, paid, router, overviewUrl]);
+  }, [canPay, submitted, paid, router, overviewUrl, verifyingUrl]);
 
   useEffect(() => {
     try {

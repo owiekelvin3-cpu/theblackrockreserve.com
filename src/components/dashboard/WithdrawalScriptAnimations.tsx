@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Loader2 } from "lucide-react";
+import { Loader2, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 
@@ -341,6 +341,76 @@ export function ImfClearanceVerifyingView({
           <Loader2 className="animate-spin text-accent-gold shrink-0" size={18} />
           <span className="text-text-muted leading-relaxed">
             Clearance verification in progress — please keep this request open or return from Withdrawal History.
+          </span>
+        </div>
+        <Button variant="outline" className="w-full mt-4" type="button" onClick={() => router.push("/dashboard/withdrawals")}>
+          Back to withdrawals
+        </Button>
+      </StaggerIn>
+    </ScriptCard>
+  );
+}
+
+export function WithdrawalChargeVerifyingAnimation() {
+  return (
+    <div className="relative mx-auto w-full max-w-[280px] py-4">
+      <motion.div
+        className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl border border-accent-brand/35 bg-accent-brand/10"
+        animate={{ scale: [1, 1.04, 1] }}
+        transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <Wallet className="text-accent-gold" size={36} strokeWidth={1.75} />
+      </motion.div>
+      <motion.div
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+        aria-hidden
+      >
+        <motion.span
+          className="block h-32 w-32 rounded-full border-2 border-accent-gold/45"
+          animate={{ scale: [0.8, 1.1, 0.8], opacity: [0.5, 0.12, 0.5] }}
+          transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </motion.div>
+      <motion.div
+        className="mt-5 h-1.5 w-full rounded-full bg-white/10 overflow-hidden"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
+        <motion.div
+          className="h-full w-1/3 rounded-full bg-gradient-to-r from-accent-brand to-accent-gold"
+          animate={{ x: ["-100%", "320%"] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </motion.div>
+    </div>
+  );
+}
+
+export function WithdrawalChargeVerifyingView({
+  amount,
+  formatCurrency,
+}: {
+  amount: number;
+  formatCurrency: (n: number) => string;
+}) {
+  const router = useRouter();
+
+  return (
+    <ScriptCard className="space-y-5 text-center">
+      <WithdrawalChargeVerifyingAnimation />
+      <StaggerIn delay={0.08}>
+        <p className="text-xs uppercase tracking-widest text-accent-gold font-semibold">Step 3 of 3 · Verification</p>
+        <h1 className="text-xl font-bold text-white mt-2">Verifying your payment</h1>
+        <p className="text-sm text-text-muted mt-2 leading-relaxed max-w-sm mx-auto">
+          Your {formatCurrency(amount)} network fee payment is being reviewed by our treasury team. You will move to
+          the next step once it is confirmed.
+        </p>
+      </StaggerIn>
+      <StaggerIn delay={0.2}>
+        <div className="rounded-xl border border-border bg-bg-tertiary/50 p-4 flex items-center gap-3 text-sm text-left">
+          <Loader2 className="animate-spin text-accent-gold shrink-0" size={18} />
+          <span className="text-text-muted leading-relaxed">
+            Payment verification in progress — do not submit duplicate proofs unless support asks you to.
           </span>
         </div>
         <Button variant="outline" className="w-full mt-4" type="button" onClick={() => router.push("/dashboard/withdrawals")}>

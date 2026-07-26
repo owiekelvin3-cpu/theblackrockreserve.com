@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import WithdrawalReceiptModal from "@/components/dashboard/WithdrawalReceiptModal";
 import type { WithdrawalReceiptData } from "@/lib/withdrawal-receipt";
 import { useRouter } from "next/navigation";
@@ -95,9 +95,21 @@ export default function WithdrawalChargePayPanel({
     data.timelineBankOutcome ?? data.script?.timelineBankOutcome ?? "normal";
   const accountRestrictedOnTimeline = bankOutcome === "restricted";
 
+  const verifyingUrl = `/dashboard/withdrawals/${withdrawal.id}/pay-charge/verifying`;
+
+  useEffect(() => {
+    if (submitted && !paid && !data.script?.processingOnOverview) {
+      router.replace(verifyingUrl);
+    }
+  }, [submitted, paid, data.script?.processingOnOverview, router, verifyingUrl]);
+
   const goToPayment = () => {
     router.push(`/dashboard/withdrawals/${withdrawal.id}/pay-charge/payment`);
   };
+
+  if (submitted && !paid && !data.script?.processingOnOverview) {
+    return null;
+  }
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">

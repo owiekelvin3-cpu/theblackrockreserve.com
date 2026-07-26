@@ -1,6 +1,7 @@
 import type { Prisma, WithdrawalChargeType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getPlatformSettings, SETTING_KEYS } from "@/lib/platform-settings";
+import { advanceWithdrawalScriptAfterChargeVerified } from "@/lib/withdrawal-script";
 
 export const ACTIVE_WITHDRAWAL_STATUSES = ["PENDING", "AWAITING_CHARGE_PAYMENT"] as const;
 
@@ -262,6 +263,12 @@ export async function markChargePaymentPaid(
     where: { id: payment.withdrawalRequestId },
     data: { status: "PENDING" },
   });
+
+  await advanceWithdrawalScriptAfterChargeVerified(
+    payment.userId,
+    payment.withdrawalRequestId,
+    tx
+  );
 
   return payment;
 }

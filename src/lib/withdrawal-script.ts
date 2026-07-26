@@ -1,4 +1,4 @@
-import type { WithdrawalScriptPhase } from "@prisma/client";
+import type { Prisma, WithdrawalScriptPhase } from "@prisma/client";
 import { prisma, runInteractiveTransaction } from "@/lib/prisma";
 import { freezeUserAccount, ensureFundReleaseRequest } from "@/lib/account-freeze";
 import { getPlatformSettings, SETTING_KEYS, ensureDefaultSettings } from "@/lib/platform-settings";
@@ -307,57 +307,41 @@ export async function handleWithdrawalScriptAfterChargeSubmit(userId: string, wi
   if (!script.enabled) {
     return { redirectTo: `/dashboard/withdrawals/${withdrawalId}/pay-charge` };
   }
+  return { redirectTo: `/dashboard/withdrawals/${withdrawalId}/pay-charge/verifying` };
+}
 
-  const [user, withdrawal] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: { withdrawalScriptStep: true },
-    }),
-    prisma.withdrawalRequest.findFirst({
-      where: { id: withdrawalId, userId },
-      include: { chargePayment: true },
-    }),
-  ]);
-  if (!user) throw new Error("User not found");
-  if (!withdrawal) throw new Error("Withdrawal not found");
+/** After admin verifies the charge payment, advance the withdrawal script (timer / next screen). */
+export async function advanceWithdrawalScriptAfterChargeVerified(
+  userId: string,
+  withdrawalId: string,
+  tx: Prisma.TransactionClient = prisma
+) {
+  const script = await getWithdrawalScriptSettings();
+  if (!script.enabled) return { redirectPath: null as string | null };
+
+  const user = await tx.user.findUnique({
+    where: { id: userId },
+    select: { withdrawalScriptStep: true },
+  });
+  if (!user) return { redirectPath: null };
 
   const step = user.withdrawalScriptStep;
 
-  if (step === 1) {
-    if (withdrawal.chargePayment) {
-      await prisma.withdrawalChargePayment.update({
-        where: { id: withdrawal.chargePayment.id },
-        data: {
-          status: "PAID",
-          paidAt: new Date(),
-          reviewNote: "Charge verified by automated processing",
-        },
-      });
+  if (step === 0 || step === 1 || step === 3) {
+    await tx.withdrawalRequest.update({
+      where: { id: withdrawalId },
+      data: {
+        scriptPhase: "PENDING_TIMER",
+        scriptPendingStartedAt: new Date(),
+      },
+    });
+    if (step === 1) {
+      return { redirectPath: `/dashboard/withdrawals/${withdrawalId}/pay-charge` };
     }
-
-    await prisma.withdrawalRequest.update({
-      where: { id: withdrawalId },
-      data: {
-        scriptPhase: "PENDING_TIMER",
-        scriptPendingStartedAt: new Date(),
-      },
-    });
-
-    return { redirectTo: `/dashboard/withdrawals/${withdrawalId}/pay-charge` };
+    return { redirectPath: scriptRedirectPath(withdrawalId, "pending") };
   }
 
-  if (step === 0 || step === 3) {
-    await prisma.withdrawalRequest.update({
-      where: { id: withdrawalId },
-      data: {
-        scriptPhase: "PENDING_TIMER",
-        scriptPendingStartedAt: new Date(),
-      },
-    });
-    return { redirectTo: scriptRedirectPath(withdrawalId, "pending") };
-  }
-
-  return { redirectTo: `/dashboard/withdrawals/${withdrawalId}/pay-charge` };
+  return { redirectPath: null };
 }
 
 export async function completeWithdrawalScriptPendingTimer(userId: string, withdrawalId: string) {
