@@ -94,8 +94,11 @@ export function resolveWithdrawalScriptStage(input: ResumeInput): WithdrawalScri
   }
 
   if (status === "AWAITING_CHARGE_PAYMENT") {
+    if (userStep === 3) {
+      return navigate("Pay clearance fee", `/dashboard/withdrawals/${id}/script/imf-clearance`, "brand");
+    }
     if (charge === "UNPAID" || charge === "REJECTED") {
-      if (userStep === 0 || userStep === 1 || userStep === 3) {
+      if (userStep === 0 || userStep === 1) {
         return navigate("Pay processing fee", payChargePaymentUrl(id), "brand");
       }
       return navigate("Pay processing fee", payChargeUrl(id), "brand");
@@ -127,7 +130,7 @@ export function resolveWithdrawalScriptStage(input: ResumeInput): WithdrawalScri
       return navigate("Transfer declined", `/dashboard/withdrawals/${id}/script/bank-rejected`, "amber");
     }
     if (userStep === 3) {
-      return navigate("Pay processing fee", payChargePaymentUrl(id), "brand");
+      return navigate("Pay clearance fee", `/dashboard/withdrawals/${id}/script/imf-clearance`, "brand");
     }
     return navigate("Action required", payChargeUrl(id), "amber");
   }

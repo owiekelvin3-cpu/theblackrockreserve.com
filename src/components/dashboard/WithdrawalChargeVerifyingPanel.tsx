@@ -36,7 +36,7 @@ export default function WithdrawalChargeVerifyingPanel({ withdrawalId }: { withd
           if (status === "PAID" && phase === "PENDING_TIMER") {
             if (step === 1) {
               router.replace(`/dashboard/withdrawals/${withdrawalId}/pay-charge`);
-            } else if (step === 0 || step === 3) {
+            } else if (step === 0) {
               router.replace(`/dashboard/withdrawals/${withdrawalId}/script/pending`);
             } else {
               router.replace(`/dashboard/withdrawals/${withdrawalId}/pay-charge`);

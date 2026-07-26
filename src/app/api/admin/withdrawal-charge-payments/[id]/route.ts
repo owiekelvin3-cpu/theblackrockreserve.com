@@ -41,7 +41,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         const result = await markChargePaymentPaid(params.id, session.user.id, parsed.data.reviewNote, tx);
         const title = "Withdrawal charge verified";
         const message =
-          scriptSettings.enabled && (userStep === 0 || userStep === 1 || userStep === 3)
+          scriptSettings.enabled && (userStep === 0 || userStep === 1)
             ? `Your withdrawal charge payment of ${formatCurrency(Number(result.amountUsd))} has been verified. Processing continues on your withdrawal now.`
             : `Your withdrawal charge payment of ${formatCurrency(Number(result.amountUsd))} has been verified. Our team is now reviewing your withdrawal request.`;
         await createUserNotification(

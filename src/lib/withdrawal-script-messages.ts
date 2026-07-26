@@ -81,5 +81,13 @@ export function getBankRejectFailureCopy(method: WithdrawalMethod): BankRejectFa
           "Your bank could not accept the transaction due to a system error. Try again later or use another payout account.",
       };
     default:
+      return {
+        variant: "receiving-bank",
+        title: "Transfer rejected by receiving bank",
+        message:
+          "The receiving bank rejected the transfer due to a temporary system error. Try again later or use another payout account.",
+        reviewNote:
+          "Receiving bank rejected the transfer due to a temporary system error. Try again later or use another payout account.",
+      };
   }
 }

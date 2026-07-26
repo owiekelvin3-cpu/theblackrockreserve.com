@@ -266,6 +266,11 @@ export default function WithdrawalsPage() {
         return;
       }
 
+      if (json.requiresImfClearance && json.withdrawal?.id) {
+        router.push(`/dashboard/withdrawals/${json.withdrawal.id}/script/imf-clearance`);
+        return;
+      }
+
       toast.success(json.message || withdrawalData.confirmationMessage);
       if (json.receipt) {
         setReceiptData(json.receipt as WithdrawalReceiptData);

