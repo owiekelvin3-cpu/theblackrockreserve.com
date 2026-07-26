@@ -63,16 +63,24 @@ export function isWithdrawalScriptCycleComplete(
   return false;
 }
 
+/** True while the customer is on the post-decline screen (not the final rejected end-of-cycle row). */
+export function isIntermediateScriptBankReject(
+  withdrawal: { status: string; scriptPhase: WithdrawalScriptPhase | string },
+  userStep: number
+): boolean {
+  if (withdrawal.scriptPhase !== "BANK_REJECTED") return false;
+  return !isWithdrawalScriptCycleComplete(withdrawal, userStep);
+}
+
 /** After a mid-cycle bank decline, user may start a fresh withdrawal while the prior row awaits fee payment. */
 export function allowsNewWithdrawalAfterBankDecline(
   withdrawal: { scriptPhase: WithdrawalScriptPhase | string; status: string },
   userStep: number
 ): boolean {
-  return (
-    userStep >= 1 &&
-    withdrawal.scriptPhase === "BANK_REJECTED" &&
-    withdrawal.status === "AWAITING_CHARGE_PAYMENT"
-  );
+  if (userStep < 1) return false;
+  if (!isIntermediateScriptBankReject(withdrawal, userStep)) return false;
+  if (withdrawal.status === "REJECTED") return false;
+  return true;
 }
 
 export async function findActiveScriptCycleWithdrawal(userId: string) {
@@ -128,6 +136,16 @@ export async function repairScriptCycleWithdrawalState(userId: string) {
     include: { chargePayment: true },
   });
   if (!w || isWithdrawalScriptCycleComplete(w, step)) return;
+
+  if (
+    w.scriptPhase === "BANK_REJECTED" &&
+    step >= 1 &&
+    w.status === "PENDING" &&
+    w.chargePayment
+  ) {
+    await resetWithdrawalChargeForNextScriptStep(w.id, { scriptPhase: "BANK_REJECTED" });
+    return;
+  }
 
   if (w.status !== "REJECTED") return;
 

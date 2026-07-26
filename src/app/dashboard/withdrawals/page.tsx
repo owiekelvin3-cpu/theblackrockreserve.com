@@ -202,6 +202,15 @@ export default function WithdrawalsPage() {
       setFrozenModalOpen(true);
       return t("withdrawals.errors.accountFrozen");
     }
+    if (withdrawalData.canStartNewWithdrawal === false) {
+      const activeRow = withdrawalData.withdrawals.find((w) => w.isActiveCycle);
+      if (activeRow?.scriptStage?.resumeUrl) {
+        toast.message("Continue your withdrawal in progress first.");
+        router.push(activeRow.scriptStage.resumeUrl);
+        return "blocked";
+      }
+      return "You already have a withdrawal in progress. Open Withdrawal History below to continue it.";
+    }
     if (!accountId) return t("withdrawals.errors.noAccount");
     if (!Number.isFinite(amount) || amount <= 0) return t("withdrawals.errors.invalidAmount");
     if (!destination.trim()) return t("withdrawals.errors.destinationRequired");
@@ -274,7 +283,7 @@ export default function WithdrawalsPage() {
     e.preventDefault();
     const validationError = validateWithdrawalForm();
     if (validationError) {
-      toast.error(validationError);
+      if (validationError !== "blocked") toast.error(validationError);
       return;
     }
 
@@ -432,12 +441,30 @@ export default function WithdrawalsPage() {
                 )}
                 <Input label="Note (optional)" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Any additional details..." />
 
+                {withdrawalData.canStartNewWithdrawal === false && (
+                  <p className="text-sm text-amber-200/90 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2.5 leading-relaxed">
+                    You have a withdrawal already in progress. After a bank decline, you can start another request here;
+                    otherwise open{" "}
+                    <button
+                      type="button"
+                      className="underline font-medium text-white"
+                      onClick={() => {
+                        const activeRow = withdrawalData.withdrawals.find((w) => w.isActiveCycle);
+                        if (activeRow?.scriptStage?.resumeUrl) router.push(activeRow.scriptStage.resumeUrl);
+                        else setHistoryExpanded(true);
+                      }}
+                    >
+                      Withdrawal History
+                    </button>{" "}
+                    to continue.
+                  </p>
+                )}
+
                 <Button
                   type="submit"
                   className="w-full sm:w-auto"
                   disabled={
                     submitting ||
-                    withdrawalData.canStartNewWithdrawal === false ||
                     !accountId ||
                     !amountUsd ||
                     !destination ||
