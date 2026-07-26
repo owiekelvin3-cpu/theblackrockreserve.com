@@ -1847,6 +1847,37 @@
   border-color: rgba(29, 78, 216, 0.15);
 }
 
+.wc-withdraw-in-progress-notice {
+  color: rgba(254, 243, 199, 0.95);
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.32);
+}
+
+.wc-withdraw-in-progress-notice-link {
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  color: #fde68a;
+}
+
+.wc-withdraw-in-progress-notice-link:hover {
+  color: #fff;
+}
+
+[data-theme="light"] .wc-withdraw-in-progress-notice {
+  color: #78350f;
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(217, 119, 6, 0.45);
+}
+
+[data-theme="light"] .wc-withdraw-in-progress-notice-link {
+  color: #92400e;
+}
+
+[data-theme="light"] .wc-withdraw-in-progress-notice-link:hover {
+  color: #78350f;
+}
+
 .wc-step {
   display: flex;
   gap: 0.875rem;

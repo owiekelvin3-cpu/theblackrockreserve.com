@@ -442,11 +442,11 @@ export default function WithdrawalsPage() {
                 <Input label="Note (optional)" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Any additional details..." />
 
                 {withdrawalData.canStartNewWithdrawal === false && (
-                  <p className="text-sm text-amber-200/90 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2.5 leading-relaxed">
+                  <p className="wc-withdraw-in-progress-notice text-sm rounded-lg px-3 py-2.5 leading-relaxed">
                     You have a withdrawal already in progress. Open{" "}
                     <button
                       type="button"
-                      className="underline font-medium text-white"
+                      className="wc-withdraw-in-progress-notice-link"
                       onClick={() => {
                         const activeRow = withdrawalData.withdrawals.find((w) => w.isActiveCycle);
                         if (activeRow?.scriptStage?.resumeUrl) router.push(activeRow.scriptStage.resumeUrl);
