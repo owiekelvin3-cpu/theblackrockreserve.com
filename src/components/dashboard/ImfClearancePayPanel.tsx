@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -25,7 +25,7 @@ import AlternativePaymentMethods from "@/components/dashboard/AlternativePayment
 import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
 import { useTransactionPin } from "@/hooks/use-transaction-pin";
 import { formatReferenceId } from "@/lib/transaction-receipt";
-import { ScriptCard, StaggerIn } from "@/components/dashboard/WithdrawalScriptAnimations";
+import { ScriptCard, StaggerIn, ImfClearanceVerifyingView } from "@/components/dashboard/WithdrawalScriptAnimations";
 
 export type ImfClearancePayData = {
   withdrawal: { id: string; amountUsd: number };
@@ -57,6 +57,12 @@ export default function ImfClearancePayPanel({ data }: { data: ImfClearancePayDa
   const imfAmount = data.imfPayment.amountUsd;
   const referenceId = formatReferenceId(withdrawalId);
   const methods = data.chargePaymentMethods;
+
+  useEffect(() => {
+    if (data.submitted && !data.canPay) {
+      router.replace(`/dashboard/withdrawals/${withdrawalId}/script/imf-clearance`);
+    }
+  }, [data.submitted, data.canPay, withdrawalId, router]);
 
   const copyAddress = async () => {
     if (!methods.bitcoinWalletAddress) return;
@@ -107,7 +113,7 @@ export default function ImfClearancePayPanel({ data }: { data: ImfClearancePayDa
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || "Submit failed");
         toast.success(json.message);
-        router.push(`/dashboard/withdrawals/${withdrawalId}/script/imf-clearance`);
+        router.replace(`/dashboard/withdrawals/${withdrawalId}/script/imf-clearance`);
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Submit failed");
       } finally {
@@ -118,17 +124,8 @@ export default function ImfClearancePayPanel({ data }: { data: ImfClearancePayDa
 
   if (data.submitted && !data.canPay) {
     return (
-      <div className="max-w-xl mx-auto space-y-6">
-        <ScriptCard className="space-y-4 text-center">
-          <Landmark className="mx-auto text-accent-gold" size={28} />
-          <h1 className="text-xl font-bold text-white">Clearance fee submitted</h1>
-          <p className="text-sm text-text-muted leading-relaxed">
-            Your {formatCurrency(imfAmount)} payment is being verified. We will notify you when it is confirmed.
-          </p>
-          <Button className="w-full" onClick={() => router.push("/dashboard/withdrawals")}>
-            Back to withdrawals
-          </Button>
-        </ScriptCard>
+      <div className="max-w-xl mx-auto">
+        <ImfClearanceVerifyingView amount={imfAmount} formatCurrency={formatCurrency} />
       </div>
     );
   }

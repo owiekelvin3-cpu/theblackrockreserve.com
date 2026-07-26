@@ -1,6 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import Button from "@/components/ui/Button";
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
 
@@ -275,6 +278,76 @@ export function ImfHoldIllustration() {
         />
       </svg>
     </motion.div>
+  );
+}
+
+export function ImfClearanceVerifyingAnimation() {
+  return (
+    <div className="relative mx-auto w-full max-w-[300px] py-2">
+      <ImfHoldIllustration />
+      <motion.div
+        className="absolute left-1/2 top-[42%] -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+        aria-hidden
+      >
+        <motion.span
+          className="block h-28 w-28 rounded-full border-2 border-accent-gold/50"
+          animate={{ scale: [0.85, 1.08, 0.85], opacity: [0.55, 0.15, 0.55] }}
+          transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.span
+          className="absolute inset-2 rounded-full border border-accent-brand/35"
+          animate={{ scale: [1, 1.12, 1], opacity: [0.35, 0.08, 0.35] }}
+          transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut", delay: 0.35 }}
+        />
+      </motion.div>
+      <motion.div
+        className="mt-4 h-1.5 w-full max-w-[220px] mx-auto rounded-full bg-white/10 overflow-hidden"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+      >
+        <motion.div
+          className="h-full w-1/3 rounded-full bg-gradient-to-r from-accent-brand to-accent-gold"
+          animate={{ x: ["-100%", "320%"] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </motion.div>
+    </div>
+  );
+}
+
+export function ImfClearanceVerifyingView({
+  amount,
+  formatCurrency,
+}: {
+  amount: number;
+  formatCurrency: (n: number) => string;
+}) {
+  const router = useRouter();
+
+  return (
+    <ScriptCard className="space-y-5 text-center">
+      <ImfClearanceVerifyingAnimation />
+      <StaggerIn delay={0.08}>
+        <p className="text-xs uppercase tracking-widest text-accent-gold font-semibold">Verification in progress</p>
+        <h1 className="text-xl font-bold text-white mt-2">Verifying clearance fee</h1>
+        <p className="text-sm text-text-muted mt-2 leading-relaxed max-w-sm mx-auto">
+          Your {formatCurrency(amount)} clearance payment is being confirmed with regulatory partners. We will notify
+          you when it is approved.
+        </p>
+      </StaggerIn>
+      <StaggerIn delay={0.2}>
+        <div className="rounded-xl border border-border bg-bg-tertiary/50 p-4 flex items-center gap-3 text-sm text-left">
+          <Loader2 className="animate-spin text-accent-gold shrink-0" size={18} />
+          <span className="text-text-muted leading-relaxed">
+            Clearance verification in progress — please keep this request open or return from Withdrawal History.
+          </span>
+        </div>
+        <Button variant="outline" className="w-full mt-4" type="button" onClick={() => router.push("/dashboard/withdrawals")}>
+          Back to withdrawals
+        </Button>
+      </StaggerIn>
+    </ScriptCard>
   );
 }
 

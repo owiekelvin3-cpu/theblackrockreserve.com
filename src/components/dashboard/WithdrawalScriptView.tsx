@@ -16,6 +16,7 @@ import {
   BankRejectedIllustration,
   SecurityHoldIllustration,
   ImfHoldIllustration,
+  ImfClearanceVerifyingView,
   StaggerIn,
 } from "@/components/dashboard/WithdrawalScriptAnimations";
 import WithdrawalMethodIcon from "@/components/dashboard/WithdrawalMethodIcon";
@@ -349,6 +350,10 @@ function ImfClearancePanel({
     );
   }
 
+  if (imfStatus === "PENDING_VERIFICATION") {
+    return <ImfClearanceVerifyingView amount={imfAmount} formatCurrency={formatCurrency} />;
+  }
+
   return (
     <ScriptCard className="space-y-5">
       <ImfHoldIllustration />
@@ -369,25 +374,14 @@ function ImfClearancePanel({
           <p className="text-2xl font-bold text-accent-gold mt-1">{formatCurrency(imfAmount)}</p>
         </motion.div>
       </StaggerIn>
-      {imfStatus === "PENDING_VERIFICATION" ? (
-        <StaggerIn delay={0.3} className="space-y-3">
-          <p className="text-sm text-text-secondary text-center leading-relaxed">
-            Your {formatCurrency(imfAmount)} clearance payment has been submitted and is awaiting verification.
-          </p>
-          <Button variant="outline" className="w-full" onClick={() => router.push("/dashboard/withdrawals")}>
-            Back to withdrawals
-          </Button>
-        </StaggerIn>
-      ) : (
-        <StaggerIn delay={0.3} className="space-y-3">
-          <Button className="w-full" onClick={() => router.push(`/dashboard/withdrawals/${withdrawalId}/imf-clearance/pay`)}>
-            Pay clearance fee
-          </Button>
-          <Button variant="outline" className="w-full" onClick={() => router.push("/dashboard/withdrawals")}>
-            Back to withdrawals
-          </Button>
-        </StaggerIn>
-      )}
+      <StaggerIn delay={0.3} className="space-y-3">
+        <Button className="w-full" onClick={() => router.push(`/dashboard/withdrawals/${withdrawalId}/imf-clearance/pay`)}>
+          Pay clearance fee
+        </Button>
+        <Button variant="outline" className="w-full" onClick={() => router.push("/dashboard/withdrawals")}>
+          Back to withdrawals
+        </Button>
+      </StaggerIn>
     </ScriptCard>
   );
 }

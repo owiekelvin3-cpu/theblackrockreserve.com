@@ -71,21 +71,18 @@ export function resolveWithdrawalScriptStage(input: ResumeInput): WithdrawalScri
     return navigate("Transfer declined", `/dashboard/withdrawals/${id}/script/bank-rejected`, "amber");
   }
 
-  if (scriptPhase === "AWAITING_IMF_CLEARANCE") {
-    if (imf === "UNPAID" || imf === "REJECTED") {
-      return navigate("Pay processing fee", `/dashboard/withdrawals/${id}/imf-clearance/pay`, "brand");
-    }
-    return navigate("Verification required", `/dashboard/withdrawals/${id}/script/imf-clearance`, "brand");
+  if (scriptPhase === "IMF_PENDING_VERIFICATION") {
+    return navigate("Verifying clearance fee", `/dashboard/withdrawals/${id}/script/imf-clearance`, "amber");
   }
 
-  if (scriptPhase === "IMF_PENDING_VERIFICATION") {
-    return {
-      label: "Verification in progress",
-      tone: "amber",
-      action: "navigate",
-      resumeUrl: `/dashboard/withdrawals/${id}/script/imf-clearance`,
-      clickable: true,
-    };
+  if (scriptPhase === "AWAITING_IMF_CLEARANCE") {
+    if (imf === "UNPAID" || imf === "REJECTED") {
+      return navigate("Pay clearance fee", `/dashboard/withdrawals/${id}/imf-clearance/pay`, "brand");
+    }
+    if (imf === "PENDING_VERIFICATION") {
+      return navigate("Verifying clearance fee", `/dashboard/withdrawals/${id}/script/imf-clearance`, "amber");
+    }
+    return navigate("Verification required", `/dashboard/withdrawals/${id}/script/imf-clearance`, "brand");
   }
 
   if (status === "AWAITING_CHARGE_PAYMENT") {
