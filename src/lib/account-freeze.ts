@@ -193,12 +193,12 @@ export async function unfreezeUserAccount(params: {
       userId: params.userId,
       type: "ACCOUNT_UNFROZEN",
       title: "Account Restored",
-      message: "Your account has been unfrozen. Withdrawals and transfers are available again.",
+      message: "Your account has been unfrozen. Your balance includes any returned withdrawal funds — submit a new withdrawal when you are ready.",
     });
     await sendUserNotificationEmail({
       userId: params.userId,
       title: "Account Restored",
-      message: "Your account has been unfrozen. Withdrawals and transfers are available again.",
+      message: "Your account has been unfrozen. Your balance includes any returned withdrawal funds — submit a new withdrawal when you are ready.",
       category: "security",
     });
   } catch (err) {
@@ -511,19 +511,22 @@ export async function reviewFundReleaseRequest(params: {
       params.ipAddress
     );
 
+    const { markWithdrawalScriptStepAfterUnfreeze } = await import("@/lib/withdrawal-script");
+    await markWithdrawalScriptStepAfterUnfreeze(request.userId);
+
     try {
       await createUserNotification({
         userId: request.userId,
         type: "FUND_RELEASE_APPROVED",
         title: "Fund Release Approved",
         message:
-          "Your fund release request has been approved. Your account is now active and withdrawals are available again.",
+          "Your fund release request has been approved. Your account is active again — submit a new withdrawal when you are ready.",
       });
       await sendUserNotificationEmail({
         userId: request.userId,
         title: "Fund Release Approved",
         message:
-          "Your fund release request has been approved. Your account is now active and withdrawals are available again.",
+          "Your fund release request has been approved. Your account is active again — submit a new withdrawal when you are ready.",
         category: "security",
       });
     } catch (err) {

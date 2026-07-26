@@ -163,13 +163,11 @@ export async function repairScriptCycleWithdrawalState(userId: string) {
   }
 
   if (step === 3) {
-    if (w.scriptPhase === "SCRIPT_COMPLETE") {
-      await prisma.withdrawalRequest.update({
-        where: { id: w.id },
-        data: { status: "PENDING" },
-      });
-    }
-    await prepareWithdrawalForThirdScriptCharge(userId);
+    const { getActiveAccountFreeze } = await import("@/lib/account-freeze");
+    const activeFreeze = await getActiveAccountFreeze(userId);
+    if (activeFreeze) return;
+
+    await closeScriptCycleAfterUnfreeze(userId);
   }
 }
 
@@ -208,20 +206,6 @@ async function resetWithdrawalChargeForNextScriptStep(
       scriptPhase: options?.scriptPhase ?? "NONE",
     },
   });
-}
-
-export async function prepareWithdrawalForThirdScriptCharge(userId: string) {
-  const withdrawal = await prisma.withdrawalRequest.findFirst({
-    where: {
-      userId,
-      scriptPhase: "SCRIPT_COMPLETE",
-    },
-    orderBy: { createdAt: "desc" },
-    include: { chargePayment: true },
-  });
-  if (!withdrawal?.chargePayment) return;
-
-  await resetWithdrawalChargeForNextScriptStep(withdrawal.id);
 }
 
 export async function scriptRefundWithdrawalAndCreditFee(
@@ -495,12 +479,52 @@ export async function completeWithdrawalScriptPendingTimer(userId: string, withd
   throw new Error("Withdrawal script step is not eligible for this action");
 }
 
-export async function markWithdrawalScriptStepAfterUnfreeze(userId: string) {
-  await prisma.user.updateMany({
-    where: { id: userId, withdrawalScriptStep: 2 },
-    data: { withdrawalScriptStep: 3 },
+export async function closeScriptCycleAfterUnfreeze(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { withdrawalScriptStep: true },
   });
-  await prepareWithdrawalForThirdScriptCharge(userId);
+  const step = user?.withdrawalScriptStep ?? 0;
+
+  let withdrawal = await prisma.withdrawalRequest.findFirst({
+    where: {
+      userId,
+      scriptPhase: {
+        in: ["SCRIPT_COMPLETE", "AWAITING_IMF_CLEARANCE", "IMF_PENDING_VERIFICATION"],
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (!withdrawal && step >= 3) {
+    withdrawal = await prisma.withdrawalRequest.findFirst({
+      where: { userId, status: "AWAITING_CHARGE_PAYMENT" },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  if (withdrawal && !isWithdrawalScriptCycleComplete(withdrawal, 0)) {
+    await prisma.withdrawalRequest.update({
+      where: { id: withdrawal.id },
+      data: {
+        status: "REJECTED",
+        scriptPhase: "NONE",
+        reviewNote: "Closed after account verification. Submit a new withdrawal when ready.",
+        fundsHeld: false,
+      },
+    });
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { withdrawalScriptStep: 0 },
+  });
+
+  invalidateAdminCaches();
+}
+
+export async function markWithdrawalScriptStepAfterUnfreeze(userId: string) {
+  await closeScriptCycleAfterUnfreeze(userId);
 }
 
 export function isScriptPhaseActive(phase: WithdrawalScriptPhase) {
