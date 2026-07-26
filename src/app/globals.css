@@ -623,6 +623,7 @@ body {
   [data-theme="light"] .border-white\/10 { border-color: var(--border); }
   [data-theme="light"] .border-white\/12 { border-color: var(--border-strong); }
   [data-theme="light"] .bg-white\/5 { background-color: var(--surface-overlay); }
+  [data-theme="light"] .bg-white\/10 { background-color: rgba(15, 20, 25, 0.08); }
   [data-theme="light"] .bg-white\/\[0\.02\] { background-color: var(--surface-overlay); }
   [data-theme="light"] .bg-bg-primary { background-color: var(--bg-primary); }
   [data-theme="light"] .hover\:bg-bg-primary:hover { background-color: var(--bg-secondary); }

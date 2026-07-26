@@ -21,7 +21,7 @@ export function ScriptCard({
       initial={{ opacity: 0, y: 20, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.5, ease: easeOut }}
-      className={`dash-card p-6 sm:p-8 ${className}`}
+      className={`dash-card ws-script-card p-6 sm:p-8 ${className}`}
     >
       {children}
     </motion.div>
@@ -55,7 +55,8 @@ export function PendingTimerRing({
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="rgba(255,255,255,0.08)"
+          className="ws-pending-ring-track"
+          stroke="var(--ws-pending-ring-track)"
           strokeWidth={stroke}
         />
         <motion.circle
@@ -83,7 +84,7 @@ export function PendingTimerRing({
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="text-2xl font-bold tabular-nums text-white"
+          className="text-2xl font-bold tabular-nums text-text-primary"
         >
           {secondsLeft}
         </motion.span>
@@ -133,12 +134,12 @@ export function BankRejectedIllustration() {
       className="mx-auto w-full max-w-[280px]"
     >
       <svg viewBox="0 0 280 160" fill="none" className="w-full h-auto" aria-hidden>
-        <rect width="280" height="160" rx="12" fill="rgba(255,255,255,0.03)" />
+        <rect width="280" height="160" rx="12" fill="var(--ws-illu-canvas)" />
         <motion.path
           d="M60 100 L120 100 L120 130 H60 Z M75 100 V75 L90 65 L105 75 V100"
-          stroke="rgba(255,255,255,0.2)"
+          stroke="var(--ws-illu-stroke)"
           strokeWidth="1.5"
-          fill="rgba(255,255,255,0.04)"
+          fill="var(--ws-illu-fill)"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.1 }}
@@ -180,7 +181,7 @@ export function BankRejectedIllustration() {
           animate={{ pathLength: 1 }}
           transition={{ duration: 0.6, delay: 0.55 }}
         />
-        <text x="140" y="152" textAnchor="middle" fill="rgba(52,211,153,0.9)" fontSize="10">
+        <text x="140" y="152" textAnchor="middle" className="ws-script-refund-label" fill="rgba(52,211,153,0.9)" fontSize="10">
           Refunded to balance
         </text>
       </svg>
@@ -232,19 +233,19 @@ export function ImfHoldIllustration() {
       transition={{ duration: 0.5, ease: easeOut }}
     >
       <svg viewBox="0 0 300 170" fill="none" className="w-full h-auto" aria-hidden>
-        <rect width="300" height="170" rx="12" fill="rgba(255,255,255,0.03)" />
+        <rect width="300" height="170" rx="12" fill="var(--ws-illu-canvas)" />
         <motion.g
           animate={{ y: [0, -2, 0] }}
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
         >
           <path
             d="M40 120 L90 95 L140 120 V150 H40 Z"
-            fill="rgba(255,255,255,0.06)"
-            stroke="rgba(255,255,255,0.15)"
+            fill="var(--ws-illu-fill)"
+            stroke="var(--ws-illu-stroke)"
             strokeWidth="1.5"
           />
-          <rect x="55" y="108" width="70" height="8" fill="rgba(255,255,255,0.1)" rx="2" />
-          <text x="90" y="88" textAnchor="middle" fill="rgba(255,255,255,0.35)" fontSize="9">
+          <rect x="55" y="108" width="70" height="8" fill="var(--ws-illu-stroke)" rx="2" />
+          <text x="90" y="88" textAnchor="middle" fill="var(--ws-illu-muted)" fontSize="9">
             Central Bank
           </text>
         </motion.g>
@@ -272,7 +273,7 @@ export function ImfHoldIllustration() {
           width="80"
           height="6"
           rx="3"
-          fill="rgba(255,255,255,0.08)"
+          fill="var(--ws-illu-fill)"
           initial={{ scaleX: 0 }}
           animate={{ scaleX: 1 }}
           style={{ transformOrigin: "left" }}
@@ -303,7 +304,7 @@ export function ImfClearanceVerifyingAnimation() {
         />
       </motion.div>
       <motion.div
-        className="mt-4 h-1.5 w-full max-w-[220px] mx-auto rounded-full bg-white/10 overflow-hidden"
+        className="mt-4 h-1.5 w-full max-w-[220px] mx-auto rounded-full ws-script-progress-track overflow-hidden"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
@@ -332,7 +333,7 @@ export function ImfClearanceVerifyingView({
       <ImfClearanceVerifyingAnimation />
       <StaggerIn delay={0.08}>
         <p className="text-xs uppercase tracking-widest text-accent-gold font-semibold">Verification in progress</p>
-        <h1 className="text-xl font-bold text-white mt-2">Verifying clearance fee</h1>
+        <h1 className="text-xl font-bold text-text-primary mt-2">Verifying clearance fee</h1>
         <p className="text-sm text-text-muted mt-2 leading-relaxed max-w-sm mx-auto">
           Your {formatCurrency(amount)} clearance payment is being confirmed with regulatory partners. We will notify
           you when it is approved.
@@ -374,7 +375,7 @@ export function WithdrawalChargeVerifyingAnimation() {
         />
       </motion.div>
       <motion.div
-        className="mt-5 h-1.5 w-full rounded-full bg-white/10 overflow-hidden"
+        className="mt-5 h-1.5 w-full rounded-full ws-script-progress-track overflow-hidden"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >

@@ -135,7 +135,7 @@ export default function WithdrawalScriptView({
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="dash-card border border-accent-red/30 bg-accent-red/5 p-4 text-sm text-white"
+              className="dash-card border border-accent-red/30 bg-accent-red/5 p-4 text-sm text-text-primary"
             >
               {error}
             </motion.div>
@@ -176,7 +176,7 @@ export default function WithdrawalScriptView({
                       <p className="text-xs uppercase tracking-widest text-accent-gold font-semibold">
                         Transfer in progress
                       </p>
-                      <h1 className="text-xl font-bold text-white mt-2">
+                      <h1 className="text-xl font-bold text-text-primary mt-2">
                         {transit?.title ?? "Your transfer is on its way to the receiving bank"}
                       </h1>
                       <p className="text-sm text-text-muted mt-2 leading-relaxed max-w-sm mx-auto">
@@ -196,7 +196,7 @@ export default function WithdrawalScriptView({
 
                 <StaggerIn delay={0.1}>
                   <p className="text-xs uppercase tracking-widest text-accent-gold font-semibold">Transaction pending</p>
-                  <h1 className="text-xl font-bold text-white mt-2">Confirming with receiving bank</h1>
+                  <h1 className="text-xl font-bold text-text-primary mt-2">Confirming with receiving bank</h1>
                   <p className="text-sm text-text-muted mt-2 leading-relaxed max-w-sm mx-auto">
                     Your {formatCurrency(data.withdrawal.amountUsd)} {data.withdrawal.methodLabel} withdrawal is being
                     verified securely.
@@ -230,7 +230,7 @@ export default function WithdrawalScriptView({
               <BankRejectedIllustration />
             )}
             <StaggerIn delay={0.15}>
-              <h1 className="text-xl font-bold text-white text-center">
+              <h1 className="text-xl font-bold text-text-primary text-center">
                 {data.bankRejectFailure?.title ?? "Transfer rejected by receiving bank"}
               </h1>
               <p className="text-sm text-text-muted mt-3 leading-relaxed text-center">
@@ -269,7 +269,7 @@ export default function WithdrawalScriptView({
           <ScriptCard className="space-y-5">
             <SecurityHoldIllustration />
             <StaggerIn delay={0.12}>
-              <h1 className="text-xl font-bold text-white text-center">Security hold — AML verification required</h1>
+              <h1 className="text-xl font-bold text-text-primary text-center">Security hold — AML verification required</h1>
               <p className="text-sm text-text-secondary leading-relaxed mt-3">{data.securityMessage}</p>
             </StaggerIn>
             <StaggerIn delay={0.24}>
@@ -358,7 +358,7 @@ function ImfClearancePanel({
     <ScriptCard className="space-y-5">
       <ImfHoldIllustration />
       <StaggerIn delay={0.1}>
-        <h1 className="text-xl font-bold text-white text-center">Central Bank / IMF clearance fee</h1>
+        <h1 className="text-xl font-bold text-text-primary text-center">Central Bank / IMF clearance fee</h1>
         <p className="text-sm text-text-secondary leading-relaxed text-center mt-2">
           Regulatory clearance is required before your {formatCurrency(withdrawalAmount)} transfer can be released.
           Pay the clearance fee below to continue.

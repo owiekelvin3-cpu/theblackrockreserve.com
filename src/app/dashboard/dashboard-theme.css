@@ -6,6 +6,12 @@
   --dash-card-dark: linear-gradient(165deg, #1e1e22 0%, #161618 45%, #121214 100%);
   --dash-card-orange: linear-gradient(165deg, #ff7a2e 0%, #ff5f05 38%, #e84e00 72%, #c93300 100%);
   --dash-inner: #0a0a0c;
+  --ws-illu-canvas: rgba(255, 255, 255, 0.04);
+  --ws-illu-fill: rgba(255, 255, 255, 0.06);
+  --ws-illu-stroke: rgba(255, 255, 255, 0.18);
+  --ws-illu-muted: rgba(255, 255, 255, 0.38);
+  --ws-progress-track: rgba(255, 255, 255, 0.1);
+  --ws-pending-ring-track: rgba(255, 255, 255, 0.1);
 }
 
 [data-theme="light"] .dash-layout {
@@ -14,6 +20,12 @@
   --dash-card-dark: linear-gradient(165deg, #ffffff 0%, #f4f6fa 100%);
   --dash-card-orange: linear-gradient(165deg, #ff8c42 0%, #ff5f05 50%, #e84e00 100%);
   --dash-inner: #eef1f6;
+  --ws-illu-canvas: rgba(15, 20, 25, 0.06);
+  --ws-illu-fill: rgba(15, 20, 25, 0.09);
+  --ws-illu-stroke: rgba(15, 20, 25, 0.22);
+  --ws-illu-muted: rgba(15, 20, 25, 0.52);
+  --ws-progress-track: rgba(15, 20, 25, 0.1);
+  --ws-pending-ring-track: rgba(15, 20, 25, 0.14);
 }
 
 .dash-layout {
@@ -2066,6 +2078,18 @@
   background: rgba(255, 95, 5, 0.12);
   border-color: rgba(255, 95, 5, 0.35);
   color: #ffb380;
+}
+
+[data-theme="light"] .wc-progress-pill {
+  background: rgba(15, 20, 25, 0.05);
+  border-color: rgba(15, 20, 25, 0.12);
+  color: #6b7280;
+}
+
+[data-theme="light"] .wc-progress-pill-active {
+  background: rgba(255, 95, 5, 0.14);
+  border-color: rgba(255, 95, 5, 0.45);
+  color: #c2410c;
 }
 
 .wc-status-timeline {
@@ -5312,3 +5336,23 @@ html.tx-member-transfer-scroll-lock {
   }
 }
 
+/* Withdrawal script cards & motion UI — bright mode */
+[data-theme="light"] .dash-layout .ws-script-card {
+  background: linear-gradient(180deg, #ffffff 0%, #f6f8fb 100%);
+  border-color: rgba(15, 20, 25, 0.12);
+  box-shadow:
+    0 10px 40px rgba(15, 20, 25, 0.08),
+    0 0 0 1px rgba(15, 20, 25, 0.04);
+}
+
+.ws-script-progress-track {
+  background: var(--ws-progress-track);
+}
+
+[data-theme="light"] .ws-pending-ring-track {
+  stroke: var(--ws-pending-ring-track);
+}
+
+[data-theme="light"] .ws-script-refund-label {
+  fill: #059669;
+}
