@@ -113,6 +113,24 @@ export function resolveWithdrawalScriptStage(input: ResumeInput): WithdrawalScri
     };
   }
 
+  if (
+    status === "REJECTED" &&
+    userStep > 0 &&
+    !isWithdrawalScriptCycleComplete(withdrawal, userStep)
+  ) {
+    if (userStep === 1) {
+      return navigate(
+        "Transfer rejected — tap to continue",
+        `/dashboard/withdrawals/${id}/script/bank-rejected`,
+        "amber"
+      );
+    }
+    if (userStep === 3) {
+      return navigate("Pay network fee (stage 3)", payChargePaymentUrl(id), "brand");
+    }
+    return navigate("Continue withdrawal", payChargeUrl(id), "amber");
+  }
+
   if (scriptPhase !== "NONE" && scriptPhase !== "SCRIPT_COMPLETE") {
     return {
       label: "Withdrawal in progress",

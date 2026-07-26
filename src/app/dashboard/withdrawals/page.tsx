@@ -12,6 +12,7 @@ import WithdrawalMethodIcon from "@/components/dashboard/WithdrawalMethodIcon";
 import WithdrawalReceiptModal, { type WithdrawalReceiptData } from "@/components/dashboard/WithdrawalReceiptModal";
 import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
 import FrozenAccountModal from "@/components/dashboard/FrozenAccountModal";
+import WithdrawalHistoryStageModal from "@/components/dashboard/WithdrawalHistoryStageModal";
 import { useFrozenAccount } from "@/components/dashboard/FrozenAccountProvider";
 import { useTransactionPin } from "@/hooks/use-transaction-pin";
 import {
@@ -118,6 +119,7 @@ export default function WithdrawalsPage() {
   const [receiptData, setReceiptData] = useState<WithdrawalReceiptData | null>(null);
   const [historyExpanded, setHistoryExpanded] = useState(false);
   const [frozenModalOpen, setFrozenModalOpen] = useState(false);
+  const [stageModalItem, setStageModalItem] = useState<WithdrawalHistoryItem | null>(null);
   const { isFrozen, freeze } = useFrozenAccount();
 
   const selectedMethodDef = getWithdrawalMethod(method)!;
@@ -282,6 +284,11 @@ export default function WithdrawalsPage() {
       w.chargePayment &&
       (w.chargePayment.status === "UNPAID" || w.chargePayment.status === "REJECTED");
 
+    if (w.scriptStage?.clickable && w.scriptStage.action !== "aml-modal") {
+      setStageModalItem(w);
+      return;
+    }
+
     if (w.scriptStage?.clickable) {
       if (w.scriptStage.action === "aml-modal") {
         setFrozenModalOpen(true);
@@ -293,8 +300,24 @@ export default function WithdrawalsPage() {
       }
     }
     if (canPayCharge) {
-      router.push(`/dashboard/withdrawals/${w.id}/pay-charge`);
+      setStageModalItem(w);
     }
+  };
+
+  const continueFromStageModal = () => {
+    const w = stageModalItem;
+    if (!w) return;
+    setStageModalItem(null);
+
+    if (w.scriptStage?.action === "aml-modal") {
+      setFrozenModalOpen(true);
+      return;
+    }
+    if (w.scriptStage?.resumeUrl) {
+      router.push(w.scriptStage.resumeUrl);
+      return;
+    }
+    router.push(`/dashboard/withdrawals/${w.id}/pay-charge`);
   };
 
   const stageToneClass = (w: WithdrawalHistoryItem) => {
@@ -575,6 +598,18 @@ export default function WithdrawalsPage() {
           "Your account is currently under review."
         }
         onClose={() => setFrozenModalOpen(false)}
+      />
+
+      <WithdrawalHistoryStageModal
+        open={!!stageModalItem}
+        onClose={() => setStageModalItem(null)}
+        onContinue={continueFromStageModal}
+        amountUsd={stageModalItem?.amountUsd ?? 0}
+        method={stageModalItem?.method ?? "ACH"}
+        methodLabel={stageModalItem?.methodLabel ?? ""}
+        statusLabel={stageModalItem?.statusLabel ?? ""}
+        billingStageLabel={stageModalItem?.billingStageLabel}
+        formatCurrency={formatCurrency}
       />
     </DashboardGate>
   );

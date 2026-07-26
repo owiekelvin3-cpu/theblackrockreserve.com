@@ -99,6 +99,50 @@ export async function findActiveScriptCycleWithdrawal(userId: string) {
   return null;
 }
 
+/** Fix rows that were marked REJECTED mid-cycle before single-segment billing shipped. */
+export async function repairScriptCycleWithdrawalState(userId: string) {
+  const settings = await getWithdrawalScriptSettings();
+  if (!settings.enabled) return;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { withdrawalScriptStep: true },
+  });
+  const step = user?.withdrawalScriptStep ?? 0;
+
+  const w = await prisma.withdrawalRequest.findFirst({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    include: { chargePayment: true },
+  });
+  if (!w || isWithdrawalScriptCycleComplete(w, step)) return;
+
+  if (w.status !== "REJECTED") return;
+
+  if (step === 1) {
+    await resetWithdrawalChargeForNextScriptStep(w.id, { scriptPhase: "BANK_REJECTED" });
+    return;
+  }
+
+  if (step === 2 && w.scriptPhase === "SCRIPT_COMPLETE") {
+    await prisma.withdrawalRequest.update({
+      where: { id: w.id },
+      data: { status: "PENDING" },
+    });
+    return;
+  }
+
+  if (step === 3) {
+    if (w.scriptPhase === "SCRIPT_COMPLETE") {
+      await prisma.withdrawalRequest.update({
+        where: { id: w.id },
+        data: { status: "PENDING" },
+      });
+    }
+    await prepareWithdrawalForThirdScriptCharge(userId);
+  }
+}
+
 async function resetWithdrawalChargeForNextScriptStep(
   withdrawalId: string,
   options?: { scriptPhase?: WithdrawalScriptPhase }

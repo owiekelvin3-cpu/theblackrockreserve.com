@@ -15,6 +15,7 @@ import {
   getWithdrawalScriptSettings,
   findActiveScriptCycleWithdrawal,
   isWithdrawalScriptCycleComplete,
+  repairScriptCycleWithdrawalState,
 } from "@/lib/withdrawal-script";
 import {
   resolveWithdrawalScriptStage,
@@ -42,6 +43,11 @@ export async function GET() {
   if (!userId) return unauthorizedResponse();
 
   try {
+    const scriptSettingsEarly = await getWithdrawalScriptSettings();
+    if (scriptSettingsEarly.enabled) {
+      await repairScriptCycleWithdrawalState(userId);
+    }
+
     const [accounts, withdrawals, userCharge, depositSettings, scriptSettings, dbUser] = await Promise.all([
       getFundSourceAccounts(userId),
       prisma.withdrawalRequest.findMany({
@@ -151,7 +157,9 @@ export async function GET() {
         const displayStatusLabel =
           scriptStage && isWithdrawalScriptStageActive(scriptStage)
             ? scriptStage.label
-            : formatWithdrawalStatus(w.status);
+            : scriptSettings.enabled && w.status === "REJECTED" && !cycleComplete
+              ? "Withdrawal in progress"
+              : formatWithdrawalStatus(w.status);
 
         return {
         id: w.id,
