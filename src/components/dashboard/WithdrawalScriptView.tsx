@@ -21,6 +21,7 @@ import {
 import WithdrawalMethodIcon from "@/components/dashboard/WithdrawalMethodIcon";
 import BankRejectContinueModal from "@/components/dashboard/BankRejectContinueModal";
 import { getWithdrawalMethod } from "@/lib/withdrawal-methods";
+import { formatReferenceId } from "@/lib/transaction-receipt";
 import type { BankRejectFailureCopy, BankTransitCopy } from "@/lib/withdrawal-script-messages";
 
 type ScriptData = {
@@ -295,14 +296,18 @@ export default function WithdrawalScriptView({
           setBankRejectContinueOpen(false);
           router.push("/dashboard/withdrawals#withdraw-form");
         }}
-        onUseAnotherBank={() => {
+        onContactSupport={() => {
           setBankRejectContinueOpen(false);
+          const ref = formatReferenceId(withdrawalId);
           try {
-            sessionStorage.setItem("br-withdrawal-alt-bank", withdrawalId);
+            sessionStorage.setItem(
+              "br-support-prefill",
+              `Hello, my withdrawal was declined by the receiving bank and I need assistance (ref ${ref}).`
+            );
           } catch {
             /* ignore */
           }
-          router.push(`/dashboard/withdrawals/${withdrawalId}/pay-charge/payment`);
+          openHumanSupport();
         }}
       />
     </DashboardGate>

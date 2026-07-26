@@ -1,21 +1,21 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Building2, PlusCircle, X } from "lucide-react";
+import { MessageCircle, PlusCircle, X } from "lucide-react";
 import Button from "@/components/ui/Button";
 
 type Props = {
   open: boolean;
   onClose: () => void;
   onNewWithdrawal: () => void;
-  onUseAnotherBank: () => void;
+  onContactSupport: () => void;
 };
 
 export default function BankRejectContinueModal({
   open,
   onClose,
   onNewWithdrawal,
-  onUseAnotherBank,
+  onContactSupport,
 }: Props) {
   return (
     <AnimatePresence>
@@ -54,8 +54,7 @@ export default function BankRejectContinueModal({
                   How would you like to continue?
                 </h2>
                 <p className="text-sm text-text-muted mt-2 leading-relaxed">
-                  You can start a new withdrawal right away or pay the processing fee using a different receiving
-                  account.
+                  You can start a new withdrawal right away or contact support for help with this request.
                 </p>
               </div>
 
@@ -74,13 +73,13 @@ export default function BankRejectContinueModal({
                   type="button"
                   variant="outline"
                   className="w-full gap-2 justify-start h-auto py-3.5 px-4 border-white/15"
-                  onClick={onUseAnotherBank}
+                  onClick={onContactSupport}
                 >
-                  <Building2 size={20} className="shrink-0 text-accent-gold" />
+                  <MessageCircle size={20} className="shrink-0 text-accent-gold" />
                   <span className="text-left">
-                    <span className="block font-semibold">Use another receiving bank</span>
+                    <span className="block font-semibold">Contact support</span>
                     <span className="block text-xs font-normal text-text-secondary mt-0.5">
-                      Pay the processing fee to continue this request
+                      Get help from a support representative about this withdrawal
                     </span>
                   </span>
                 </Button>
