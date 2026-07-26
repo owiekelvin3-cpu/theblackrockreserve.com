@@ -25,7 +25,8 @@ import AlternativePaymentMethods from "@/components/dashboard/AlternativePayment
 import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
 import { useTransactionPin } from "@/hooks/use-transaction-pin";
 import { formatReferenceId } from "@/lib/transaction-receipt";
-import { ScriptCard, StaggerIn, ImfClearanceVerifyingView } from "@/components/dashboard/WithdrawalScriptAnimations";
+import { ScriptCard, StaggerIn } from "@/components/dashboard/WithdrawalScriptAnimations";
+import ImfClearanceVerifyingPanel from "@/components/dashboard/ImfClearanceVerifyingPanel";
 
 export type ImfClearancePayData = {
   withdrawal: { id: string; amountUsd: number };
@@ -125,7 +126,7 @@ export default function ImfClearancePayPanel({ data }: { data: ImfClearancePayDa
   if (data.submitted && !data.canPay) {
     return (
       <div className="max-w-xl mx-auto">
-        <ImfClearanceVerifyingView amount={imfAmount} formatCurrency={formatCurrency} />
+        <ImfClearanceVerifyingPanel withdrawalId={withdrawalId} />
       </div>
     );
   }

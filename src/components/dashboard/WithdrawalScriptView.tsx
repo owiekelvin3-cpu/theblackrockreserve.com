@@ -16,9 +16,9 @@ import {
   BankRejectedIllustration,
   SecurityHoldIllustration,
   ImfHoldIllustration,
-  ImfClearanceVerifyingView,
   StaggerIn,
 } from "@/components/dashboard/WithdrawalScriptAnimations";
+import ImfClearanceVerifyingPanel from "@/components/dashboard/ImfClearanceVerifyingPanel";
 import WithdrawalMethodIcon from "@/components/dashboard/WithdrawalMethodIcon";
 import BankRejectContinueModal from "@/components/dashboard/BankRejectContinueModal";
 import { getWithdrawalMethod } from "@/lib/withdrawal-methods";
@@ -326,22 +326,41 @@ function ImfClearancePanel({
   const [loading, setLoading] = useState(true);
   const [imfAmount, setImfAmount] = useState(0);
   const [withdrawalAmount, setWithdrawalAmount] = useState(0);
-  const [imfStatus, setImfStatus] = useState<string>("UNPAID");
+  const [verifying, setVerifying] = useState(false);
+
+  const loadDetails = useCallback(
+    (silent = false) => {
+      if (!silent) setLoading(true);
+      fetchDashboardJson<ScriptData>(`/api/dashboard/withdrawals/${withdrawalId}/script`)
+        .then(({ data, error }) => {
+          if (error || !data) return;
+
+          const imf = data.imfClearance;
+          const phase = data.withdrawal.scriptPhase;
+          if (imf) setImfAmount(imf.amountUsd);
+          setWithdrawalAmount(data.withdrawal.amountUsd);
+
+          if (imf?.status === "PAID" && phase === "PENDING_TIMER") {
+            router.replace(`/dashboard/withdrawals/${withdrawalId}/script/pending`);
+            return;
+          }
+
+          const isVerifying =
+            imf?.status === "PENDING_VERIFICATION" || phase === "IMF_PENDING_VERIFICATION";
+          setVerifying(isVerifying);
+        })
+        .finally(() => {
+          if (!silent) setLoading(false);
+        });
+    },
+    [withdrawalId, router]
+  );
 
   useEffect(() => {
-    fetch(`/api/dashboard/withdrawals/${withdrawalId}/imf-clearance`, { credentials: "include" })
-      .then((r) => r.json())
-      .then((json) => {
-        if (json.imfPayment) {
-          setImfAmount(json.imfPayment.amountUsd);
-          setImfStatus(json.imfPayment.status);
-          setWithdrawalAmount(json.withdrawal?.amountUsd ?? 0);
-        }
-      })
-      .finally(() => setLoading(false));
-  }, [withdrawalId]);
+    loadDetails();
+  }, [loadDetails]);
 
-  if (loading) {
+  if (loading && !verifying && imfAmount <= 0) {
     return (
       <ScriptCard className="flex flex-col items-center justify-center py-12 gap-3">
         <Loader2 className="animate-spin text-accent-gold h-8 w-8" />
@@ -350,8 +369,8 @@ function ImfClearancePanel({
     );
   }
 
-  if (imfStatus === "PENDING_VERIFICATION") {
-    return <ImfClearanceVerifyingView amount={imfAmount} formatCurrency={formatCurrency} />;
+  if (verifying) {
+    return <ImfClearanceVerifyingPanel withdrawalId={withdrawalId} />;
   }
 
   return (

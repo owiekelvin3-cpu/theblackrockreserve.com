@@ -24,7 +24,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "IMF clearance not found" }, { status: 404 });
     }
 
-    const allowedPhases = ["AWAITING_IMF_CLEARANCE", "IMF_PENDING_VERIFICATION"];
+    const allowedPhases = ["AWAITING_IMF_CLEARANCE", "IMF_PENDING_VERIFICATION", "PENDING_TIMER"];
     if (!allowedPhases.includes(withdrawal.scriptPhase)) {
       return NextResponse.json({ error: "IMF clearance is not required for this withdrawal" }, { status: 400 });
     }
