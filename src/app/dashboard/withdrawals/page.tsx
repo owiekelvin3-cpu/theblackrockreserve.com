@@ -443,8 +443,7 @@ export default function WithdrawalsPage() {
 
                 {withdrawalData.canStartNewWithdrawal === false && (
                   <p className="text-sm text-amber-200/90 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2.5 leading-relaxed">
-                    You have a withdrawal already in progress. After a bank decline, you can start another request here;
-                    otherwise open{" "}
+                    You already have a withdrawal in progress. Open{" "}
                     <button
                       type="button"
                       className="underline font-medium text-white"
@@ -456,7 +455,8 @@ export default function WithdrawalsPage() {
                     >
                       Withdrawal History
                     </button>{" "}
-                    to continue.
+                    to continue it. You can start a separate new request only after a bank decline on that
+                    withdrawal (use Continue on the decline screen).
                   </p>
                 )}
 
