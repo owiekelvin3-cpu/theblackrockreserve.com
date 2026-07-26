@@ -29,6 +29,22 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "IMF clearance is not required for this withdrawal" }, { status: 400 });
     }
 
+    let payment = withdrawal.imfClearancePayment;
+    if (withdrawal.scriptPhase === "AWAITING_IMF_CLEARANCE" && payment.status === "PAID") {
+      payment = await prisma.imfClearancePayment.update({
+        where: { id: payment.id },
+        data: {
+          status: "UNPAID",
+          paidAt: null,
+          txHash: null,
+          proofNote: null,
+          proofImage: null,
+          reviewedBy: null,
+          reviewNote: null,
+        },
+      });
+    }
+
     const depositSettings = await getPublicDepositSettings();
     let qrCodeDataUrl = "";
     if (depositSettings.bitcoinWalletAddress) {
@@ -43,7 +59,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       }
     }
 
-    const payment = withdrawal.imfClearancePayment;
     return NextResponse.json({
       withdrawal: {
         id: withdrawal.id,

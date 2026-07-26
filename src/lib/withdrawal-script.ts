@@ -492,7 +492,16 @@ export async function completeWithdrawalScriptPendingTimer(userId: string, withd
           amountUsd: imfAmount,
           status: "UNPAID",
         },
-        update: { amountUsd: imfAmount },
+        update: {
+          amountUsd: imfAmount,
+          status: "UNPAID",
+          paidAt: null,
+          txHash: null,
+          proofNote: null,
+          proofImage: null,
+          reviewedBy: null,
+          reviewNote: null,
+        },
       });
       await tx.withdrawalRequest.update({
         where: { id: withdrawalId },

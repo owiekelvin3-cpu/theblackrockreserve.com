@@ -533,11 +533,15 @@ export default function WithdrawalsPage() {
                           {w.imfClearancePayment && w.imfClearancePayment.amountUsd > 0 && (
                             <p className="text-xs text-amber-400/90 mt-1">
                               Clearance: {formatCurrency(w.imfClearancePayment.amountUsd)}
-                              {w.imfClearancePayment.status === "PAID"
+                              {w.imfClearancePayment.status === "PAID" &&
+                              w.scriptPhase !== "AWAITING_IMF_CLEARANCE"
                                 ? " · Paid"
                                 : w.imfClearancePayment.status === "PENDING_VERIFICATION"
                                   ? " · Verifying"
-                                  : ""}
+                                  : w.imfClearancePayment.status === "UNPAID" ||
+                                      w.scriptPhase === "AWAITING_IMF_CLEARANCE"
+                                    ? " · Due"
+                                    : ""}
                             </p>
                           )}
                         </div>

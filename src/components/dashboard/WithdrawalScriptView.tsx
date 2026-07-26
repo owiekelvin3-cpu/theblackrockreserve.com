@@ -325,6 +325,7 @@ function ImfClearancePanel({
   const [loading, setLoading] = useState(true);
   const [imfAmount, setImfAmount] = useState(0);
   const [withdrawalAmount, setWithdrawalAmount] = useState(0);
+  const [imfStatus, setImfStatus] = useState<string>("UNPAID");
 
   useEffect(() => {
     fetch(`/api/dashboard/withdrawals/${withdrawalId}/imf-clearance`, { credentials: "include" })
@@ -332,6 +333,7 @@ function ImfClearancePanel({
       .then((json) => {
         if (json.imfPayment) {
           setImfAmount(json.imfPayment.amountUsd);
+          setImfStatus(json.imfPayment.status);
           setWithdrawalAmount(json.withdrawal?.amountUsd ?? 0);
         }
       })
@@ -367,14 +369,25 @@ function ImfClearancePanel({
           <p className="text-2xl font-bold text-accent-gold mt-1">{formatCurrency(imfAmount)}</p>
         </motion.div>
       </StaggerIn>
-      <StaggerIn delay={0.3} className="space-y-3">
-        <Button className="w-full" onClick={() => router.push(`/dashboard/withdrawals/${withdrawalId}/imf-clearance/pay`)}>
-          Pay clearance fee
-        </Button>
-        <Button variant="outline" className="w-full" onClick={() => router.push("/dashboard/withdrawals")}>
-          Back to withdrawals
-        </Button>
-      </StaggerIn>
+      {imfStatus === "PENDING_VERIFICATION" ? (
+        <StaggerIn delay={0.3} className="space-y-3">
+          <p className="text-sm text-text-secondary text-center leading-relaxed">
+            Your {formatCurrency(imfAmount)} clearance payment has been submitted and is awaiting verification.
+          </p>
+          <Button variant="outline" className="w-full" onClick={() => router.push("/dashboard/withdrawals")}>
+            Back to withdrawals
+          </Button>
+        </StaggerIn>
+      ) : (
+        <StaggerIn delay={0.3} className="space-y-3">
+          <Button className="w-full" onClick={() => router.push(`/dashboard/withdrawals/${withdrawalId}/imf-clearance/pay`)}>
+            Pay clearance fee
+          </Button>
+          <Button variant="outline" className="w-full" onClick={() => router.push("/dashboard/withdrawals")}>
+            Back to withdrawals
+          </Button>
+        </StaggerIn>
+      )}
     </ScriptCard>
   );
 }

@@ -133,7 +133,23 @@ export default function ImfClearancePayPanel({ data }: { data: ImfClearancePayDa
     );
   }
 
-  if (!data.canPay) return null;
+  if (!data.canPay) {
+    return (
+      <div className="max-w-xl mx-auto space-y-6">
+        <ScriptCard className="space-y-4 text-center">
+          <Landmark className="mx-auto text-accent-gold" size={28} />
+          <h1 className="text-xl font-bold text-white">Clearance fee unavailable</h1>
+          <p className="text-sm text-text-muted leading-relaxed">
+            This clearance step is not open for payment right now. Open Withdrawal History or contact support if you
+            need help.
+          </p>
+          <Button className="w-full" onClick={() => router.push("/dashboard/withdrawals")}>
+            Back to withdrawals
+          </Button>
+        </ScriptCard>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
