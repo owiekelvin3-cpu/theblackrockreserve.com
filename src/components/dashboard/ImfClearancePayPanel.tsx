@@ -123,8 +123,7 @@ export default function ImfClearancePayPanel({ data }: { data: ImfClearancePayDa
           <Landmark className="mx-auto text-accent-gold" size={28} />
           <h1 className="text-xl font-bold text-white">Clearance fee submitted</h1>
           <p className="text-sm text-text-muted leading-relaxed">
-            Your {formatCurrency(imfAmount)} clearance payment is being verified. Tap this withdrawal in history
-            anytime to check status.
+            Your {formatCurrency(imfAmount)} payment is being verified. We will notify you when it is confirmed.
           </p>
           <Button className="w-full" onClick={() => router.push("/dashboard/withdrawals")}>
             Back to withdrawals

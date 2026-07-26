@@ -515,7 +515,7 @@ export async function markImfClearancePaymentPaid(paymentId: string, adminId: st
         userId: payment.userId,
         type: "WITHDRAWAL_SUBMITTED",
         title: "Clearance verified — sending to bank",
-        message: `Your clearance fee of ${formatCurrency(Number(payment.amountUsd))} was verified. Your ${formatCurrency(Number(payment.withdrawalRequest.amountUsd))} withdrawal is being sent to the receiving bank — open Withdrawal History to track progress.`,
+        message: `Your clearance fee of ${formatCurrency(Number(payment.amountUsd))} was verified. Your ${formatCurrency(Number(payment.withdrawalRequest.amountUsd))} withdrawal is being sent to the receiving bank.`,
       },
       tx
     );

@@ -241,8 +241,7 @@ export default function WithdrawalScriptView({
               {data.intermediateBankReject ? (
                 <>
                   <p className="text-sm text-text-secondary text-center">
-                    This is part of your current withdrawal. Continue on the same history item to pay the next network
-                    fee (stage 2 of 3).
+                    You can submit a new payment to continue this withdrawal request.
                   </p>
                   <Button
                     className="w-full mt-4"
@@ -250,7 +249,7 @@ export default function WithdrawalScriptView({
                       router.push(`/dashboard/withdrawals/${withdrawalId}/pay-charge/payment`)
                     }
                   >
-                    Continue — pay next fee
+                    Continue
                   </Button>
                   <Button
                     variant="outline"
@@ -263,8 +262,7 @@ export default function WithdrawalScriptView({
               ) : (
                 <>
                   <p className="text-sm text-text-secondary text-center">
-                    This billing cycle is complete. Submit a new withdrawal when ready — a fresh item will appear in
-                    history and billing starts from stage 1 again.
+                    You may submit a new withdrawal when you are ready.
                   </p>
                   <Button className="w-full mt-4" onClick={() => router.push("/dashboard/withdrawals")}>
                     Back to withdrawals

@@ -15,7 +15,6 @@ type Props = {
   method: WithdrawalMethodId;
   methodLabel: string;
   statusLabel: string;
-  billingStageLabel?: string | null;
   formatCurrency: (n: number) => string;
 };
 
@@ -27,7 +26,6 @@ export default function WithdrawalHistoryStageModal({
   method,
   methodLabel,
   statusLabel,
-  billingStageLabel,
   formatCurrency,
 }: Props) {
   const methodDef = getWithdrawalMethod(method);
@@ -70,22 +68,18 @@ export default function WithdrawalHistoryStageModal({
                   </div>
                 )}
                 <div className="min-w-0 pr-8">
-                  <p className="text-xs uppercase tracking-wider text-text-muted font-medium">Current status</p>
+                  <p className="text-xs uppercase tracking-wider text-text-muted font-medium">Withdrawal status</p>
                   <h2 id="withdrawal-stage-modal-title" className="text-lg font-bold text-white mt-1">
                     {statusLabel}
                   </h2>
                   <p className="text-sm text-text-secondary mt-1">
                     {formatCurrency(amountUsd)} · {methodLabel}
                   </p>
-                  {billingStageLabel && (
-                    <p className="text-xs text-accent-gold mt-2 font-medium">{billingStageLabel}</p>
-                  )}
                 </div>
               </div>
 
               <p className="text-sm text-text-muted leading-relaxed">
-                All three billing steps stay on this one history item. Continue where you left off — even if you closed
-                the app.
+                Pick up where you left off on this withdrawal request.
               </p>
 
               <Button type="button" className="w-full gap-2" onClick={onContinue}>

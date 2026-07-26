@@ -21,7 +21,6 @@ import {
   resolveWithdrawalScriptStage,
   isWithdrawalScriptStageActive,
 } from "@/lib/withdrawal-script-resume";
-import { getScriptBillingStageLabel } from "@/lib/withdrawal-script-billing-label";
 import { withdrawalRequestSchema } from "@/lib/validations";
 import { requireTransactionPin } from "@/lib/transaction-pin";
 import { createUserNotification, sendUserNotificationEmail } from "@/lib/user-notifications";
@@ -177,10 +176,6 @@ export async function GET() {
         scriptStage,
         cycleComplete,
         isActiveCycle: isActiveCycleRow,
-        billingStageLabel:
-          isActiveCycleRow && !cycleComplete
-            ? getScriptBillingStageLabel(userStep, w.scriptPhase)
-            : null,
         reviewNote: w.reviewNote,
         createdAt: w.createdAt.toISOString(),
         chargePayment: w.chargePayment
@@ -316,7 +311,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "You already have a withdrawal in progress (all 3 billing stages stay on one history item). Open Withdrawal History and tap it to continue.",
+            "You already have a withdrawal in progress. Open Withdrawal History to continue.",
           activeWithdrawalId: activeCycle.id,
           resumeUrl: stage.resumeUrl ?? `/dashboard/withdrawals/${activeCycle.id}/pay-charge`,
         },
