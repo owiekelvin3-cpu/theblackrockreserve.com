@@ -7,6 +7,7 @@ import DashboardGate from "@/components/dashboard/DashboardGate";
 import { WithdrawalChargeVerifyingView } from "@/components/dashboard/WithdrawalScriptAnimations";
 import { fetchDashboardJson } from "@/lib/fetch-json";
 import type { ChargePayPageData } from "@/components/dashboard/WithdrawalChargePayPanel";
+import { formatReferenceId } from "@/lib/transaction-receipt";
 import { useI18n } from "@/components/providers/I18nProvider";
 
 export default function WithdrawalChargeVerifyingPanel({ withdrawalId }: { withdrawalId: string }) {
@@ -59,7 +60,7 @@ export default function WithdrawalChargeVerifyingPanel({ withdrawalId }: { withd
   }, [load]);
 
   useEffect(() => {
-    const tick = window.setInterval(() => load(true), 8000);
+    const tick = window.setInterval(() => load(true), 4000);
     const onFocus = () => load(true);
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onFocus);
@@ -79,7 +80,11 @@ export default function WithdrawalChargeVerifyingPanel({ withdrawalId }: { withd
             <p className="text-xs text-text-muted">Loading…</p>
           </div>
         ) : (
-          <WithdrawalChargeVerifyingView amount={amount} formatCurrency={formatCurrency} />
+          <WithdrawalChargeVerifyingView
+            amount={amount}
+            formatCurrency={formatCurrency}
+            referenceId={formatReferenceId(withdrawalId)}
+          />
         )}
       </div>
     </DashboardGate>

@@ -133,9 +133,9 @@ export default function WithdrawalChargePaymentPanel({
         toast.success(json.message);
         clearProofImage();
         if (typeof json.redirectTo === "string" && json.redirectTo) {
-          router.push(json.redirectTo);
+          router.replace(json.redirectTo);
         } else {
-          router.push(overviewUrl);
+          router.replace(`/dashboard/withdrawals/${withdrawal.id}/pay-charge/verifying`);
         }
         onRefresh();
       } finally {

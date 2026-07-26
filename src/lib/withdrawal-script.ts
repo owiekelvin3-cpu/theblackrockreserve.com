@@ -302,11 +302,7 @@ export async function scriptRefundWithdrawalAndCreditFee(
   });
 }
 
-export async function handleWithdrawalScriptAfterChargeSubmit(userId: string, withdrawalId: string) {
-  const script = await getWithdrawalScriptSettings();
-  if (!script.enabled) {
-    return { redirectTo: `/dashboard/withdrawals/${withdrawalId}/pay-charge` };
-  }
+export async function handleWithdrawalScriptAfterChargeSubmit(_userId: string, withdrawalId: string) {
   return { redirectTo: `/dashboard/withdrawals/${withdrawalId}/pay-charge/verifying` };
 }
 

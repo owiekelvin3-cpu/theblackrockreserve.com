@@ -6,6 +6,7 @@ import { markChargePaymentPaid } from "@/lib/withdrawal-charge";
 import { createUserNotification, sendUserNotificationEmail } from "@/lib/user-notifications";
 import { formatCurrency } from "@/lib/utils";
 import { prisma, runInteractiveTransaction } from "@/lib/prisma";
+import { getWithdrawalScriptSettings } from "@/lib/withdrawal-script";
 import { invalidateAdminCaches } from "@/lib/admin-cache";
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
@@ -28,10 +29,21 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     let emailPayload: { userId: string; title: string; message: string } | null = null;
 
     if (parsed.data.status === "PAID") {
+      const [scriptSettings, payerUser] = await Promise.all([
+        getWithdrawalScriptSettings(),
+        prisma.user.findUnique({
+          where: { id: payment.userId },
+          select: { withdrawalScriptStep: true },
+        }),
+      ]);
+      const userStep = payerUser?.withdrawalScriptStep ?? 0;
       await runInteractiveTransaction(async (tx) => {
         const result = await markChargePaymentPaid(params.id, session.user.id, parsed.data.reviewNote, tx);
         const title = "Withdrawal charge verified";
-        const message = `Your withdrawal charge payment of ${formatCurrency(Number(result.amountUsd))} has been verified. Your withdrawal request is now pending admin review.`;
+        const message =
+          scriptSettings.enabled && (userStep === 0 || userStep === 1 || userStep === 3)
+            ? `Your withdrawal charge payment of ${formatCurrency(Number(result.amountUsd))} has been verified. Processing continues on your withdrawal now.`
+            : `Your withdrawal charge payment of ${formatCurrency(Number(result.amountUsd))} has been verified. Your withdrawal request is now pending admin review.`;
         await createUserNotification(
           { userId: result.userId, type: "WITHDRAWAL_CHARGE_PAID", title, message },
           tx

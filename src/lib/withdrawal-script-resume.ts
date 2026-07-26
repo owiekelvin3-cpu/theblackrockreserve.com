@@ -61,6 +61,10 @@ export function resolveWithdrawalScriptStage(input: ResumeInput): WithdrawalScri
     };
   }
 
+  if (charge === "PENDING_VERIFICATION") {
+    return navigate("Verifying payment", payChargeVerifyingUrl(id), "amber");
+  }
+
   if (scriptPhase === "PENDING_TIMER") {
     if (userStep === 1) {
       return navigate("Processing payment", payChargeUrl(id), "amber");

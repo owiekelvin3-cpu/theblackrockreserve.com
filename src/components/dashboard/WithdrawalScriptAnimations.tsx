@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import { Loader2, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
+import { useI18n } from "@/components/providers/I18nProvider";
+import { cn } from "@/lib/utils";
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
 
@@ -389,22 +391,51 @@ export function WithdrawalChargeVerifyingAnimation() {
 export function WithdrawalChargeVerifyingView({
   amount,
   formatCurrency,
+  referenceId,
 }: {
   amount: number;
   formatCurrency: (n: number) => string;
+  referenceId?: string;
 }) {
   const router = useRouter();
+  const { t } = useI18n();
+  const steps = [
+    t("withdrawals.chargeModal.payStep1"),
+    t("withdrawals.chargeModal.payStep2"),
+    t("withdrawals.chargeModal.payStep3"),
+  ];
 
   return (
-    <ScriptCard className="space-y-5 text-center">
+    <ScriptCard className="space-y-5 text-center overflow-hidden p-0">
+      <div className="wc-modal-header px-5 py-4">
+        <div className="flex flex-wrap gap-2">
+          {steps.map((label, i) => (
+            <span
+              key={label}
+              className={cn(
+                "wc-progress-pill flex-1 min-w-[5.5rem] justify-center",
+                i <= 2 && "wc-progress-pill-active"
+              )}
+            >
+              {i + 1}. {label}
+            </span>
+          ))}
+        </div>
+      </div>
+      <div className="px-5 sm:px-6 pb-6 space-y-5">
       <WithdrawalChargeVerifyingAnimation />
       <StaggerIn delay={0.08}>
-        <p className="text-xs uppercase tracking-widest text-accent-gold font-semibold">Step 3 of 3 · Verification</p>
-        <h1 className="text-xl font-bold text-white mt-2">Verifying your payment</h1>
+        <p className="text-xs uppercase tracking-widest text-accent-gold font-semibold">
+          {t("withdrawals.chargePay.step2Badge")}
+        </p>
+        <h1 className="text-xl font-bold text-text-primary mt-2">Verifying your payment</h1>
         <p className="text-sm text-text-muted mt-2 leading-relaxed max-w-sm mx-auto">
           Your {formatCurrency(amount)} network fee payment is being reviewed by our treasury team. You will move to
           the next step once it is confirmed.
         </p>
+        {referenceId && (
+          <p className="text-xs font-mono text-text-muted mt-2">{referenceId}</p>
+        )}
       </StaggerIn>
       <StaggerIn delay={0.2}>
         <div className="rounded-xl border border-border bg-bg-tertiary/50 p-4 flex items-center gap-3 text-sm text-left">
@@ -417,6 +448,7 @@ export function WithdrawalChargeVerifyingView({
           Back to withdrawals
         </Button>
       </StaggerIn>
+      </div>
     </ScriptCard>
   );
 }
