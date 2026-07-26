@@ -209,7 +209,7 @@ export default function WithdrawalsPage() {
         router.push(activeRow.scriptStage.resumeUrl);
         return "blocked";
       }
-      return "You already have a withdrawal in progress. Open Withdrawal History below to continue it.";
+      return "You have a withdrawal already in progress. Open withdrawal history to continue.";
     }
     if (!accountId) return t("withdrawals.errors.noAccount");
     if (!Number.isFinite(amount) || amount <= 0) return t("withdrawals.errors.invalidAmount");
@@ -443,7 +443,7 @@ export default function WithdrawalsPage() {
 
                 {withdrawalData.canStartNewWithdrawal === false && (
                   <p className="text-sm text-amber-200/90 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2.5 leading-relaxed">
-                    You already have a withdrawal in progress. Open{" "}
+                    You have a withdrawal already in progress. Open{" "}
                     <button
                       type="button"
                       className="underline font-medium text-white"
@@ -453,10 +453,9 @@ export default function WithdrawalsPage() {
                         else setHistoryExpanded(true);
                       }}
                     >
-                      Withdrawal History
+                      withdrawal history
                     </button>{" "}
-                    to continue it. You can start a separate new request only after a bank decline on that
-                    withdrawal (use Continue on the decline screen).
+                    to continue.
                   </p>
                 )}
 
