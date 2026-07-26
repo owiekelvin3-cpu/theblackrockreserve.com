@@ -235,7 +235,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         userId,
         type: "WITHDRAWAL_CHARGE_SUBMITTED",
         title: "Charge payment submitted",
-        message: `Your withdrawal charge payment of ${formatCurrency(amount)} has been submitted for admin verification.`,
+        message: `Your withdrawal charge payment of ${formatCurrency(amount)} has been submitted for verification by our team.`,
       });
     } catch (notifyError) {
       console.error("Charge payment notification error:", notifyError);

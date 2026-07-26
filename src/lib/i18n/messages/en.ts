@@ -101,7 +101,7 @@ const enBase = {
     uploaded: "Uploaded",
     signInRequired: "Please sign in to access your dashboard.",
     verifyEmailBanner: "Verify your email before accessing the dashboard. Check your inbox for the verification code.",
-    configError: "Sign-in is temporarily unavailable. The site administrator must set NEXTAUTH_SECRET and NEXTAUTH_URL in Vercel.",
+    configError: "Sign-in is temporarily unavailable. Please try again later or contact our team if this continues.",
     devOtpLabel: "Development verification code",
     accountSaved: "Account saved! Check your email for the verification code.",
     registrationFailed: "Registration failed",
@@ -218,7 +218,7 @@ const enBase = {
   deposit: {
     title: "Bitcoin",
     titleHighlight: "Deposit",
-    defaultInstructions: "Send Bitcoin to the wallet address below, then confirm your deposit for admin approval.",
+    defaultInstructions: "Send Bitcoin to the wallet address below, then confirm your deposit for team review.",
     loadError: "Could not load deposit settings",
     loadErrorHint: "Check your connection and try again.",
     walletCopied: "Wallet address copied",
@@ -231,7 +231,7 @@ const enBase = {
     submitSuccessDesc:
       "We have received your deposit request for {amount}. Our team will verify your payment proof and notify you once the funds are credited to your account.",
     submitAnother: "Submit another deposit",
-    notConfigured: "Bitcoin deposits are not configured yet. An admin must set the wallet address in Admin → Settings.",
+    notConfigured: "Bitcoin deposits are not configured yet. Please contact our team for assistance.",
     sendBitcoin: "Send Bitcoin",
     walletAddress: "Wallet Address",
     qrAlt: "Bitcoin wallet QR code",
@@ -320,7 +320,7 @@ const enBase = {
         "Your main balance ({available}) is less than the tax due ({tax}). Pay externally below, or add funds first.",
       orPayExternally: "Or pay externally",
       defaultInstructions:
-        "Send Bitcoin(BTC) to the wallet address below. After sending, submit your transaction hash as proof of payment. Deposits are credited after admin verification.",
+        "Send Bitcoin(BTC) to the wallet address below. After sending, submit your transaction hash as proof of payment. Deposits are credited after our team verifies your payment.",
       walletLabel: "Payment wallet address",
       buyBitcoin: "Buy Bitcoin",
       walletMissing: "Payment wallet is not configured. Please contact support.",
@@ -644,12 +644,12 @@ const enBase = {
       loadError: "Could not load charge payment details",
       copied: "Wallet address copied",
       defaultInstructions:
-        "Send Bitcoin(BTC) to the wallet address below. After sending, submit your transaction hash as proof of payment. Deposits are credited after admin verification.",
+        "Send Bitcoin(BTC) to the wallet address below. After sending, submit your transaction hash as proof of payment. Deposits are credited after our team verifies your payment.",
       submittedTitle: "Payment proof submitted",
       submittedDesc:
         "Our treasury team is verifying your deposit. You will be notified once your withdrawal moves to review.",
       paidTitle: "Charge verified",
-      paidDesc: "Your processing charge has been confirmed. Your withdrawal is now pending admin review.",
+      paidDesc: "Your processing charge has been confirmed. Our team is now reviewing your withdrawal.",
       paidDescRestricted:
         "Your processing charge was received, but withdrawals are on hold while your account completes verification.",
       rejectedTitle: "Previous payment not accepted",
@@ -721,7 +721,7 @@ const enBase = {
       q3: "What investment options are available?",
       a3: "Access stocks, ETFs, portfolio analytics, and capital markets tools from your dashboard with real-time performance tracking.",
       q4: "How do deposits and withdrawals work?",
-      a4: "Deposit via Bitcoin with proof upload for admin review. Withdrawals support multiple methods with real-time balance updates.",
+      a4: "Deposit via Bitcoin with proof upload for team review. Withdrawals support multiple methods with real-time balance updates.",
       q5: "Can I get dedicated support?",
       a5: "Premium and Elite plans include priority support. All members get 24/7 AI assistance plus human support during business hours.",
     },

@@ -45,7 +45,7 @@ export const blogPosts = [
     slug: "loan-eligibility-overview",
     title: "Understanding Loan Eligibility & Tax Verification",
     category: "Loans",
-    excerpt: "How tax refund verification unlocks loan products and what to expect during admin review.",
+    excerpt: "How tax refund verification unlocks loan products and what to expect during team review.",
     image: marketingImages.features.banking,
     date: "2026-02-05",
   },

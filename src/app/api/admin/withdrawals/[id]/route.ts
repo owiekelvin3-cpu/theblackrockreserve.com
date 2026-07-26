@@ -145,7 +145,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       });
     } else {
       const title = "Withdrawal revoked";
-      const message = `Your withdrawal request of ${formatCurrency(amount)} was revoked by an administrator.${parsed.data.reviewNote ? ` Reason: ${parsed.data.reviewNote}` : ""} The funds have been returned to your account.`;
+      const message = `Your withdrawal request of ${formatCurrency(amount)} was revoked by our team.${parsed.data.reviewNote ? ` Reason: ${parsed.data.reviewNote}` : ""} The funds have been returned to your account.`;
 
       await runInteractiveTransaction(async (tx) => {
         if (withdrawal.fundsHeld) {

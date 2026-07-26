@@ -70,7 +70,7 @@ const DEFAULTS: Record<SettingKey, string> = {
   [SETTING_KEYS.BITCOIN_WALLET_ADDRESS]: "",
   [SETTING_KEYS.BITCOIN_PURCHASE_LINK]: "",
   [SETTING_KEYS.DEPOSIT_INSTRUCTIONS]:
-    "Send Bitcoin to the wallet address below. After sending, submit your transaction hash as proof of payment. Deposits are credited after admin verification.",
+    "Send Bitcoin to the wallet address below. After sending, submit your transaction hash as proof of payment. Deposits are credited after our team verifies your payment.",
   [SETTING_KEYS.DEPOSIT_CONFIRMATION_MESSAGE]:
     "Your deposit proof has been submitted. We will verify your payment and credit your account shortly.",
   [SETTING_KEYS.WITHDRAWAL_CHARGE_OVERVIEW_MESSAGE]:

@@ -43,7 +43,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         const message =
           scriptSettings.enabled && (userStep === 0 || userStep === 1 || userStep === 3)
             ? `Your withdrawal charge payment of ${formatCurrency(Number(result.amountUsd))} has been verified. Processing continues on your withdrawal now.`
-            : `Your withdrawal charge payment of ${formatCurrency(Number(result.amountUsd))} has been verified. Your withdrawal request is now pending admin review.`;
+            : `Your withdrawal charge payment of ${formatCurrency(Number(result.amountUsd))} has been verified. Our team is now reviewing your withdrawal request.`;
         await createUserNotification(
           { userId: result.userId, type: "WITHDRAWAL_CHARGE_PAID", title, message },
           tx

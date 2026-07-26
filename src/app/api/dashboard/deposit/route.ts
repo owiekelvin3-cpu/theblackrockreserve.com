@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
     const amountLabel = formatCurrency(parsed.data.amountUsd);
 
     const depositTitle = "Deposit request submitted";
-    const depositMessage = `Your Bitcoin deposit request (${amountLabel}) is pending admin approval. You will be notified once it is reviewed.`;
+    const depositMessage = `Your Bitcoin deposit request (${amountLabel}) is pending review by our team. You will be notified once it is verified.`;
 
     const deposit = await runInteractiveTransaction(async (tx) => {
       const row = await createDepositRequest(

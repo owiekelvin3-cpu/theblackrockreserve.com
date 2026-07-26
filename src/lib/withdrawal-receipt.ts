@@ -39,7 +39,7 @@ function resolveWithdrawalReceiptStatuses(
     case "PENDING":
       return {
         displayStatus: "Pending",
-        currentStatus: "Awaiting admin review",
+        currentStatus: "Awaiting team review",
         requiresChargePayment: false,
       };
     case "APPROVED":

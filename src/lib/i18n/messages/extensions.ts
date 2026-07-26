@@ -219,7 +219,7 @@ const extensions = {
     netProceeds: "Net Proceeds (to wallet)",
     costBasis: "Cost Basis",
     realizedPl: "Realized P&L",
-    profitNote: "Net proceeds credit your wallet. Realized profit or loss updates your profit balance automatically — no admin approval required.",
+    profitNote: "Net proceeds credit your wallet. Realized profit or loss updates your profit balance automatically — no team review required.",
     back: "Back",
     confirm: "Confirm Sell",
     successTitle: "Sale Confirmed",
