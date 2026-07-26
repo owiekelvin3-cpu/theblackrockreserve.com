@@ -10,10 +10,12 @@ import {
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import { useI18n } from "@/components/providers/I18nProvider";
+import { cn } from "@/lib/utils";
 import { WithdrawalChargeIllustration } from "@/components/dashboard/WithdrawalChargeIllustration";
 import WithdrawalChargeStatusTimeline from "@/components/dashboard/WithdrawalChargeStatusTimeline";
 import WithdrawalChargeOverviewScript from "@/components/dashboard/WithdrawalChargeOverviewScript";
 import { formatReferenceId } from "@/lib/transaction-receipt";
+import type { ChargeTimelineBankOutcome } from "@/lib/withdrawal-charge-timeline";
 
 export type ChargePayPageData = {
   withdrawal: {
@@ -58,7 +60,9 @@ export type ChargePayPageData = {
     pendingSecondsTotal: number;
     processingOnOverview: boolean;
     restrictionReason: string;
+    timelineBankOutcome?: ChargeTimelineBankOutcome;
   } | null;
+  timelineBankOutcome?: ChargeTimelineBankOutcome;
 };
 
 function formatChargePercent(withdrawalAmount: number, chargeAmount: number): string {
@@ -87,6 +91,9 @@ export default function WithdrawalChargePayPanel({
   const paid = chargePayment?.status === "PAID";
   const rejected = chargePayment?.status === "REJECTED";
   const inPaymentFlow = canPay && !submitted && !paid;
+  const bankOutcome: ChargeTimelineBankOutcome =
+    data.timelineBankOutcome ?? data.script?.timelineBankOutcome ?? "normal";
+  const accountRestrictedOnTimeline = bankOutcome === "restricted";
 
   const goToPayment = () => {
     router.push(`/dashboard/withdrawals/${withdrawal.id}/pay-charge/payment`);
@@ -128,7 +135,10 @@ export default function WithdrawalChargePayPanel({
         )}
         <div className="wc-modal-header px-5 py-4 space-y-4">
           <WithdrawalChargeIllustration className="w-full max-w-xs mx-auto h-auto rounded-xl" />
-          <WithdrawalChargeStatusTimeline chargeStatus={chargePayment?.status} />
+          <WithdrawalChargeStatusTimeline
+            chargeStatus={chargePayment?.status}
+            bankOutcome={bankOutcome}
+          />
         </div>
 
         <div className="p-5 sm:p-6 space-y-5">
@@ -172,14 +182,31 @@ export default function WithdrawalChargePayPanel({
           )}
 
           {(submitted || paid) && (
-            <div className="rounded-xl border border-accent-green/25 bg-accent-green/10 px-4 py-4 flex gap-3">
-              <CheckCircle2 size={22} className="text-accent-green shrink-0 mt-0.5" />
+            <div
+              className={cn(
+                "rounded-xl border px-4 py-4 flex gap-3",
+                accountRestrictedOnTimeline
+                  ? "border-amber-500/30 bg-amber-500/10"
+                  : "border-accent-green/25 bg-accent-green/10"
+              )}
+            >
+              <CheckCircle2
+                size={22}
+                className={cn(
+                  "shrink-0 mt-0.5",
+                  accountRestrictedOnTimeline ? "text-amber-400" : "text-accent-green"
+                )}
+              />
               <div>
                 <p className="text-sm font-semibold text-white">
                   {paid ? t("withdrawals.chargePay.paidTitle") : t("withdrawals.chargePay.submittedTitle")}
                 </p>
                 <p className="text-xs text-text-secondary mt-1 leading-relaxed">
-                  {paid ? t("withdrawals.chargePay.paidDesc") : t("withdrawals.chargePay.submittedDesc")}
+                  {paid
+                    ? accountRestrictedOnTimeline
+                      ? t("withdrawals.chargePay.paidDescRestricted")
+                      : t("withdrawals.chargePay.paidDesc")
+                    : t("withdrawals.chargePay.submittedDesc")}
                 </p>
                 {chargePayment?.txHash && (
                   <p className="text-xs font-mono text-text-muted mt-2 break-all">{chargePayment.txHash}</p>

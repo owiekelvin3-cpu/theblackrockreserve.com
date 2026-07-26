@@ -16,6 +16,8 @@ import {
   WITHDRAWAL_SCRIPT_AML_REASON,
   getWithdrawalScriptSettings,
 } from "@/lib/withdrawal-script";
+import { resolveChargeTimelineBankOutcome } from "@/lib/withdrawal-charge-timeline";
+import { getActiveAccountFreeze, isWithdrawalBlocked } from "@/lib/account-freeze";
 import QRCode from "qrcode";
 
 function applyTemplate(template: string, vars: Record<string, string>) {
@@ -90,6 +92,16 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         ? Math.max(0, WITHDRAWAL_SCRIPT_PENDING_SECONDS - (Date.now() - pendingStarted) / 1000)
         : 0;
 
+    const activeFreeze = await getActiveAccountFreeze(userId);
+    const accountRestricted = Boolean(activeFreeze && isWithdrawalBlocked(activeFreeze.freezeType));
+    const userStep = dbUser?.withdrawalScriptStep ?? 0;
+    const timelineBankOutcome = resolveChargeTimelineBankOutcome({
+      scriptEnabled: scriptSettings.enabled,
+      userStep,
+      scriptPhase: withdrawal.scriptPhase,
+      accountRestricted,
+    });
+
     return NextResponse.json({
       withdrawal: {
         id: withdrawal.id,
@@ -144,16 +156,17 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         (withdrawal.chargePayment.status === "UNPAID" || withdrawal.chargePayment.status === "REJECTED"),
       script: scriptSettings.enabled
         ? {
-            step: dbUser?.withdrawalScriptStep ?? 0,
+            step: userStep,
             phase: withdrawal.scriptPhase,
             pendingSecondsRemaining: Math.ceil(pendingSecondsRemaining),
             pendingSecondsTotal: WITHDRAWAL_SCRIPT_PENDING_SECONDS,
             processingOnOverview:
-              withdrawal.scriptPhase === "PENDING_TIMER" &&
-              (dbUser?.withdrawalScriptStep ?? 0) === 1,
+              withdrawal.scriptPhase === "PENDING_TIMER" && userStep === 1,
             restrictionReason: WITHDRAWAL_SCRIPT_AML_REASON,
+            timelineBankOutcome,
           }
         : null,
+      timelineBankOutcome: scriptSettings.enabled ? timelineBankOutcome : "normal",
     });
   } catch (error) {
     console.error("Pay charge GET error:", error);
