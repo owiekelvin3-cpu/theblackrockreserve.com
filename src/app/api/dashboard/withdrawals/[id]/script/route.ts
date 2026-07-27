@@ -36,7 +36,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         ? Math.max(0, WITHDRAWAL_SCRIPT_PENDING_SECONDS - (Date.now() - pendingStarted) / 1000)
         : 0;
     const bankReject = getBankRejectFailureCopy(withdrawal.method);
-    const imfPaid = withdrawal.imfClearancePayment?.status === "PAID";
     const userStep = dbUser?.withdrawalScriptStep ?? 0;
     const pendingMode =
       withdrawal.scriptPhase === "PENDING_TIMER" && userStep === 3 ? "bank-transit" : "standard";
