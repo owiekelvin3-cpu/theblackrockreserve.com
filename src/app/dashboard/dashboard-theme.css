@@ -5829,3 +5829,23 @@ html.tx-member-transfer-scroll-lock {
 [data-theme="light"] .dash-layout .inst-payout-reject-refund {
   color: #059669;
 }
+
+.inst-payout-reject-dot {
+  background: linear-gradient(135deg, #f87171 0%, #fca5a5 100%);
+  box-shadow: 0 0 12px rgba(248, 113, 113, 0.55);
+}
+
+.inst-payout-reject-ring {
+  border-color: rgba(248, 113, 113, 0.4);
+}
+
+.inst-payout-reject-ring-inner {
+  border-color: rgba(239, 68, 68, 0.22);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inst-payout-reject-wrap *,
+  .inst-payout-reject-dot {
+    animation: none !important;
+  }
+}
