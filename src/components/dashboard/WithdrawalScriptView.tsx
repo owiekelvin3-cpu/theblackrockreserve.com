@@ -198,7 +198,7 @@ export default function WithdrawalScriptView({
               </p>
             </StaggerIn>
             <StaggerIn delay={0.28}>
-              {data.intermediateBankReject ? (
+              {data.intermediateBankReject || data.cycleComplete ? (
                 <>
                   <p className="text-sm text-text-secondary text-center">
                     Choose how you would like to proceed with this withdrawal.
@@ -212,8 +212,8 @@ export default function WithdrawalScriptView({
                   <p className="text-sm text-text-secondary text-center">
                     You may submit a new withdrawal when you are ready.
                   </p>
-                  <Button className="w-full mt-4" onClick={() => router.push("/dashboard/withdrawals")}>
-                    Back to withdrawals
+                  <Button className="w-full mt-4" onClick={() => router.push("/dashboard/withdrawals#withdraw-form")}>
+                    Start a new withdrawal
                   </Button>
                 </>
               )}
@@ -251,7 +251,7 @@ export default function WithdrawalScriptView({
         onClose={() => setBankRejectContinueOpen(false)}
         onNewWithdrawal={() => {
           setBankRejectContinueOpen(false);
-          router.push("/dashboard/withdrawals#withdraw-form");
+          router.push("/dashboard/withdrawals?fresh=1#withdraw-form");
         }}
         onContactSupport={() => {
           setBankRejectContinueOpen(false);

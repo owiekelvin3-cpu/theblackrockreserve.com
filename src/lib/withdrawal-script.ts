@@ -110,8 +110,9 @@ export function isWithdrawalScriptCycleComplete(
   withdrawal: { status: string; scriptPhase: WithdrawalScriptPhase | string },
   userStep: number
 ): boolean {
+  void userStep;
   if (withdrawal.status !== "REJECTED") return false;
-  if (withdrawal.scriptPhase === "BANK_REJECTED" && userStep === 0) return true;
+  if (withdrawal.scriptPhase === "BANK_REJECTED") return true;
   if (withdrawal.scriptPhase === "NONE" || withdrawal.scriptPhase === "SCRIPT_COMPLETE") return true;
   return false;
 }
@@ -152,12 +153,12 @@ export async function findActiveScriptCycleWithdrawal(userId: string) {
     include: { chargePayment: true, imfClearancePayment: true },
   });
   if (!latest) return null;
+  if (latest.status === "REJECTED") return null;
   if (isWithdrawalScriptCycleComplete(latest, userStep)) return null;
 
   const phaseActive =
     latest.scriptPhase !== "NONE" &&
-    latest.scriptPhase !== "SCRIPT_COMPLETE" &&
-    !(latest.status === "REJECTED" && latest.scriptPhase === "BANK_REJECTED");
+    latest.scriptPhase !== "SCRIPT_COMPLETE";
 
   if (
     latest.status === "AWAITING_CHARGE_PAYMENT" ||
@@ -205,6 +206,19 @@ export async function repairPostUnfreezeThirdChargeStep(userId: string) {
 /** Fix rows that were marked REJECTED mid-cycle before single-segment billing shipped. */
 export async function repairScriptCycleWithdrawalState(userId: string) {
   await repairPostUnfreezeThirdChargeStep(userId);
+
+  const latest = await prisma.withdrawalRequest.findFirst({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    select: { status: true, scriptPhase: true },
+  });
+  if (latest?.status === "REJECTED" && latest.scriptPhase === "BANK_REJECTED") {
+    await prisma.user.updateMany({
+      where: { id: userId, withdrawalScriptStep: { not: 0 } },
+      data: { withdrawalScriptStep: 0 },
+    });
+  }
+
   const settings = await getWithdrawalScriptSettings();
   if (!settings.enabled) return;
 

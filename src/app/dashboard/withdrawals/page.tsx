@@ -151,12 +151,22 @@ export default function WithdrawalsPage() {
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined" || window.location.hash !== "#withdraw-form") return;
+    if (typeof window === "undefined") return;
+    const hashForm = window.location.hash === "#withdraw-form";
+    const fresh = new URLSearchParams(window.location.search).get("fresh") === "1";
+    if (!hashForm && !fresh) return;
+
+    load(true);
+
     const el = document.getElementById("withdraw-form");
     if (el) {
       window.requestAnimationFrame(() => {
         el.scrollIntoView({ behavior: "smooth", block: "start" });
       });
+    }
+
+    if (fresh && typeof window.history.replaceState === "function") {
+      window.history.replaceState(null, "", "/dashboard/withdrawals#withdraw-form");
     }
   }, [loading, data]);
 
@@ -341,7 +351,7 @@ export default function WithdrawalsPage() {
   };
 
   return (
-    <DashboardGate isLoading={loading}>
+    <DashboardGate isLoading={loading && data === null}>
       <div className="space-y-6 max-w-4xl">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-white">
@@ -469,6 +479,7 @@ export default function WithdrawalsPage() {
                   className="w-full sm:w-auto"
                   disabled={
                     submitting ||
+                    withdrawalData.canStartNewWithdrawal === false ||
                     !accountId ||
                     !amountUsd ||
                     !destination ||
