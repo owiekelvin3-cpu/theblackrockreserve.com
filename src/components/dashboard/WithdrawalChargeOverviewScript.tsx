@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import FrozenAccountModal from "@/components/dashboard/FrozenAccountModal";
 import { InstitutionalTransferProcessing } from "@/components/dashboard/InstitutionalTransferProcessing";
 import { ScriptCard } from "@/components/dashboard/WithdrawalScriptAnimations";
+import type { WithdrawalMethodDef } from "@/lib/withdrawal-methods";
 
 type ScriptState = {
   step: number;
@@ -20,11 +21,13 @@ export default function WithdrawalChargeOverviewScript({
   script,
   onComplete,
   referenceId,
+  payoutMethod,
 }: {
   withdrawalId: string;
   script: ScriptState;
   onComplete?: () => void;
   referenceId?: string;
+  payoutMethod?: WithdrawalMethodDef;
 }) {
   const [secondsLeft, setSecondsLeft] = useState(script.pendingSecondsRemaining || script.pendingSecondsTotal);
   const [completing, setCompleting] = useState(false);
@@ -91,6 +94,8 @@ export default function WithdrawalChargeOverviewScript({
                 totalSeconds={script.pendingSecondsTotal}
                 completing={completing}
                 referenceId={referenceId}
+                institutionLabel={payoutMethod?.label}
+                payoutMethod={payoutMethod}
               />
             </ScriptCard>
           </motion.div>

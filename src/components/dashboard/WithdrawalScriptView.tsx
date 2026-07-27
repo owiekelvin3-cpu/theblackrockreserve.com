@@ -157,7 +157,10 @@ export default function WithdrawalScriptView({
               institutionLabel={
                 data.pendingMode === "bank-transit"
                   ? (data.bankTransit?.institutionLabel ?? data.withdrawal.methodLabel)
-                  : undefined
+                  : data.withdrawal.methodLabel
+              }
+              payoutMethod={
+                data.withdrawal.method ? getWithdrawalMethod(data.withdrawal.method) ?? undefined : undefined
               }
               secondsLeft={secondsLeft}
               totalSeconds={totalSeconds}

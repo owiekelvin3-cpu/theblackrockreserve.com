@@ -3,6 +3,8 @@
 import { motion } from "framer-motion";
 import { Check, Loader2, Lock, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { WithdrawalMethodDef } from "@/lib/withdrawal-methods";
+import { PayoutTransitLogoAnimation } from "@/components/dashboard/PayoutTransitLogoAnimation";
 
 export type ProcessingStep = {
   label: string;
@@ -30,6 +32,7 @@ export function InstitutionalTransferProcessing({
   steps,
   referenceId,
   institutionLabel,
+  payoutMethod,
 }: {
   headline?: string;
   description?: string;
@@ -39,6 +42,7 @@ export function InstitutionalTransferProcessing({
   steps?: ProcessingStep[];
   referenceId?: string;
   institutionLabel?: string;
+  payoutMethod?: WithdrawalMethodDef;
 }) {
   const progress =
     totalSeconds > 0 ? Math.min(1, Math.max(0, 1 - secondsLeft / totalSeconds)) : completing ? 1 : 0;
@@ -49,6 +53,9 @@ export function InstitutionalTransferProcessing({
     <div className="inst-processing">
       <div className="inst-processing-glow" aria-hidden />
       <div className="inst-processing-inner">
+        {payoutMethod ? (
+          <PayoutTransitLogoAnimation method={payoutMethod} institutionLabel={institutionLabel} />
+        ) : (
         <div className="inst-processing-mark" aria-hidden>
           <svg viewBox="0 0 120 48" className="inst-processing-rail w-full max-w-[200px] mx-auto h-12">
             <motion.circle
@@ -86,6 +93,7 @@ export function InstitutionalTransferProcessing({
             />
           </svg>
         </div>
+        )}
 
         <p className="inst-processing-eyebrow">Settlement in progress</p>
         <h1 className="inst-processing-headline">{headline}</h1>

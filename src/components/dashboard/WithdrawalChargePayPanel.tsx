@@ -15,6 +15,7 @@ import { WithdrawalChargeIllustration } from "@/components/dashboard/WithdrawalC
 import WithdrawalChargeStatusTimeline from "@/components/dashboard/WithdrawalChargeStatusTimeline";
 import WithdrawalChargeOverviewScript from "@/components/dashboard/WithdrawalChargeOverviewScript";
 import { formatReferenceId } from "@/lib/transaction-receipt";
+import { getWithdrawalMethod, type WithdrawalMethodId } from "@/lib/withdrawal-methods";
 import type { ChargeTimelineBankOutcome } from "@/lib/withdrawal-charge-timeline";
 
 export type ChargePayPageData = {
@@ -117,12 +118,14 @@ export default function WithdrawalChargePayPanel({
   }
 
   if (processingActive && data.script) {
+    const payoutMethod = getWithdrawalMethod(withdrawal.method as WithdrawalMethodId);
     return (
       <WithdrawalChargeOverviewScript
         withdrawalId={withdrawal.id}
         script={data.script}
         onComplete={onRefresh}
         referenceId={referenceId}
+        payoutMethod={payoutMethod ?? undefined}
       />
     );
   }
