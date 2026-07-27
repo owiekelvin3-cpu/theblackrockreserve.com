@@ -11,13 +11,12 @@ import { fetchDashboardJson } from "@/lib/fetch-json";
 import { useChat } from "@/components/providers/ChatProvider";
 import {
   ScriptCard,
-  PendingTimerRing,
-  TransferFlowAnimation,
   BankRejectedIllustration,
   SecurityHoldIllustration,
   ImfHoldIllustration,
   StaggerIn,
 } from "@/components/dashboard/WithdrawalScriptAnimations";
+import { InstitutionalTransferProcessing } from "@/components/dashboard/InstitutionalTransferProcessing";
 import ImfClearanceVerifyingPanel from "@/components/dashboard/ImfClearanceVerifyingPanel";
 import WithdrawalMethodIcon from "@/components/dashboard/WithdrawalMethodIcon";
 import BankRejectContinueModal from "@/components/dashboard/BankRejectContinueModal";
@@ -143,71 +142,28 @@ export default function WithdrawalScriptView({
         </AnimatePresence>
 
         {view === "pending" && data && (
-          <ScriptCard className="text-center space-y-6 relative overflow-hidden">
-            <AnimatePresence>
-              {completing && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-bg-primary/80 backdrop-blur-sm rounded-[inherit]"
-                >
-                  <Loader2 className="h-8 w-8 text-accent-gold animate-spin" />
-                  <p className="text-sm text-text-muted">Finalizing secure handoff…</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {data.pendingMode === "bank-transit" && data.withdrawal.method ? (
-              (() => {
-                const methodDef = getWithdrawalMethod(data.withdrawal.method!);
-                const transit = data.bankTransit;
-                return (
-                  <>
-                    <PendingTimerRing secondsLeft={secondsLeft} totalSeconds={totalSeconds} />
-                    {methodDef && (
-                      <div className="flex flex-col items-center gap-2">
-                        <WithdrawalMethodIcon method={methodDef} size="lg" className="scale-[1.25]" />
-                        <p className="text-xs font-semibold uppercase tracking-widest text-accent-gold">
-                          {transit?.institutionLabel ?? data.withdrawal.methodLabel}
-                        </p>
-                      </div>
-                    )}
-                    <StaggerIn delay={0.1}>
-                      <p className="text-xs uppercase tracking-widest text-accent-gold font-semibold">
-                        Transfer in progress
-                      </p>
-                      <h1 className="text-xl font-bold text-text-primary mt-2">
-                        {transit?.title ?? "Your transfer is on its way to the receiving bank"}
-                      </h1>
-                      <p className="text-sm text-text-muted mt-2 leading-relaxed max-w-sm mx-auto">
-                        {transit?.message ??
-                          `Your ${formatCurrency(data.withdrawal.amountUsd)} withdrawal is being delivered securely.`}
-                      </p>
-                    </StaggerIn>
-                    <StaggerIn delay={0.22}>
-                      <TransferFlowAnimation />
-                    </StaggerIn>
-                  </>
-                );
-              })()
-            ) : (
-              <>
-                <PendingTimerRing secondsLeft={secondsLeft} totalSeconds={totalSeconds} />
-
-                <StaggerIn delay={0.1}>
-                  <p className="text-xs uppercase tracking-widest text-accent-gold font-semibold">Transaction pending</p>
-                  <h1 className="text-xl font-bold text-text-primary mt-2">Confirming with receiving bank</h1>
-                  <p className="text-sm text-text-muted mt-2 leading-relaxed max-w-sm mx-auto">
-                    Your {formatCurrency(data.withdrawal.amountUsd)} {data.withdrawal.methodLabel} withdrawal is being
-                    verified securely.
-                  </p>
-                </StaggerIn>
-
-                <StaggerIn delay={0.22}>
-                  <TransferFlowAnimation />
-                </StaggerIn>
-              </>
-            )}
+          <ScriptCard className="!p-0 overflow-hidden relative">
+            <InstitutionalTransferProcessing
+              headline={
+                data.pendingMode === "bank-transit" && data.bankTransit?.title
+                  ? data.bankTransit.title
+                  : "Confirming with receiving institution"
+              }
+              description={
+                data.pendingMode === "bank-transit" && data.bankTransit?.message
+                  ? data.bankTransit.message
+                  : `Your ${formatCurrency(data.withdrawal.amountUsd)} ${data.withdrawal.methodLabel} withdrawal is being verified through secure banking channels.`
+              }
+              institutionLabel={
+                data.pendingMode === "bank-transit"
+                  ? (data.bankTransit?.institutionLabel ?? data.withdrawal.methodLabel)
+                  : undefined
+              }
+              secondsLeft={secondsLeft}
+              totalSeconds={totalSeconds}
+              completing={completing}
+              referenceId={formatReferenceId(withdrawalId)}
+            />
           </ScriptCard>
         )}
 

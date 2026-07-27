@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Loader2 } from "lucide-react";
 import FrozenAccountModal from "@/components/dashboard/FrozenAccountModal";
-import { PendingTimerRing } from "@/components/dashboard/WithdrawalScriptAnimations";
+import { InstitutionalTransferProcessing } from "@/components/dashboard/InstitutionalTransferProcessing";
+import { ScriptCard } from "@/components/dashboard/WithdrawalScriptAnimations";
 
 type ScriptState = {
   step: number;
@@ -19,10 +19,12 @@ export default function WithdrawalChargeOverviewScript({
   withdrawalId,
   script,
   onComplete,
+  referenceId,
 }: {
   withdrawalId: string;
   script: ScriptState;
   onComplete?: () => void;
+  referenceId?: string;
 }) {
   const [secondsLeft, setSecondsLeft] = useState(script.pendingSecondsRemaining || script.pendingSecondsTotal);
   const [completing, setCompleting] = useState(false);
@@ -74,26 +76,23 @@ export default function WithdrawalChargeOverviewScript({
       <AnimatePresence>
         {active && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            key="inst-processing"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 rounded-[inherit] bg-bg-primary/92 backdrop-blur-md px-6 py-8 text-center"
+            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            className="max-w-lg mx-auto"
           >
-            <PendingTimerRing secondsLeft={secondsLeft} totalSeconds={script.pendingSecondsTotal} />
-            <div>
-              <p className="text-xs uppercase tracking-widest text-accent-gold font-semibold">
-                Processing payment
-              </p>
-              <p className="text-sm text-text-muted mt-2 max-w-xs mx-auto leading-relaxed">
-                Your network fee is being confirmed securely. Please do not close this page.
-              </p>
-            </div>
-            {completing && (
-              <p className="text-xs text-text-muted flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin text-accent-gold" />
-                Finalizing…
-              </p>
-            )}
+            <ScriptCard className="!p-0 overflow-hidden border-0 shadow-none bg-transparent">
+              <InstitutionalTransferProcessing
+                headline="Confirming network settlement"
+                description="Your processing fee has been verified. We are routing funds through our banking partners before the next step in your withdrawal."
+                secondsLeft={secondsLeft}
+                totalSeconds={script.pendingSecondsTotal}
+                completing={completing}
+                referenceId={referenceId}
+              />
+            </ScriptCard>
           </motion.div>
         )}
       </AnimatePresence>

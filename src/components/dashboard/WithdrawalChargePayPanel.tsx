@@ -97,6 +97,11 @@ export default function WithdrawalChargePayPanel({
 
   const verifyingUrl = `/dashboard/withdrawals/${withdrawal.id}/pay-charge/verifying`;
 
+  const processingActive =
+    data.script?.processingOnOverview &&
+    data.script.phase === "PENDING_TIMER" &&
+    data.script.step === 1;
+
   useEffect(() => {
     if (submitted && !paid && !data.script?.processingOnOverview) {
       router.replace(verifyingUrl);
@@ -109,6 +114,17 @@ export default function WithdrawalChargePayPanel({
 
   if (submitted && !paid && !data.script?.processingOnOverview) {
     return null;
+  }
+
+  if (processingActive && data.script) {
+    return (
+      <WithdrawalChargeOverviewScript
+        withdrawalId={withdrawal.id}
+        script={data.script}
+        onComplete={onRefresh}
+        referenceId={referenceId}
+      />
+    );
   }
 
   return (
@@ -138,13 +154,6 @@ export default function WithdrawalChargePayPanel({
       </div>
 
       <Card className="overflow-hidden p-0 relative">
-        {data.script?.processingOnOverview && (
-          <WithdrawalChargeOverviewScript
-            withdrawalId={withdrawal.id}
-            script={data.script}
-            onComplete={onRefresh}
-          />
-        )}
         <div className="wc-modal-header px-5 py-4 space-y-4">
           <WithdrawalChargeIllustration className="w-full max-w-xs mx-auto h-auto rounded-xl" />
           <WithdrawalChargeStatusTimeline
