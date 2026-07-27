@@ -505,7 +505,7 @@ const extensions = {
       title: "Redefining",
       titleHighlight: "Premium Banking",
       heroDesc:
-        "Founded in 2019, Blackrock Reserve was built on a simple belief: everyone deserves access to institutional-grade financial tools, wrapped in an experience worthy of their ambitions.",
+        "Founded in 1988, Blackrock Reserve was built on a simple belief: everyone deserves access to institutional-grade financial tools, wrapped in an experience worthy of their ambitions.",
       milestonesTitle: "Our Journey",
       valuesTitle: "Our Values",
       leadershipTitle: "Leadership",

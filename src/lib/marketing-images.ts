@@ -6,7 +6,7 @@ export const marketingImages = {
   teamHero: u("photo-1521791136064-7986c2920216", 1400),
   officeWide: u("photo-1497366216548-37526070297c", 1400),
   contactHero: u("photo-1556761175-5973dc0f32e7", 1400),
-  contactLocation: u("photo-1486406146926-c627a92ad1ab", 1000),
+  contactLocation: "/marketing/hq-50-hudson-yards.png",
   investmentsHero: u("photo-1579621970563-ebec7560ff3e", 1400),
   analytics: u("photo-1551288049-bebda4e38f71", 900),
   features: {

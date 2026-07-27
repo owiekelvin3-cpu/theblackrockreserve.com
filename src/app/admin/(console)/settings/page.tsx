@@ -340,7 +340,7 @@ export default function AdminSettingsPage() {
                     markDirty();
                     setSettings({ ...settings, contactAddressLine1: e.target.value });
                   }}
-                  placeholder="1 Blackrock Plaza, Suite 400"
+                  placeholder="50 Hudson Yards"
                 />
               </div>
               <div>
@@ -352,7 +352,7 @@ export default function AdminSettingsPage() {
                     markDirty();
                     setSettings({ ...settings, contactAddressLine2: e.target.value });
                   }}
-                  placeholder="New York, NY 10004"
+                  placeholder="New York, NY 10001, United States"
                 />
               </div>
 
@@ -377,7 +377,7 @@ export default function AdminSettingsPage() {
                     markDirty();
                     setSettings({ ...settings, contactHqAddress: e.target.value });
                   }}
-                  placeholder="1 Blackrock Plaza, Suite 400 · New York, NY 10004"
+                  placeholder="50 Hudson Yards · New York, NY 10001, United States"
                 />
               </div>
 

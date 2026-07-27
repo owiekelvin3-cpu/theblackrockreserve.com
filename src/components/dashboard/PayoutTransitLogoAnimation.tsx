@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Landmark, X } from "lucide-react";
+import { X } from "lucide-react";
+import BlackRockWordmark from "@/components/dashboard/BlackRockWordmark";
 import WithdrawalMethodIcon from "@/components/dashboard/WithdrawalMethodIcon";
 import type { WithdrawalMethodDef } from "@/lib/withdrawal-methods";
 
@@ -17,10 +18,14 @@ export function PayoutTransitLogoAnimation({
   return (
     <div className="inst-payout-transit" aria-hidden>
       <div className="inst-payout-transit-col">
-        <div className="inst-payout-transit-badge inst-payout-transit-badge-bank">
-          <Landmark size={22} strokeWidth={1.75} className="text-slate-300" />
-        </div>
-        <p className="inst-payout-transit-label">Our bank</p>
+        <motion.div
+          className="inst-payout-transit-badge inst-payout-transit-badge-bank inst-payout-transit-badge-wordmark"
+          animate={{ scale: [1, 1.03, 1], opacity: [0.92, 1, 0.92] }}
+          transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <BlackRockWordmark compact />
+        </motion.div>
+        <p className="inst-payout-transit-label">BlackRock</p>
       </div>
 
       <div className="inst-payout-transit-bridge">
@@ -78,13 +83,13 @@ export function BankRejectPayoutHero({
       <div className="inst-payout-transit inst-payout-reject">
         <div className="inst-payout-transit-col">
           <motion.div
-            className="inst-payout-transit-badge inst-payout-transit-badge-bank"
+            className="inst-payout-transit-badge inst-payout-transit-badge-bank inst-payout-transit-badge-wordmark"
             animate={{ scale: [1, 1.03, 1], opacity: [0.92, 1, 0.92] }}
             transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
           >
-            <Landmark size={22} strokeWidth={1.75} className="text-slate-300" />
+            <BlackRockWordmark compact />
           </motion.div>
-          <p className="inst-payout-transit-label">Our bank</p>
+          <p className="inst-payout-transit-label">BlackRock</p>
         </div>
 
         <div className="inst-payout-transit-bridge inst-payout-reject-bridge">

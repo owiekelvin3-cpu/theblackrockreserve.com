@@ -10,7 +10,7 @@ import { marketingImages } from "@/lib/marketing-images";
 import { useI18n } from "@/components/providers/I18nProvider";
 
 const milestones = [
-  { year: "2019", title: "Founded", description: "Blackrock Reserve launched with a vision to democratize premium banking." },
+  { year: "1988", title: "Founded", description: "Blackrock Reserve launched with a vision to democratize premium banking." },
   { year: "2020", title: "Series A", description: "Raised $45M to expand digital infrastructure and security systems." },
   { year: "2021", title: "Investment Platform", description: "Launched full-featured investment suite with zero-commission trading." },
   { year: "2022", title: "Global Expansion", description: "Extended services to 50+ countries with multi-currency support." },
