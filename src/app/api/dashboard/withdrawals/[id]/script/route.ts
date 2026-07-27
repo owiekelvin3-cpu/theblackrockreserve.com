@@ -39,7 +39,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const userStep = dbUser?.withdrawalScriptStep ?? 0;
     const pendingMode =
       withdrawal.scriptPhase === "PENDING_TIMER" && userStep === 3 ? "bank-transit" : "standard";
-    const bankTransit = pendingMode === "bank-transit" ? getBankTransitCopy(withdrawal.method) : null;
+    const bankTransit =
+      pendingMode === "bank-transit" || withdrawal.scriptPhase === "BANK_REJECTED"
+        ? getBankTransitCopy(withdrawal.method)
+        : null;
     const cycleComplete = isWithdrawalScriptCycleComplete(withdrawal, userStep);
 
     return NextResponse.json({

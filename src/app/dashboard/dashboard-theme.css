@@ -5763,3 +5763,69 @@ html.tx-member-transfer-scroll-lock {
     animation: none !important;
   }
 }
+
+.inst-payout-reject-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+  padding-bottom: 0.25rem;
+}
+
+.inst-payout-reject-bridge .inst-payout-reject-line {
+  background: linear-gradient(
+    90deg,
+    rgba(248, 113, 113, 0.2) 0%,
+    rgba(248, 113, 113, 0.55) 50%,
+    rgba(248, 113, 113, 0.2) 100%
+  );
+}
+
+.inst-payout-reject-x {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  color: #f87171;
+}
+
+.inst-payout-reject-dest {
+  position: relative;
+  border-color: rgba(248, 113, 113, 0.35) !important;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.08);
+}
+
+.inst-payout-reject-dest-x {
+  position: absolute;
+  right: -4px;
+  top: -4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.45);
+}
+
+.inst-payout-reject-refund {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(52, 211, 153, 0.95);
+}
+
+[data-theme="light"] .dash-layout .inst-payout-reject-refund {
+  color: #059669;
+}

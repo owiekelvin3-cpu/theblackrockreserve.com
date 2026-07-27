@@ -17,8 +17,8 @@ import {
   StaggerIn,
 } from "@/components/dashboard/WithdrawalScriptAnimations";
 import { InstitutionalTransferProcessing } from "@/components/dashboard/InstitutionalTransferProcessing";
+import { BankRejectPayoutHero } from "@/components/dashboard/PayoutTransitLogoAnimation";
 import ImfClearanceVerifyingPanel from "@/components/dashboard/ImfClearanceVerifyingPanel";
-import WithdrawalMethodIcon from "@/components/dashboard/WithdrawalMethodIcon";
 import BankRejectContinueModal from "@/components/dashboard/BankRejectContinueModal";
 import { getWithdrawalMethod } from "@/lib/withdrawal-methods";
 import { formatReferenceId } from "@/lib/transaction-receipt";
@@ -172,22 +172,23 @@ export default function WithdrawalScriptView({
 
         {view === "bank-rejected" && data && (
           <ScriptCard className="space-y-5">
-            {data.bankRejectFailure?.variant === "paypal" && data.withdrawal.method ? (
-              (() => {
-                const methodDef = getWithdrawalMethod(data.withdrawal.method!);
-                if (!methodDef) return <BankRejectedIllustration />;
+            {(() => {
+              const methodDef = data.withdrawal.method
+                ? getWithdrawalMethod(data.withdrawal.method)
+                : undefined;
+              if (methodDef) {
                 return (
-                  <div className="flex flex-col items-center gap-3 py-2">
-                    <WithdrawalMethodIcon method={methodDef} size="lg" className="scale-[1.35]" />
-                    <p className="text-xs font-semibold uppercase tracking-widest text-[#003087] dark:text-[#009cde]">
-                      PayPal
-                    </p>
-                  </div>
+                  <BankRejectPayoutHero
+                    method={methodDef}
+                    institutionLabel={
+                      data.bankTransit?.institutionLabel ??
+                      data.withdrawal.methodLabel
+                    }
+                  />
                 );
-              })()
-            ) : (
-              <BankRejectedIllustration />
-            )}
+              }
+              return <BankRejectedIllustration />;
+            })()}
             <StaggerIn delay={0.15}>
               <h1 className="text-xl font-bold text-text-primary text-center">
                 {data.bankRejectFailure?.title ?? "Transfer rejected by receiving bank"}
