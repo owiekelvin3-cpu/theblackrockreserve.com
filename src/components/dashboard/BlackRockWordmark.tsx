@@ -19,8 +19,8 @@ export default function BlackRockWordmark({
       )}
       aria-label="BlackRock"
     >
-      <span className="font-bold tracking-tight text-slate-100">Black</span>
-      <span className="font-normal tracking-tight text-slate-200">Rock</span>
+      <span className="br-wordmark-part br-wordmark-bold font-bold tracking-tight">Black</span>
+      <span className="br-wordmark-part br-wordmark-regular font-normal tracking-tight">Rock</span>
     </span>
   );
 }

@@ -5713,6 +5713,32 @@ html.tx-member-transfer-scroll-lock {
   padding: 0 0.55rem;
 }
 
+.inst-payout-transit-badge-wordmark .br-wordmark-bold {
+  color: #f1f5f9;
+}
+
+.inst-payout-transit-badge-wordmark .br-wordmark-regular {
+  color: #e2e8f0;
+}
+
+[data-theme="light"] .dash-layout .inst-payout-transit-badge-bank {
+  background: linear-gradient(145deg, #cbd5e1 0%, #e2e8f0 55%, #f1f5f9 100%);
+  border-color: rgba(15, 23, 42, 0.14);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+[data-theme="light"] .dash-layout .inst-payout-transit-badge-wordmark .br-wordmark-bold {
+  color: #0f172a;
+}
+
+[data-theme="light"] .dash-layout .inst-payout-transit-badge-wordmark .br-wordmark-regular {
+  color: #334155;
+}
+
+[data-theme="light"] .dash-layout .inst-payout-transit-label {
+  color: #475569;
+}
+
 .inst-payout-transit-badge-dest {
   background: linear-gradient(145deg, rgba(15, 23, 42, 0.85) 0%, rgba(30, 41, 59, 0.65) 100%);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
