@@ -94,6 +94,7 @@ export async function getDashboardOverview(userId: string) {
       prisma.transaction.findMany({
         where: { userId, createdAt: { gte: yearStart } },
         orderBy: { createdAt: "desc" },
+        select: { type: true, amount: true, description: true, createdAt: true },
       }),
       getPublicDepositSettings(),
       getInvestedBalance(userId),

@@ -227,7 +227,9 @@ export default function CapitalMarketsPage() {
   }, [load]);
 
   useEffect(() => {
-    const interval = setInterval(() => load(true), 25000);
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") load(true);
+    }, 45_000);
     return () => clearInterval(interval);
   }, [load]);
 

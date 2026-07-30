@@ -1,9 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getExchangeRates } from "@/lib/exchange-rates";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/admin-audit";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const ip = getClientIp(request) ?? "anonymous";
+  const limited = checkRateLimit(`currency:rates:${ip}`, 120, 60_000);
+  if (!limited.allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   try {
     const { rates, fetchedAt, stale } = await getExchangeRates();
     return NextResponse.json(

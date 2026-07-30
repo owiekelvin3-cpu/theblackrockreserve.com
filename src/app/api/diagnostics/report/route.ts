@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logConnectivity } from "@/lib/connectivity-log";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/admin-audit";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +21,12 @@ type ClientReport = {
 };
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request) ?? "anonymous";
+  const limited = checkRateLimit(`diagnostics:report:${ip}`, 120, 60 * 60 * 1000);
+  if (!limited.allowed) {
+    return NextResponse.json({ error: "Too many reports" }, { status: 429 });
+  }
+
   let body: ClientReport = {};
   try {
     const raw = await request.text();

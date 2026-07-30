@@ -16,6 +16,7 @@ import {
 } from "@/components/admin/AdminUi";
 import AdminFetchState from "@/components/admin/AdminFetchState";
 import { useAdminFetch } from "@/hooks/use-admin-fetch";
+import { useAdminProofPreview } from "@/hooks/use-admin-proof-preview";
 import { formatCurrency } from "@/lib/utils";
 
 interface DepositRow {
@@ -28,7 +29,6 @@ interface DepositRow {
   amountUsd: number | null;
   bitcoinWalletAddress: string | null;
   txHash: string | null;
-  proofImage: string | null;
   hasProofImage: boolean;
   proofNote: string | null;
   status: string;
@@ -92,8 +92,14 @@ function DepositActions({
   );
 }
 
-function DepositProofCell({ d, onView }: { d: DepositRow; onView: () => void }) {
-  if (d.proofImage) {
+function DepositProofCell({
+  d,
+  onView,
+}: {
+  d: DepositRow;
+  onView: () => void;
+}) {
+  if (d.hasProofImage) {
     return (
       <button type="button" onClick={onView} className="admin-link text-xs">
         View screenshot
@@ -112,13 +118,20 @@ function DepositProofCell({ d, onView }: { d: DepositRow; onView: () => void }) 
 
 export default function AdminDepositsPage() {
   const { data, error, loading, refresh, lastUpdated } = useAdminFetch<{ deposits: DepositRow[] }>("/api/admin/deposits");
+  const { openProof, modal: proofModal } = useAdminProofPreview();
   const deposits = data?.deposits ?? [];
   const [reviewing, setReviewing] = useState<string | null>(null);
   const [creditAmount, setCreditAmount] = useState<Record<string, string>>({});
   const [filter, setFilter] = useState<"all" | "pending">("pending");
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
-  const [proofPreview, setProofPreview] = useState<DepositRow | null>(null);
+
+  const viewDepositProof = (d: DepositRow) => {
+    void openProof(`/api/admin/deposits/${d.id}/proof`, {
+      title: "Transaction proof",
+      description: `${d.userName} · ${d.amountUsd != null ? formatCurrency(d.amountUsd) : "Amount not set"}`,
+    });
+  };
 
   const pendingCount = deposits.filter((d) => d.status === "PENDING").length;
   const filtered = filter === "pending" ? deposits.filter((d) => d.status === "PENDING") : deposits;
@@ -219,7 +232,7 @@ export default function AdminDepositsPage() {
                   </div>
                   <div className="col-span-2">
                     <p className="text-[var(--admin-muted)]">Proof</p>
-                    <DepositProofCell d={d} onView={() => setProofPreview(d)} />
+                    <DepositProofCell d={d} onView={() => viewDepositProof(d)} />
                   </div>
                   <div className="col-span-2">
                     <p className="text-[var(--admin-muted)]">Account</p>
@@ -274,7 +287,7 @@ export default function AdminDepositsPage() {
                       {d.bitcoinWalletAddress ?? "—"}
                     </td>
                     <td>
-                      <DepositProofCell d={d} onView={() => setProofPreview(d)} />
+                      <DepositProofCell d={d} onView={() => viewDepositProof(d)} />
                     </td>
                     <td>
                       <DepositStatusBadge status={d.status} label={d.statusLabel} />
@@ -330,30 +343,7 @@ export default function AdminDepositsPage() {
         />
       </AdminModal>
 
-      <AdminModal
-        open={!!proofPreview?.proofImage}
-        onClose={() => setProofPreview(null)}
-        title="Transaction proof"
-        description={
-          proofPreview
-            ? `${proofPreview.userName} · ${proofPreview.amountUsd != null ? formatCurrency(proofPreview.amountUsd) : "Amount not set"}`
-            : undefined
-        }
-        footer={
-          <button type="button" className="admin-btn-ghost text-xs px-4 py-2" onClick={() => setProofPreview(null)}>
-            Close
-          </button>
-        }
-      >
-        {proofPreview?.proofImage && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={proofPreview.proofImage}
-            alt="Transaction proof"
-            className="w-full max-h-[70vh] object-contain rounded-lg border border-[var(--admin-border)]"
-          />
-        )}
-      </AdminModal>
+      {proofModal}
     </AdminPage>
   );
 }

@@ -3,6 +3,7 @@ import {
   formatSupportAttachmentLabel,
   type ValidatedSupportAttachment,
 } from "@/lib/support-attachment";
+import { clampAdminListLimit } from "@/lib/db-list-limits";
 
 export type SupportMessageDto = {
   id: string;
@@ -157,13 +158,14 @@ export async function sendUserSupportMessage(
   return getUserSupportConversation(userId);
 }
 
-export async function getAdminSupportConversations() {
+export async function getAdminSupportConversations(limit = 200) {
   try {
     const conversations = await prisma.supportConversation.findMany({
       where: {
         messages: { some: { role: "USER" } },
       },
       orderBy: { updatedAt: "desc" },
+      take: clampAdminListLimit(limit),
       include: {
         user: { select: { id: true, name: true, email: true } },
         messages: {

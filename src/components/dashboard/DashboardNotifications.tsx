@@ -114,6 +114,8 @@ export default function DashboardNotifications() {
   const panelRef = useRef<HTMLDivElement>(null);
   const seenIdsRef = useRef<Set<string>>(new Set());
   const pushReadyRef = useRef(false);
+  const lastSilentRefreshRef = useRef(0);
+  const SILENT_REFRESH_GAP_MS = 3_000;
 
   const alertNewItems = useCallback((fresh: Notification[]) => {
     if (fresh.length === 0) return;
@@ -163,16 +165,23 @@ export default function DashboardNotifications() {
     load();
     const interval = window.setInterval(() => {
       if (document.visibilityState === "visible") load(true);
-    }, 45_000);
+    }, 60_000);
     const onRefresh = () => load(true);
+    const scheduleSilentRefresh = () => {
+      if (document.visibilityState !== "visible") return;
+      const now = Date.now();
+      if (now - lastSilentRefreshRef.current < SILENT_REFRESH_GAP_MS) return;
+      lastSilentRefreshRef.current = now;
+      load(true);
+    };
     window.addEventListener("notifications:refresh", onRefresh);
-    window.addEventListener("focus", onRefresh);
-    document.addEventListener("visibilitychange", onRefresh);
+    window.addEventListener("focus", scheduleSilentRefresh);
+    document.addEventListener("visibilitychange", scheduleSilentRefresh);
     return () => {
       window.clearInterval(interval);
       window.removeEventListener("notifications:refresh", onRefresh);
-      window.removeEventListener("focus", onRefresh);
-      document.removeEventListener("visibilitychange", onRefresh);
+      window.removeEventListener("focus", scheduleSilentRefresh);
+      document.removeEventListener("visibilitychange", scheduleSilentRefresh);
     };
   }, [load]);
 

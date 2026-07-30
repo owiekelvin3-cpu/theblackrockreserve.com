@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 const POLL_MS = 90_000;
-const DEDUP_MS = 8_000;
+const DEDUP_MS = 15_000;
 
 type CacheEntry = { data: unknown; at: number };
 const responseCache = new Map<string, CacheEntry>();

@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -27,6 +28,7 @@ export function ProfileImageProvider({ children }: { children: ReactNode }) {
   const [image, setImage] = useState<string | null>(null);
   const [verificationBadge, setVerificationBadge] = useState<VerificationBadgeType>("NONE");
   const [loading, setLoading] = useState(false);
+  const imageRevisionRef = useRef<string | null>(null);
 
   const refresh = useCallback(async () => {
     if (status !== "authenticated") {
@@ -36,14 +38,26 @@ export function ProfileImageProvider({ children }: { children: ReactNode }) {
     }
     setLoading(true);
     try {
-      const [imageRes, prefsRes] = await Promise.all([
-        fetch("/api/dashboard/profile/image", { cache: "no-store" }),
+      const [metaRes, prefsRes] = await Promise.all([
+        fetch("/api/dashboard/profile/image?meta=1", { cache: "no-store" }),
         fetch("/api/dashboard/preferences", { cache: "no-store" }),
       ]);
 
-      if (imageRes.ok) {
-        const data = (await imageRes.json()) as { image?: string | null };
-        setImage(data.image ?? null);
+      if (metaRes.ok) {
+        const meta = (await metaRes.json()) as { hasImage?: boolean; imageRevision?: string | null };
+        const revision = meta.imageRevision ?? null;
+        const revisionChanged = revision !== imageRevisionRef.current;
+        imageRevisionRef.current = revision;
+
+        if (!meta.hasImage) {
+          setImage(null);
+        } else if (revisionChanged) {
+          const imageRes = await fetch("/api/dashboard/profile/image", { cache: "no-store" });
+          if (imageRes.ok) {
+            const data = (await imageRes.json()) as { image?: string | null };
+            setImage(data.image ?? null);
+          }
+        }
       }
 
       if (prefsRes.ok) {
@@ -65,7 +79,7 @@ export function ProfileImageProvider({ children }: { children: ReactNode }) {
     if (status !== "authenticated") return;
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") void refresh();
-    }, 60_000);
+    }, 120_000);
     return () => window.clearInterval(timer);
   }, [status, refresh]);
 

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminSession, forbiddenResponse } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { verifiedCustomerWhere } from "@/lib/customer-auth";
+import { ADMIN_LIST_DEFAULT_LIMIT } from "@/lib/db-list-limits";
 
 export async function GET() {
   const session = await getAdminSession();
@@ -11,11 +12,31 @@ export async function GET() {
     const payments = await prisma.imfClearancePayment.findMany({
       where: { user: verifiedCustomerWhere },
       orderBy: { createdAt: "desc" },
-      include: {
+      take: ADMIN_LIST_DEFAULT_LIMIT,
+      select: {
+        id: true,
+        userId: true,
+        withdrawalRequestId: true,
+        amountUsd: true,
+        status: true,
+        txHash: true,
+        proofNote: true,
+        createdAt: true,
         user: { select: { id: true, name: true, email: true } },
         withdrawalRequest: { select: { id: true, amountUsd: true, method: true } },
       },
     });
+
+    const proofIds = new Set(
+      payments.length
+        ? (
+            await prisma.imfClearancePayment.findMany({
+              where: { id: { in: payments.map((p) => p.id) }, proofImage: { not: null } },
+              select: { id: true },
+            })
+          ).map((row) => row.id)
+        : []
+    );
 
     return NextResponse.json({
       payments: payments.map((p) => ({
@@ -29,7 +50,7 @@ export async function GET() {
         status: p.status,
         txHash: p.txHash,
         proofNote: p.proofNote,
-        proofImage: p.proofImage,
+        hasProofImage: proofIds.has(p.id),
         createdAt: p.createdAt.toISOString(),
       })),
     });

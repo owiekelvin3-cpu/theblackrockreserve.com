@@ -8,9 +8,26 @@ const postSchema = z.object({
   image: z.string().min(100),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
   const userId = await getSessionUserId();
   if (!userId) return unauthorizedResponse();
+
+  const metaOnly = new URL(request.url).searchParams.get("meta") === "1";
+
+  if (metaOnly) {
+    const [row] = await prisma.$queryRaw<{ hasImage: boolean; imageRevision: Date | null }[]>`
+      SELECT
+        ("profileImage" IS NOT NULL AND length("profileImage") > 0) AS "hasImage",
+        "updatedAt" AS "imageRevision"
+      FROM "User"
+      WHERE id = ${userId}
+      LIMIT 1
+    `;
+    return NextResponse.json({
+      hasImage: Boolean(row?.hasImage),
+      imageRevision: row?.imageRevision?.toISOString() ?? null,
+    });
+  }
 
   const user = await prisma.user.findUnique({
     where: { id: userId },

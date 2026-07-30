@@ -1,9 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getPublicContactSettings } from "@/lib/platform-settings";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/admin-audit";
 
 export const revalidate = 300;
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const ip = getClientIp(request) ?? "anonymous";
+  const limited = checkRateLimit(`contact:settings:${ip}`, 60, 60_000);
+  if (!limited.allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   try {
     const settings = await getPublicContactSettings();
     return NextResponse.json(settings, {

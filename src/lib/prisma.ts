@@ -1,4 +1,5 @@
 import { Prisma, PrismaClient } from "@prisma/client";
+import { isPrismaQueryStatsEnabled, recordPrismaQuery } from "@/lib/prisma-query-stats";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -176,8 +177,13 @@ function resolveDirectDatabaseUrl(): string {
 
 function createPrismaClient() {
   const dbUrl = withPoolSettings(process.env.DATABASE_URL);
+  const queryStats = isPrismaQueryStatsEnabled();
   const options: ConstructorParameters<typeof PrismaClient>[0] = {
-    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+    log: queryStats
+      ? [{ emit: "event", level: "query" }]
+      : process.env.NODE_ENV === "development"
+        ? ["error", "warn"]
+        : ["error"],
   };
 
   // Only override the datasource when a URL exists — passing `undefined` breaks `next build`
@@ -185,7 +191,18 @@ function createPrismaClient() {
     options.datasources = { db: { url: dbUrl } };
   }
 
-  return new PrismaClient(options);
+  const client = new PrismaClient(options);
+
+  if (queryStats) {
+    (client as PrismaClient<{ log: [{ emit: "event"; level: "query" }] }>).$on(
+      "query",
+      (event: Prisma.QueryEvent) => {
+        recordPrismaQuery(event.query, event.duration);
+      }
+    );
+  }
+
+  return client;
 }
 
 function createTransactionPrismaClient() {

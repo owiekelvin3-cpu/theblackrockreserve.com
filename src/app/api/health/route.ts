@@ -3,19 +3,39 @@ import { isNextAuthConfigured } from "@/lib/auth-config";
 import { isEmailConfigured, getEmailProvider } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 import { logConnectivity } from "@/lib/connectivity-log";
+import { getCachedDbHealth, setCachedDbHealth } from "@/lib/health-db-cache";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/admin-audit";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  const ip = getClientIp(request) ?? "anonymous";
+  const limited = checkRateLimit(`health:${ip}`, 30, 60_000);
+  if (!limited.allowed) {
+    return NextResponse.json({ ok: false, error: "Too many health checks" }, { status: 429 });
+  }
+
   const start = Date.now();
   let databaseOk = false;
   let dbError: string | null = null;
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    databaseOk = true;
-  } catch (err) {
-    databaseOk = false;
-    dbError = err instanceof Error ? err.message.slice(0, 120) : "db_error";
+  let dbFromCache = false;
+
+  const cached = getCachedDbHealth();
+  if (cached) {
+    databaseOk = cached.ok;
+    dbError = cached.error;
+    dbFromCache = true;
+  } else {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      databaseOk = true;
+      setCachedDbHealth(true, null);
+    } catch (err) {
+      databaseOk = false;
+      dbError = err instanceof Error ? err.message.slice(0, 120) : "db_error";
+      setCachedDbHealth(false, dbError);
+    }
   }
 
   const durationMs = Date.now() - start;
@@ -28,7 +48,7 @@ export async function GET(request: NextRequest) {
     ok,
     durationMs,
     error: dbError ?? undefined,
-    extra: { databaseOk, authOk },
+    extra: { databaseOk, authOk, dbFromCache },
   });
 
   // Production: only expose status booleans (no secrets, URLs, or provider details).

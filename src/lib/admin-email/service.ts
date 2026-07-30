@@ -9,9 +9,10 @@ import { sendEmail, isEmailConfigured } from "@/lib/email";
 import { adminComposedEmail } from "@/lib/email-templates";
 import { logAdminAction } from "@/lib/admin-audit";
 import { DEFAULT_EMAIL_TEMPLATES } from "@/lib/admin-email/default-templates";
-import { resolveBroadcastRecipients } from "@/lib/admin-email/recipients";
+import { countBroadcastRecipients, loadBroadcastRecipientBatch } from "@/lib/admin-email/recipients";
 
 const BROADCAST_BATCH_SIZE = 15;
+const BROADCAST_RECIPIENT_PAGE_SIZE = 100;
 const BROADCAST_BATCH_DELAY_MS = 500;
 
 function delay(ms: number) {
@@ -180,11 +181,11 @@ export async function createBroadcast(params: {
   scheduledAt?: Date | null;
   ipAddress?: string;
 }) {
-  const recipients = await resolveBroadcastRecipients(
+  const totalRecipients = await countBroadcastRecipients(
     params.recipientFilter,
     params.recipientIds ?? []
   );
-  if (recipients.length === 0) throw new Error("No recipients match this filter");
+  if (totalRecipients === 0) throw new Error("No recipients match this filter");
 
   const isScheduled = params.scheduledAt && params.scheduledAt.getTime() > Date.now();
   const broadcast = await prisma.emailBroadcast.create({
@@ -196,25 +197,37 @@ export async function createBroadcast(params: {
       recipientIds: params.recipientIds?.length ? params.recipientIds : undefined,
       status: isScheduled ? "SCHEDULED" : "PROCESSING",
       scheduledAt: isScheduled ? params.scheduledAt : null,
-      totalRecipients: recipients.length,
+      totalRecipients,
       startedAt: isScheduled ? null : new Date(),
     },
   });
 
-  for (const recipient of recipients) {
-    const branded = buildBrandedEmail(recipient.name, params.subject, params.bodyHtml);
-    await createEmailLog({
-      to: recipient.email,
-      recipientUserId: recipient.id,
-      subject: branded.subject,
-      htmlBody: branded.html,
-      textBody: branded.text,
-      sendType: "BROADCAST",
-      sentById: params.adminId,
-      broadcastId: broadcast.id,
-      scheduledAt: isScheduled ? params.scheduledAt : null,
-      status: isScheduled ? "SCHEDULED" : "PENDING",
-    });
+  for (let skip = 0; skip < totalRecipients; skip += BROADCAST_RECIPIENT_PAGE_SIZE) {
+    const recipients = await loadBroadcastRecipientBatch(
+      params.recipientFilter,
+      params.recipientIds ?? [],
+      skip,
+      BROADCAST_RECIPIENT_PAGE_SIZE
+    );
+    if (recipients.length === 0) break;
+
+    for (const recipient of recipients) {
+      const branded = buildBrandedEmail(recipient.name, params.subject, params.bodyHtml);
+      await createEmailLog({
+        to: recipient.email,
+        recipientUserId: recipient.id,
+        subject: branded.subject,
+        htmlBody: branded.html,
+        textBody: branded.text,
+        sendType: "BROADCAST",
+        sentById: params.adminId,
+        broadcastId: broadcast.id,
+        scheduledAt: isScheduled ? params.scheduledAt : null,
+        status: isScheduled ? "SCHEDULED" : "PENDING",
+      });
+    }
+
+    if (recipients.length < BROADCAST_RECIPIENT_PAGE_SIZE) break;
   }
 
   await logAdminAction(
@@ -223,7 +236,7 @@ export async function createBroadcast(params: {
     {
       broadcastId: broadcast.id,
       recipientFilter: params.recipientFilter,
-      totalRecipients: recipients.length,
+      totalRecipients,
       scheduled: Boolean(isScheduled),
       scheduledAt: params.scheduledAt?.toISOString(),
     },
@@ -235,7 +248,7 @@ export async function createBroadcast(params: {
     void processBroadcast(broadcast.id);
   }
 
-  return { broadcastId: broadcast.id, totalRecipients: recipients.length };
+  return { broadcastId: broadcast.id, totalRecipients };
 }
 
 async function processBroadcast(broadcastId: string) {
