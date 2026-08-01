@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Send, UserRound } from "lucide-react";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+import CurrencyAmountInput from "@/components/ui/CurrencyAmountInput";
 import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
 import type { MemberTransferReceiptData } from "@/components/dashboard/MemberTransferReceiptModal";
 import { useTransactionPin } from "@/hooks/use-transaction-pin";
@@ -26,10 +27,10 @@ type Props = {
 };
 
 export default function NameTransferPanel({ accounts, onTransferComplete, className }: Props) {
-  const { t, formatCurrency } = useI18n();
+  const { t, formatCurrency, convertToUsd } = useI18n();
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? "");
   const [recipientName, setRecipientName] = useState("");
-  const [amountUsd, setAmountUsd] = useState("");
+  const [amountDisplay, setAmountDisplay] = useState("");
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -37,7 +38,7 @@ export default function NameTransferPanel({ accounts, onTransferComplete, classN
   const { open: pinOpen, loading: pinLoading, error: pinError, requestPin, closePin, confirmPin } = useTransactionPin();
 
   const submitTransfer = async (transactionPin: string) => {
-    const transferAmount = Number(amountUsd);
+    const transferAmount = convertToUsd(Number(amountDisplay));
     const name = recipientName.trim();
     const memo = note.trim() || null;
     const sourceAccountName = selectedAccount?.name ?? "";
@@ -78,7 +79,7 @@ export default function NameTransferPanel({ accounts, onTransferComplete, classN
           };
 
       setRecipientName("");
-      setAmountUsd("");
+      setAmountDisplay("");
       setNote("");
 
       onTransferComplete?.(receipt);
@@ -92,7 +93,7 @@ export default function NameTransferPanel({ accounts, onTransferComplete, classN
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const amount = Number(amountUsd);
+    const amountInUsd = convertToUsd(Number(amountDisplay));
     if (!accountId) {
       toast.error(t("withdrawals.errors.noAccount"));
       return;
@@ -101,12 +102,12 @@ export default function NameTransferPanel({ accounts, onTransferComplete, classN
       toast.error(t("withdrawals.nameTransfer.recipientNameRequired"));
       return;
     }
-    if (!Number.isFinite(amount) || amount <= 0) {
+    if (!Number.isFinite(Number(amountDisplay)) || Number(amountDisplay) <= 0) {
       toast.error(t("withdrawals.errors.invalidAmount"));
       return;
     }
     const available = selectedAccount?.availableBalance ?? 0;
-    if (amount > available) {
+    if (amountInUsd > available) {
       toast.error(t("withdrawals.errors.insufficientBalance", { amount: formatCurrency(available) }));
       return;
     }
@@ -161,14 +162,9 @@ export default function NameTransferPanel({ accounts, onTransferComplete, classN
           />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Input
-              label={t("withdrawals.amountUsd")}
-              type="number"
-              value={amountUsd}
-              onChange={(e) => setAmountUsd(e.target.value)}
-              placeholder="0.00"
-              min="0.01"
-              step="0.01"
+            <CurrencyAmountInput
+              value={amountDisplay}
+              onChange={setAmountDisplay}
               required
             />
             <Input
@@ -185,7 +181,7 @@ export default function NameTransferPanel({ accounts, onTransferComplete, classN
             disabled={
               submitting ||
               !recipientName.trim() ||
-              !amountUsd ||
+              !amountDisplay ||
               (selectedAccount?.availableBalance ?? 0) <= 0
             }
             isLoading={submitting}

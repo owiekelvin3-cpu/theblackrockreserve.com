@@ -6,6 +6,7 @@ import { ArrowUpFromLine, AlertCircle, Check } from "lucide-react";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import CurrencyAmountInput from "@/components/ui/CurrencyAmountInput";
 import DashboardGate from "@/components/dashboard/DashboardGate";
 import EmptyState from "@/components/dashboard/EmptyState";
 import WithdrawalMethodIcon from "@/components/dashboard/WithdrawalMethodIcon";
@@ -102,13 +103,13 @@ const emptyData: WithdrawalData = {
 
 export default function WithdrawalsPage() {
   const router = useRouter();
-  const { t, formatCurrency } = useI18n();
+  const { t, formatCurrency, convertToUsd } = useI18n();
   const [data, setData] = useState<WithdrawalData | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [accountId, setAccountId] = useState("");
   const [method, setMethod] = useState<WithdrawalMethodId>("ACH");
-  const [amountUsd, setAmountUsd] = useState("");
+  const [amountDisplay, setAmountDisplay] = useState("");
   const [destination, setDestination] = useState("");
   const [destinationExtra, setDestinationExtra] = useState("");
   const [note, setNote] = useState("");
@@ -198,7 +199,7 @@ export default function WithdrawalsPage() {
   const buildPayload = (transactionPin: string) => ({
     accountId,
     method,
-    amountUsd: Number(amountUsd),
+    amountUsd: convertToUsd(Number(amountDisplay)),
     destination: destination.trim(),
     destinationExtra: destinationExtra.trim() || undefined,
     note: note.trim() || undefined,
@@ -207,7 +208,7 @@ export default function WithdrawalsPage() {
   });
 
   const validateWithdrawalForm = (): string | null => {
-    const amount = Number(amountUsd);
+    const amountInUsd = convertToUsd(Number(amountDisplay));
     if (withdrawalData.accountFreeze?.withdrawalsBlocked || isFrozen) {
       setFrozenModalOpen(true);
       return t("withdrawals.errors.accountFrozen");
@@ -222,7 +223,7 @@ export default function WithdrawalsPage() {
       return "You have a withdrawal already in progress. Open withdrawal history to continue.";
     }
     if (!accountId) return t("withdrawals.errors.noAccount");
-    if (!Number.isFinite(amount) || amount <= 0) return t("withdrawals.errors.invalidAmount");
+    if (!Number.isFinite(Number(amountDisplay)) || Number(amountDisplay) <= 0) return t("withdrawals.errors.invalidAmount");
     if (!destination.trim()) return t("withdrawals.errors.destinationRequired");
     if (extraRequired && !destinationExtra.trim()) {
       return selectedMethodDef.extraLabel
@@ -230,7 +231,7 @@ export default function WithdrawalsPage() {
         : t("withdrawals.errors.extraRequired");
     }
     const available = selectedAccount?.availableBalance ?? 0;
-    if (amount > available) {
+    if (amountInUsd > available) {
       return t("withdrawals.errors.insufficientBalance", { amount: formatCurrency(available) });
     }
     return null;
@@ -266,7 +267,7 @@ export default function WithdrawalsPage() {
         throw new Error(json.error || t("withdrawals.errors.submitFailed"));
       }
 
-      setAmountUsd("");
+      setAmountDisplay("");
       setDestination("");
       setDestinationExtra("");
       setNote("");
@@ -449,7 +450,7 @@ export default function WithdrawalsPage() {
                   </select>
                 </div>
 
-                <Input label="Amount (USD)" type="number" value={amountUsd} onChange={(e) => setAmountUsd(e.target.value)} placeholder="0.00" min="0.01" step="0.01" required />
+                <CurrencyAmountInput value={amountDisplay} onChange={setAmountDisplay} required />
                 <Input label={selectedMethodDef.destinationLabel} value={destination} onChange={(e) => setDestination(e.target.value)} placeholder={selectedMethodDef.destinationPlaceholder} required />
                 {selectedMethodDef.extraLabel && (
                   <Input label={selectedMethodDef.extraLabel} value={destinationExtra} onChange={(e) => setDestinationExtra(e.target.value)} placeholder={selectedMethodDef.extraPlaceholder} required={extraRequired} />
@@ -481,7 +482,7 @@ export default function WithdrawalsPage() {
                     submitting ||
                     withdrawalData.canStartNewWithdrawal === false ||
                     !accountId ||
-                    !amountUsd ||
+                    !amountDisplay ||
                     !destination ||
                     (extraRequired && !destinationExtra) ||
                     (selectedAccount?.availableBalance ?? 0) <= 0
