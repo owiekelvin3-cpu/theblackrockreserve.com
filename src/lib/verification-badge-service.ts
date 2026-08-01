@@ -6,7 +6,6 @@ import {
   isVerificationSchemaError,
   verificationSchemaErrorMessage,
 } from "@/lib/verification-badge-schema";
-import { clampAdminListLimit, ADMIN_LIST_DEFAULT_LIMIT } from "@/lib/db-list-limits";
 
 export type VerificationBadgeUserRow = {
   id: string;
@@ -76,12 +75,10 @@ export async function getVerificationBadgeUsers(filters?: {
   search?: string;
   badgeType?: VerificationBadgeType;
   verifiedOnly?: boolean;
-  limit?: number;
 }) {
   const users = await prisma.user.findMany({
     where: buildUserWhere(filters),
     orderBy: [{ verificationBadge: "desc" }, { verificationBadgeAt: "desc" }, { createdAt: "desc" }],
-    take: clampAdminListLimit(filters?.limit ?? ADMIN_LIST_DEFAULT_LIMIT),
     select: {
       id: true,
       name: true,

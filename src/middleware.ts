@@ -2,18 +2,6 @@ import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 import { isVerifiedCustomerToken } from "@/lib/customer-auth";
 import { auditCookieHeader, COOKIE_CRITICAL_BYTES } from "@/lib/cookie-audit";
-import { isApiRequestStatsEnabled, recordApiRequest } from "@/lib/api-request-stats";
-
-/** Public API routes — skip JWT/cookie gate; each route applies its own limits. */
-function isPublicApiPath(pathname: string): boolean {
-  if (pathname === "/api/health" || pathname === "/api/ping") return true;
-  if (pathname.startsWith("/api/auth/")) return true;
-  if (pathname === "/api/contact" || pathname === "/api/contact/settings") return true;
-  if (pathname.startsWith("/api/currency/")) return true;
-  if (pathname.startsWith("/api/diagnostics/")) return true;
-  if (pathname === "/api/chat") return true;
-  return false;
-}
 
 function dashboardDeniedResponse(
   request: NextRequest,
@@ -44,14 +32,6 @@ function authNotConfiguredResponse(request: NextRequest) {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  if (isApiRequestStatsEnabled() && pathname.startsWith("/api/")) {
-    recordApiRequest(pathname, request.method);
-  }
-
-  if (isPublicApiPath(pathname)) {
-    return NextResponse.next();
-  }
 
   const cookieHeader = request.headers.get("cookie");
   auditCookieHeader(cookieHeader, pathname);
@@ -115,6 +95,9 @@ export const config = {
     "/admin/:path*",
     "/dashboard",
     "/dashboard/:path*",
-    "/api/:path*",
+    "/api/dashboard",
+    "/api/dashboard/:path*",
+    "/api/admin",
+    "/api/admin/:path*",
   ],
 };

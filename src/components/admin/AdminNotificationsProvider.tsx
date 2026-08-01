@@ -50,8 +50,8 @@ const AdminNotificationsContext = createContext<AdminNotificationsContextValue>(
   refresh: () => {},
 });
 
-/** Poll interval — aligned with server-side notification cache (20s). */
-const POLL_MS = 30_000;
+/** Fast enough for support chat; still polls when the tab is in the background. */
+const POLL_MS = 12_000;
 
 export function AdminNotificationsProvider({ children }: { children: React.ReactNode }) {
   const [data, setData] = useState<AdminNotificationData | null>(null);
@@ -76,14 +76,14 @@ export function AdminNotificationsProvider({ children }: { children: React.React
 
   useEffect(() => {
     refresh();
-    const tick = () => {
+    const id = window.setInterval(refresh, POLL_MS);
+    const onVisible = () => {
       if (document.visibilityState === "visible") refresh();
     };
-    const id = window.setInterval(tick, POLL_MS);
-    document.addEventListener("visibilitychange", tick);
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       window.clearInterval(id);
-      document.removeEventListener("visibilitychange", tick);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [refresh]);
 

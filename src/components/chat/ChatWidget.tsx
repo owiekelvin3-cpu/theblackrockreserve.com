@@ -236,7 +236,7 @@ export default function ChatWidget() {
     fetchHumanConversation().finally(() => setHumanLoading(false));
     const id = window.setInterval(() => {
       if (document.visibilityState === "visible") fetchHumanConversation();
-    }, 25_000);
+    }, 12000);
     return () => window.clearInterval(id);
   }, [isDashboard, chatMode, open, fetchHumanConversation]);
 

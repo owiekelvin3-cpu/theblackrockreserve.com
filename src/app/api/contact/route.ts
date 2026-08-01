@@ -5,22 +5,11 @@ import { sendEmail, isEmailConfigured } from "@/lib/email";
 import { contactNotificationEmail } from "@/lib/email-templates";
 import { getPublicContactSettings } from "@/lib/platform-settings";
 import { invalidateAdminCaches } from "@/lib/admin-cache";
-import { checkRateLimit } from "@/lib/rate-limit";
-import { getClientIp } from "@/lib/admin-audit";
 
 const FALLBACK_SUPPORT_INBOX = "blackrockreservesupport@gmail.com";
 
 export async function POST(req: Request) {
   try {
-    const ip = getClientIp(req) ?? "anonymous";
-    const limited = checkRateLimit(`contact:${ip}`, 5, 60 * 60 * 1000);
-    if (!limited.allowed) {
-      return NextResponse.json(
-        { error: "Too many messages. Please try again later." },
-        { status: 429 }
-      );
-    }
-
     const body = await req.json();
     const parsed = contactSchema.safeParse(body);
 

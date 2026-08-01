@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getChatReply } from "@/lib/chatbot";
-import { checkRateLimit } from "@/lib/rate-limit";
-import { getClientIp } from "@/lib/admin-audit";
 
 const chatSchema = z.object({
   message: z.string().min(1, "Message is required").max(1000),
@@ -20,12 +18,6 @@ const chatSchema = z.object({
 
 export async function POST(req: Request) {
   try {
-    const ip = getClientIp(req) ?? "anonymous";
-    const limited = checkRateLimit(`chat:${ip}`, 30, 60_000);
-    if (!limited.allowed) {
-      return NextResponse.json({ error: "Too many messages. Please slow down." }, { status: 429 });
-    }
-
     const body = await req.json();
     const parsed = chatSchema.safeParse(body);
 

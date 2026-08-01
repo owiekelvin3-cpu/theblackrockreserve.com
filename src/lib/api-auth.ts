@@ -1,4 +1,3 @@
-import { cache } from "react";
 import { getServerSession } from "next-auth";
 import { getToken } from "next-auth/jwt";
 import { cookies } from "next/headers";
@@ -7,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { verifiedCustomerWhere } from "@/lib/customer-auth";
 
 /** Verified customer (USER role) — for all dashboard APIs */
-export const getSessionUserId = cache(async (): Promise<string | null> => {
+export async function getSessionUserId(): Promise<string | null> {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id || session.user.role !== "USER") return null;
 
@@ -21,10 +20,10 @@ export const getSessionUserId = cache(async (): Promise<string | null> => {
   });
 
   return user?.id ?? null;
-});
+}
 
 /** Admin APIs — always re-check role/status in DB so demoted/suspended admins lose access. */
-export const getAdminSession = cache(async () => {
+export async function getAdminSession() {
   let candidateId: string | null = null;
   let candidateEmail = "";
   let candidateName = "Admin";
@@ -74,7 +73,7 @@ export const getAdminSession = cache(async () => {
       role: "ADMIN" as const,
     },
   };
-});
+}
 
 export function unauthorizedResponse() {
   return Response.json({ error: "Unauthorized" }, { status: 401 });

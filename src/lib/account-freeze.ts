@@ -2,7 +2,6 @@ import type { AccountFreezeType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { logAdminAction } from "@/lib/admin-audit";
 import { createUserNotification, sendUserNotificationEmail } from "@/lib/user-notifications";
-import { clampAdminListLimit, ADMIN_LIST_DEFAULT_LIMIT } from "@/lib/db-list-limits";
 
 export type AccountFreezeDto = {
   id: string;
@@ -250,7 +249,7 @@ export async function updateFreezeReason(params: {
   return mapFreezeToDto(updated);
 }
 
-export async function getFrozenAccounts(filters?: { search?: string; limit?: number }) {
+export async function getFrozenAccounts(filters?: { search?: string }) {
   const freezes = await prisma.accountFreeze.findMany({
     where: {
       status: "ACTIVE",
@@ -266,7 +265,6 @@ export async function getFrozenAccounts(filters?: { search?: string; limit?: num
         : {}),
     },
     orderBy: { frozenAt: "desc" },
-    take: clampAdminListLimit(filters?.limit ?? ADMIN_LIST_DEFAULT_LIMIT),
     include: {
       user: {
         select: {

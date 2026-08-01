@@ -328,7 +328,7 @@ export default function AdminMessagesPage() {
       if (document.visibilityState === "visible") {
         loadThread(selection.id, true);
       }
-    }, 25_000);
+    }, 12_000);
 
     return () => window.clearInterval(timer);
   }, [selection, loadThread, viewingChat]);

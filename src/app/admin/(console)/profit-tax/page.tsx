@@ -13,10 +13,10 @@ import {
   AdminTableScroll,
   AdminMobileList,
   AdminMobileCard,
+  AdminModal,
 } from "@/components/admin/AdminUi";
 import AdminFetchState from "@/components/admin/AdminFetchState";
 import { useAdminFetch } from "@/hooks/use-admin-fetch";
-import { useAdminProofPreview } from "@/hooks/use-admin-proof-preview";
 import { formatCurrency } from "@/lib/utils";
 
 interface TaxRow {
@@ -41,7 +41,7 @@ interface PaymentRow {
   paymentMethod: string;
   txHash: string | null;
   proofNote: string | null;
-  hasProofImage: boolean;
+  proofImage: string | null;
   createdAt: string;
 }
 
@@ -76,7 +76,7 @@ function PaymentSummary({
         <span className="text-[var(--admin-muted)]">Method</span>
         <span className="text-right text-xs">{payment.paymentMethod}</span>
       </div>
-      {payment.hasProofImage && (
+      {payment.proofImage && (
         <div className="flex justify-between gap-3 items-center">
           <span className="text-[var(--admin-muted)]">Screenshot</span>
           <button type="button" onClick={onViewProof} className="admin-link text-xs">
@@ -111,14 +111,7 @@ export default function AdminProfitTaxPage() {
   const [removeUserId, setRemoveUserId] = useState<string | null>(null);
   const [confirmApplyAll, setConfirmApplyAll] = useState(false);
   const [confirmSaveSingle, setConfirmSaveSingle] = useState(false);
-  const { openProof, modal: proofModal } = useAdminProofPreview();
-
-  const viewPaymentProof = (payment: PaymentRow) => {
-    void openProof(`/api/admin/profit-tax-payments/${payment.id}/proof`, {
-      title: "Tax payment proof",
-      description: `${payment.userName} · ${formatCurrency(payment.amountUsd)}`,
-    });
-  };
+  const [proofPreview, setProofPreview] = useState<PaymentRow | null>(null);
 
   const taxes = data?.taxes ?? [];
   const users = data?.users ?? [];
@@ -363,10 +356,10 @@ export default function AdminProfitTaxPage() {
                       <p className="font-medium">{formatCurrency(p.amountUsd)}</p>
                     </div>
                   </div>
-                  {p.hasProofImage && (
+                  {p.proofImage && (
                     <button
                       type="button"
-                      onClick={() => viewPaymentProof(p)}
+                      onClick={() => setProofPreview(p)}
                       className="admin-link text-xs mb-2"
                     >
                       View screenshot
@@ -419,10 +412,10 @@ export default function AdminProfitTaxPage() {
                         <p className="text-[10px] text-[var(--admin-muted)]">{p.taxPercentage}%</p>
                       </td>
                       <td className="py-3 px-5 text-xs max-w-[160px]">
-                        {p.hasProofImage && (
+                        {p.proofImage && (
                           <button
                             type="button"
-                            onClick={() => viewPaymentProof(p)}
+                            onClick={() => setProofPreview(p)}
                             className="admin-link block mb-1"
                           >
                             View screenshot
@@ -433,7 +426,7 @@ export default function AdminProfitTaxPage() {
                             {p.txHash}
                           </p>
                         )}
-                        {!p.hasProofImage && !p.txHash && (
+                        {!p.proofImage && !p.txHash && (
                           <span className="text-[var(--admin-muted)]">{p.paymentMethod}</span>
                         )}
                       </td>
@@ -543,7 +536,7 @@ export default function AdminProfitTaxPage() {
         >
           <PaymentSummary
             payment={selectedPayment}
-            onViewProof={() => viewPaymentProof(selectedPayment)}
+            onViewProof={() => setProofPreview(selectedPayment)}
           />
         </AdminActionModal>
       )}
@@ -564,12 +557,39 @@ export default function AdminProfitTaxPage() {
         >
           <PaymentSummary
             payment={selectedPayment}
-            onViewProof={() => viewPaymentProof(selectedPayment)}
+            onViewProof={() => setProofPreview(selectedPayment)}
           />
         </AdminActionModal>
       )}
 
-      {proofModal}
+      <AdminModal
+        open={!!proofPreview?.proofImage}
+        onClose={() => setProofPreview(null)}
+        title="Tax payment screenshot"
+        description={
+          proofPreview
+            ? `${proofPreview.userName} · ${formatCurrency(proofPreview.amountUsd)}`
+            : undefined
+        }
+        footer={
+          <button
+            type="button"
+            className="admin-btn-ghost text-xs px-4 py-2"
+            onClick={() => setProofPreview(null)}
+          >
+            Close
+          </button>
+        }
+      >
+        {proofPreview?.proofImage && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={proofPreview.proofImage}
+            alt="Tax payment screenshot"
+            className="w-full max-h-[70vh] object-contain rounded-lg border border-[var(--admin-border)]"
+          />
+        )}
+      </AdminModal>
     </AdminPage>
   );
 }
