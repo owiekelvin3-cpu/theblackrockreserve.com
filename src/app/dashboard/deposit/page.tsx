@@ -5,6 +5,7 @@ import { Copy, Check, ExternalLink, Bitcoin, Upload, AlertCircle, CheckCircle2, 
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import CurrencyAmountInput from "@/components/ui/CurrencyAmountInput";
 import DashboardGate from "@/components/dashboard/DashboardGate";
 import { fetchDashboardJson } from "@/lib/fetch-json";
 import { cn } from "@/lib/utils";
@@ -45,13 +46,13 @@ interface SuccessState {
 const DEPOSIT_HISTORY_PREVIEW = 2;
 
 export default function DepositPage() {
-  const { t, formatCurrency } = useI18n();
+  const { t, formatCurrency, convertToUsd } = useI18n();
   const [data, setData] = useState<DepositData | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [copied, setCopied] = useState(false);
   const [accountId, setAccountId] = useState("");
-  const [amountUsd, setAmountUsd] = useState("");
+  const [amountDisplay, setAmountDisplay] = useState("");
   const [proofImage, setProofImage] = useState<string | null>(null);
   const [proofFileName, setProofFileName] = useState("");
   const [proofNote, setProofNote] = useState("");
@@ -120,8 +121,8 @@ export default function DepositPage() {
       toast.error(t("deposit.selectAccount"));
       return;
     }
-    const amount = Number(amountUsd);
-    if (!amountUsd || Number.isNaN(amount) || amount <= 0) {
+    const amountInUsd = convertToUsd(Number(amountDisplay));
+    if (!amountDisplay || Number.isNaN(Number(amountDisplay)) || Number(amountDisplay) <= 0) {
       toast.error(t("deposit.amountRequired"));
       return;
     }
@@ -138,7 +139,7 @@ export default function DepositPage() {
           credentials: "include",
           body: JSON.stringify({
             accountId,
-            amountUsd: amount,
+            amountUsd: amountInUsd,
             proofImage,
             proofNote: proofNote || undefined,
             transactionPin,
@@ -152,15 +153,15 @@ export default function DepositPage() {
           message:
             json.message ??
             t("deposit.submitSuccessDesc", {
-              amount: json.amountLabel ?? formatCurrency(amount),
+              amount: json.amountLabel ?? formatCurrency(amountInUsd),
             }),
-          amountUsd: json.amountUsd ?? amount,
-          amountLabel: json.amountLabel ?? formatCurrency(amount),
+          amountUsd: json.amountUsd ?? amountInUsd,
+          amountLabel: json.amountLabel ?? formatCurrency(amountInUsd),
           statusLabel: json.statusLabel ?? json.deposit?.statusLabel ?? t("deposit.submitSuccessStatus"),
         });
         clearProofImage();
         setProofNote("");
-        setAmountUsd("");
+        setAmountDisplay("");
         load(true);
         dispatchNotificationsRefresh();
         toast.success(json.title ?? t("deposit.submitSuccess"));
@@ -176,7 +177,7 @@ export default function DepositPage() {
   const canSubmit =
     Boolean(accountId) &&
     Boolean(depositData?.accounts.length) &&
-    Boolean(amountUsd && Number(amountUsd) > 0) &&
+    Boolean(amountDisplay && Number(amountDisplay) > 0) &&
     Boolean(proofImage);
 
   return (
@@ -319,14 +320,10 @@ export default function DepositPage() {
               ) : (
                 <p className="text-sm text-accent-red">{t("deposit.noAccount")}</p>
               )}
-              <Input
-                label={t("deposit.amountSent")}
-                type="number"
-                value={amountUsd}
-                onChange={(e) => setAmountUsd(e.target.value)}
+              <CurrencyAmountInput
+                value={amountDisplay}
+                onChange={setAmountDisplay}
                 placeholder={t("deposit.amountPlaceholder")}
-                min="0"
-                step="0.01"
                 required
               />
               <div>
