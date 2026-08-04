@@ -15,6 +15,8 @@ export type SupportMessageDto = {
     mime: string;
     dataUrl: string;
     kind: "image" | "document" | "file";
+    /** Present when attachment exists but blob was omitted from the list payload. */
+    lazy?: boolean;
   } | null;
 };
 
@@ -30,22 +32,27 @@ export type SupportConversationSummary = {
   messageCount: number;
 };
 
-function mapMessage(m: {
-  id: string;
-  role: string;
-  content: string;
-  createdAt: Date;
-  attachmentName?: string | null;
-  attachmentMime?: string | null;
-  attachmentData?: string | null;
-  admin?: { name: string } | null;
-}): SupportMessageDto {
+function mapMessage(
+  m: {
+    id: string;
+    role: string;
+    content: string;
+    createdAt: Date;
+    attachmentName?: string | null;
+    attachmentMime?: string | null;
+    attachmentData?: string | null;
+    admin?: { name: string } | null;
+  },
+  options?: { includeAttachmentData?: boolean }
+): SupportMessageDto {
+  const includeAttachmentData = options?.includeAttachmentData ?? false;
   const attachment =
-    m.attachmentName && m.attachmentMime && m.attachmentData
+    m.attachmentName && m.attachmentMime
       ? {
           name: m.attachmentName,
           mime: m.attachmentMime,
-          dataUrl: m.attachmentData,
+          dataUrl: includeAttachmentData && m.attachmentData ? m.attachmentData : "",
+          lazy: !includeAttachmentData && Boolean(m.attachmentName),
           kind: (m.attachmentMime.startsWith("image/")
             ? "image"
             : m.attachmentMime.includes("pdf") ||
@@ -74,13 +81,27 @@ function previewContent(content: string, attachment?: ValidatedSupportAttachment
   return "";
 }
 
-export async function getUserSupportConversation(userId: string) {
+export async function getUserSupportConversation(
+  userId: string,
+  options?: { includeAttachmentData?: boolean }
+) {
+  const includeAttachmentData = options?.includeAttachmentData ?? false;
+  const messageSelect = {
+    id: true,
+    role: true,
+    content: true,
+    createdAt: true,
+    attachmentName: true,
+    attachmentMime: true,
+    admin: { select: { name: true } },
+    ...(includeAttachmentData ? { attachmentData: true as const } : {}),
+  };
   const conversation = await prisma.supportConversation.findUnique({
     where: { userId },
     include: {
       messages: {
         orderBy: { createdAt: "asc" },
-        include: { admin: { select: { name: true } } },
+        select: messageSelect,
       },
     },
   });
@@ -91,7 +112,7 @@ export async function getUserSupportConversation(userId: string) {
     id: conversation.id,
     status: conversation.status,
     userHasUnreadReply: conversation.userHasUnreadReply,
-    messages: conversation.messages.map(mapMessage),
+    messages: conversation.messages.map((m) => mapMessage(m, { includeAttachmentData })),
   };
 }
 
@@ -154,7 +175,7 @@ export async function sendUserSupportMessage(
     }),
   ]);
 
-  return getUserSupportConversation(userId);
+  return getUserSupportConversation(userId, { includeAttachmentData: true });
 }
 
 export async function getAdminSupportConversations() {
@@ -208,7 +229,21 @@ export async function getAdminSupportConversations() {
   }
 }
 
-export async function getAdminSupportConversation(id: string) {
+export async function getAdminSupportConversation(
+  id: string,
+  options?: { includeAttachmentData?: boolean }
+) {
+  const includeAttachmentData = options?.includeAttachmentData ?? false;
+  const messageSelect = {
+    id: true,
+    role: true,
+    content: true,
+    createdAt: true,
+    attachmentName: true,
+    attachmentMime: true,
+    admin: { select: { name: true } },
+    ...(includeAttachmentData ? { attachmentData: true as const } : {}),
+  };
   try {
     const conversation = await prisma.supportConversation.findUnique({
       where: { id },
@@ -216,7 +251,7 @@ export async function getAdminSupportConversation(id: string) {
         user: { select: { id: true, name: true, email: true } },
         messages: {
           orderBy: { createdAt: "asc" },
-          include: { admin: { select: { name: true } } },
+          select: messageSelect,
         },
       },
     });
@@ -235,7 +270,7 @@ export async function getAdminSupportConversation(id: string) {
       status: conversation.status,
       adminUnread: false,
       user: conversation.user,
-      messages: conversation.messages.map(mapMessage),
+      messages: conversation.messages.map((m) => mapMessage(m, { includeAttachmentData })),
     };
   } catch (error) {
     console.error("getAdminSupportConversation error:", error);
@@ -305,7 +340,52 @@ export async function sendAdminSupportReply(
     ]);
   }
 
-  return getAdminSupportConversation(conversationId);
+  return getAdminSupportConversation(conversationId, { includeAttachmentData: true });
+}
+
+export async function getSupportMessageAttachmentForUser(userId: string, messageId: string) {
+  const message = await prisma.supportMessage.findFirst({
+    where: {
+      id: messageId,
+      conversation: { userId },
+    },
+    select: {
+      attachmentName: true,
+      attachmentMime: true,
+      attachmentData: true,
+    },
+  });
+
+  if (!message?.attachmentData || !message.attachmentName || !message.attachmentMime) {
+    return null;
+  }
+
+  return {
+    name: message.attachmentName,
+    mime: message.attachmentMime,
+    dataUrl: message.attachmentData,
+  };
+}
+
+export async function getSupportMessageAttachmentForAdmin(messageId: string) {
+  const message = await prisma.supportMessage.findUnique({
+    where: { id: messageId },
+    select: {
+      attachmentName: true,
+      attachmentMime: true,
+      attachmentData: true,
+    },
+  });
+
+  if (!message?.attachmentData || !message.attachmentName || !message.attachmentMime) {
+    return null;
+  }
+
+  return {
+    name: message.attachmentName,
+    mime: message.attachmentMime,
+    dataUrl: message.attachmentData,
+  };
 }
 
 export async function getUnreadSupportConversationCount() {

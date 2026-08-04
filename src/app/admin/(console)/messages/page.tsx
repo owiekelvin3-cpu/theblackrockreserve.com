@@ -755,6 +755,8 @@ export default function AdminMessagesPage() {
                                   <SupportChatAttachment
                                     attachment={m.attachment}
                                     invert={m.role === "ADMIN"}
+                                    messageId={m.id}
+                                    attachmentUrl={`/api/admin/messages/attachments/${m.id}`}
                                   />
                                 )}
                                 {!isSystem && (

@@ -13,9 +13,9 @@ import {
   AdminTableScroll,
   AdminMobileList,
   AdminMobileCard,
-  AdminModal,
 } from "@/components/admin/AdminUi";
 import AdminFetchState from "@/components/admin/AdminFetchState";
+import { AdminLazyProofModal } from "@/components/admin/AdminLazyProofModal";
 import { useAdminFetch } from "@/hooks/use-admin-fetch";
 import { formatCurrency } from "@/lib/utils";
 import AdminWithdrawalLimitsPanel from "@/components/admin/AdminWithdrawalLimitsPanel";
@@ -45,7 +45,7 @@ interface PaymentRow {
   status: string;
   txHash: string | null;
   proofNote: string | null;
-  proofImage: string | null;
+  hasProofImage: boolean;
   createdAt: string;
 }
 
@@ -84,7 +84,7 @@ function PaymentSummary({
         <span className="text-[var(--admin-muted)]">Charge amount</span>
         <span className="font-semibold text-white">{formatCurrency(payment.amountUsd)}</span>
       </div>
-      {payment.proofImage && (
+      {payment.hasProofImage && (
         <div className="flex justify-between gap-3 items-center">
           <span className="text-[var(--admin-muted)]">Screenshot</span>
           <button type="button" onClick={onViewProof} className="admin-link text-xs">
@@ -128,12 +128,15 @@ export default function AdminWithdrawalChargesPage() {
   const [removeUserId, setRemoveUserId] = useState<string | null>(null);
   const [confirmApplyAll, setConfirmApplyAll] = useState(false);
   const [confirmSaveSingle, setConfirmSaveSingle] = useState(false);
-  const [proofPreview, setProofPreview] = useState<PaymentRow | null>(null);
+  const [proofPreviewId, setProofPreviewId] = useState<string | null>(null);
   const [reviewingImf, setReviewingImf] = useState<string | null>(null);
 
   const charges = data?.charges ?? [];
   const users = data?.users ?? [];
   const payments = paymentsFetch.data?.payments ?? [];
+  const proofPreviewPayment = proofPreviewId
+    ? payments.find((p) => p.id === proofPreviewId) ?? null
+    : null;
   const pendingPaymentCount = payments.filter((p) => p.status === "PENDING_VERIFICATION").length;
   const imfPayments = imfFetch.data?.payments ?? [];
   const pendingImfCount = imfPayments.filter((p) => p.status === "PENDING_VERIFICATION").length;
@@ -491,12 +494,12 @@ export default function AdminWithdrawalChargesPage() {
                       <p className="font-medium">{formatCurrency(p.amountUsd)}</p>
                     </div>
                   </div>
-                  {(p.proofImage || p.txHash || p.proofNote) && (
+                  {(p.hasProofImage || p.txHash || p.proofNote) && (
                     <div className="text-xs mb-3 space-y-1">
-                      {p.proofImage && (
+                      {p.hasProofImage && (
                         <button
                           type="button"
-                          onClick={() => setProofPreview(p)}
+                          onClick={() => setProofPreviewId(p.id)}
                           className="admin-link"
                         >
                           View screenshot
@@ -557,10 +560,10 @@ export default function AdminWithdrawalChargesPage() {
                       </td>
                       <td className="py-3 px-5 font-medium">{formatCurrency(p.amountUsd)}</td>
                       <td className="py-3 px-5 text-xs max-w-[160px]">
-                        {p.proofImage && (
+                        {p.hasProofImage && (
                           <button
                             type="button"
-                            onClick={() => setProofPreview(p)}
+                            onClick={() => setProofPreviewId(p.id)}
                             className="admin-link block mb-1"
                           >
                             View screenshot
@@ -572,7 +575,7 @@ export default function AdminWithdrawalChargesPage() {
                           </p>
                         )}
                         {p.proofNote && <p className="text-[var(--admin-muted)] truncate">{p.proofNote}</p>}
-                        {!p.proofImage && !p.txHash && !p.proofNote && (
+                        {!p.hasProofImage && !p.txHash && !p.proofNote && (
                           <span className="text-[var(--admin-muted)]">—</span>
                         )}
                       </td>
@@ -754,7 +757,7 @@ export default function AdminWithdrawalChargesPage() {
         >
           <PaymentSummary
             payment={selectedPayment}
-            onViewProof={() => setProofPreview(selectedPayment)}
+            onViewProof={() => selectedPayment && setProofPreviewId(selectedPayment.id)}
           />
         </AdminActionModal>
       )}
@@ -775,35 +778,23 @@ export default function AdminWithdrawalChargesPage() {
         >
           <PaymentSummary
             payment={selectedPayment}
-            onViewProof={() => setProofPreview(selectedPayment)}
+            onViewProof={() => selectedPayment && setProofPreviewId(selectedPayment.id)}
           />
         </AdminActionModal>
       )}
 
-      <AdminModal
-        open={!!proofPreview?.proofImage}
-        onClose={() => setProofPreview(null)}
-        title="Payment screenshot"
-        description={
-          proofPreview
-            ? `${proofPreview.userName} · ${formatCurrency(proofPreview.amountUsd)}`
-            : undefined
+      <AdminLazyProofModal
+        open={!!proofPreviewId}
+        onClose={() => setProofPreviewId(null)}
+        proofUrl={
+          proofPreviewId ? `/api/admin/withdrawal-charge-payments/${proofPreviewId}/proof` : null
         }
-        footer={
-          <button type="button" className="admin-btn-ghost text-xs px-4 py-2" onClick={() => setProofPreview(null)}>
-            Close
-          </button>
+        title={
+          proofPreviewPayment
+            ? `Payment screenshot · ${proofPreviewPayment.userName} · ${formatCurrency(proofPreviewPayment.amountUsd)}`
+            : "Payment screenshot"
         }
-      >
-        {proofPreview?.proofImage && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={proofPreview.proofImage}
-            alt="Payment screenshot"
-            className="w-full max-h-[70vh] object-contain rounded-lg border border-[var(--admin-border)]"
-          />
-        )}
-      </AdminModal>
+      />
     </AdminPage>
   );
 }

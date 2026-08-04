@@ -15,6 +15,7 @@ import {
   AdminMobileCard,
 } from "@/components/admin/AdminUi";
 import AdminFetchState from "@/components/admin/AdminFetchState";
+import { AdminLazyProofModal } from "@/components/admin/AdminLazyProofModal";
 import { useAdminFetch } from "@/hooks/use-admin-fetch";
 import { formatCurrency } from "@/lib/utils";
 
@@ -32,7 +33,7 @@ interface WithdrawalRow {
   chargePaymentId: string | null;
   chargePaymentStatus: string | null;
   chargePaymentTxHash: string | null;
-  chargePaymentProofImage: string | null;
+  chargePaymentHasProofImage: boolean;
   destination: string;
   destinationExtra: string | null;
   note: string | null;
@@ -69,7 +70,13 @@ function isActionable(w: WithdrawalRow) {
   );
 }
 
-function WithdrawalSummary({ withdrawal }: { withdrawal: WithdrawalRow }) {
+function WithdrawalSummary({
+  withdrawal,
+  onViewChargeProof,
+}: {
+  withdrawal: WithdrawalRow;
+  onViewChargeProof?: () => void;
+}) {
   return (
     <div className="rounded-lg border border-[var(--admin-border)] bg-white/[0.02] p-4 space-y-2 text-sm">
       <div className="flex justify-between gap-3">
@@ -112,17 +119,12 @@ function WithdrawalSummary({ withdrawal }: { withdrawal: WithdrawalRow }) {
           </span>
         </div>
       )}
-      {withdrawal.chargePaymentProofImage && (
+      {withdrawal.chargePaymentHasProofImage && (
         <div className="flex justify-between gap-3 items-center">
           <span className="text-[var(--admin-muted)]">Charge screenshot</span>
-          <a
-            href={withdrawal.chargePaymentProofImage}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="admin-link text-xs"
-          >
+          <button type="button" onClick={onViewChargeProof} className="admin-link text-xs">
             View screenshot
-          </a>
+          </button>
         </div>
       )}
       {withdrawal.chargePaymentTxHash && (
@@ -235,6 +237,11 @@ export default function AdminWithdrawalsPage() {
   const [reviewing, setReviewing] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [filter, setFilter] = useState<"pending" | "all">("pending");
+  const [chargeProofPreviewId, setChargeProofPreviewId] = useState<string | null>(null);
+
+  const openChargeProof = (withdrawal: WithdrawalRow) => {
+    if (withdrawal.chargePaymentId) setChargeProofPreviewId(withdrawal.chargePaymentId);
+  };
 
   const actionableCount = withdrawals.filter(isActionable).length;
   const filtered =
@@ -457,7 +464,10 @@ export default function AdminWithdrawalsPage() {
           onConfirm={() => reviewWithdrawal(pendingAction.id, "APPROVED")}
           loading={reviewing === pendingAction.id}
         >
-          <WithdrawalSummary withdrawal={selectedWithdrawal} />
+          <WithdrawalSummary
+            withdrawal={selectedWithdrawal}
+            onViewChargeProof={() => openChargeProof(selectedWithdrawal)}
+          />
         </AdminActionModal>
       )}
 
@@ -475,7 +485,10 @@ export default function AdminWithdrawalsPage() {
           onConfirm={(reviewNote) => reviewWithdrawal(pendingAction.id, "REJECTED", reviewNote)}
           loading={reviewing === pendingAction.id}
         >
-          <WithdrawalSummary withdrawal={selectedWithdrawal} />
+          <WithdrawalSummary
+            withdrawal={selectedWithdrawal}
+            onViewChargeProof={() => openChargeProof(selectedWithdrawal)}
+          />
         </AdminActionModal>
       )}
 
@@ -489,7 +502,10 @@ export default function AdminWithdrawalsPage() {
           onConfirm={() => reviewCharge(pendingAction.chargePaymentId, "PAID")}
           loading={reviewing === pendingAction.chargePaymentId}
         >
-          <WithdrawalSummary withdrawal={selectedWithdrawal} />
+          <WithdrawalSummary
+            withdrawal={selectedWithdrawal}
+            onViewChargeProof={() => openChargeProof(selectedWithdrawal)}
+          />
         </AdminActionModal>
       )}
 
@@ -507,9 +523,23 @@ export default function AdminWithdrawalsPage() {
           onConfirm={(reviewNote) => reviewCharge(pendingAction.chargePaymentId, "REJECTED", reviewNote)}
           loading={reviewing === pendingAction.chargePaymentId}
         >
-          <WithdrawalSummary withdrawal={selectedWithdrawal} />
+          <WithdrawalSummary
+            withdrawal={selectedWithdrawal}
+            onViewChargeProof={() => openChargeProof(selectedWithdrawal)}
+          />
         </AdminActionModal>
       )}
+
+      <AdminLazyProofModal
+        open={!!chargeProofPreviewId}
+        onClose={() => setChargeProofPreviewId(null)}
+        proofUrl={
+          chargeProofPreviewId
+            ? `/api/admin/withdrawal-charge-payments/${chargeProofPreviewId}/proof`
+            : null
+        }
+        title="Charge payment screenshot"
+      />
     </AdminPage>
   );
 }

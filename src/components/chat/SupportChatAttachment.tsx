@@ -11,6 +11,7 @@ export type ChatAttachmentView = {
   mime: string;
   dataUrl: string;
   kind?: "image" | "document" | "file";
+  lazy?: boolean;
 };
 
 function downloadAttachment(attachment: ChatAttachmentView) {
@@ -161,38 +162,101 @@ function InChatImageViewer({
 export default function SupportChatAttachment({
   attachment,
   invert = false,
+  messageId,
+  attachmentUrl,
 }: {
   attachment: ChatAttachmentView;
   invert?: boolean;
+  messageId?: string;
+  attachmentUrl?: string;
 }) {
   const [viewerOpen, setViewerOpen] = useState(false);
   const [broken, setBroken] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [resolvedUrl, setResolvedUrl] = useState<string | null>(
+    attachment.dataUrl || null
+  );
   const closeViewer = useCallback(() => setViewerOpen(false), []);
 
+  const fetchUrl =
+    attachmentUrl ??
+    (messageId ? `/api/dashboard/support-chat/messages/${messageId}/attachment` : null);
+
+  const loadDataUrl = useCallback(async () => {
+    if (resolvedUrl) return resolvedUrl;
+    if (!fetchUrl) return null;
+    setLoading(true);
+    try {
+      const res = await fetch(fetchUrl, { credentials: "include", cache: "no-store" });
+      const json = (await res.json()) as { attachment?: { dataUrl?: string } };
+      if (!res.ok || !json.attachment?.dataUrl) return null;
+      setResolvedUrl(json.attachment.dataUrl);
+      return json.attachment.dataUrl;
+    } catch {
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchUrl, resolvedUrl]);
+
+  const activeAttachment: ChatAttachmentView = {
+    ...attachment,
+    dataUrl: resolvedUrl ?? attachment.dataUrl,
+  };
+
+  const needsLazyLoad = Boolean(attachment.lazy || (!activeAttachment.dataUrl && fetchUrl));
+
   const isImage =
-    (attachment.kind === "image" || attachment.mime.startsWith("image/")) &&
+    (activeAttachment.kind === "image" || activeAttachment.mime.startsWith("image/")) &&
     !broken &&
-    !/heic|heif/i.test(attachment.mime);
+    !/heic|heif/i.test(activeAttachment.mime);
+
+  if (needsLazyLoad && !resolvedUrl) {
+    return (
+      <button
+        type="button"
+        disabled={loading}
+        onClick={() => void loadDataUrl()}
+        className={cn(
+          "mt-2 flex w-full items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors",
+          invert
+            ? "border-white/20 bg-black/15 hover:bg-black/25 text-white"
+            : "border-white/10 bg-white/5 hover:bg-white/10 text-text-primary"
+        )}
+      >
+        <Paperclip size={16} className={invert ? "text-white" : "text-text-muted"} />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-xs font-medium">{activeAttachment.name}</span>
+          <span className={cn("mt-0.5 block text-[10px]", invert ? "text-white/70" : "text-text-muted")}>
+            {loading ? "Loading attachment…" : "Tap to load attachment"}
+          </span>
+        </span>
+      </button>
+    );
+  }
 
   if (isImage) {
     return (
       <>
         <button
           type="button"
-          onClick={() => setViewerOpen(true)}
+          onClick={async () => {
+            const url = await loadDataUrl();
+            if (url) setViewerOpen(true);
+          }}
           className="group mt-2 block w-full overflow-hidden rounded-xl border border-white/15 bg-black/25 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-brand/50"
-          aria-label={`Open ${attachment.name}`}
+          aria-label={`Open ${activeAttachment.name}`}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={attachment.dataUrl}
-            alt={attachment.name}
+            src={activeAttachment.dataUrl}
+            alt={activeAttachment.name}
             className="mx-auto max-h-64 w-full object-cover sm:max-h-72 sm:object-contain"
             onError={() => setBroken(true)}
           />
         </button>
         {viewerOpen && (
-          <InChatImageViewer attachment={attachment} onClose={closeViewer} />
+          <InChatImageViewer attachment={activeAttachment} onClose={closeViewer} />
         )}
       </>
     );
@@ -201,7 +265,7 @@ export default function SupportChatAttachment({
   return (
     <button
       type="button"
-      onClick={() => downloadAttachment(attachment)}
+      onClick={() => void loadDataUrl().then((url) => url && downloadAttachment({ ...activeAttachment, dataUrl: url }))}
       className={cn(
         "mt-2 flex w-full items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors",
         invert
@@ -224,7 +288,7 @@ export default function SupportChatAttachment({
         )}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-xs font-medium">{attachment.name}</span>
+        <span className="block truncate text-xs font-medium">{activeAttachment.name}</span>
         <span
           className={cn(
             "mt-0.5 block text-[10px]",

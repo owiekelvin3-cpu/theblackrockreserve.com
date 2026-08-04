@@ -55,7 +55,6 @@ export async function GET() {
       select: {
         preferredLocale: true,
         preferredCurrency: true,
-        profileImage: true,
         name: true,
         phone: true,
         notificationPrefs: true,
@@ -86,7 +85,6 @@ export async function GET() {
     return NextResponse.json({
       preferredLocale: user?.preferredLocale ?? "en",
       preferredCurrency,
-      profileImage: user?.profileImage ?? null,
       name: user?.name ?? null,
       phone: user?.phone ?? null,
       notificationPrefs: parseNotificationPrefs(user?.notificationPrefs),
@@ -101,7 +99,6 @@ export async function GET() {
       {
         preferredLocale: "en",
         preferredCurrency: "USD",
-        profileImage: null,
         name: null,
         phone: null,
         notificationPrefs: parseNotificationPrefs(null),

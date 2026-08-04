@@ -236,7 +236,7 @@ export default function ChatWidget() {
     fetchHumanConversation().finally(() => setHumanLoading(false));
     const id = window.setInterval(() => {
       if (document.visibilityState === "visible") fetchHumanConversation();
-    }, 12000);
+    }, 30_000);
     return () => window.clearInterval(id);
   }, [isDashboard, chatMode, open, fetchHumanConversation]);
 
@@ -656,6 +656,7 @@ export default function ChatWidget() {
                       <SupportChatAttachment
                         attachment={msg.attachment}
                         invert={msg.role === "user"}
+                        messageId={msg.id}
                       />
                     )}
                   </div>

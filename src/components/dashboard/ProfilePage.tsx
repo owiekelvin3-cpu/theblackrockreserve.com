@@ -124,11 +124,13 @@ export default function ProfilePage() {
 
   const loadPreferences = useCallback(() => {
     setLoading(true);
-    fetch("/api/dashboard/preferences")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
+    Promise.all([
+      fetch("/api/dashboard/preferences").then((r) => (r.ok ? r.json() : null)),
+      fetch("/api/dashboard/profile/image").then((r) => (r.ok ? r.json() : null)),
+    ])
+      .then(([data, imageData]) => {
         if (!data) return;
-        if (data.profileImage) setProfileImage(data.profileImage);
+        if (imageData?.image) setProfileImage(imageData.image);
         if (data.name) setName(data.name);
         if (data.phone) setPhone(data.phone);
         if (data.memberSince) setMemberSince(data.memberSince);

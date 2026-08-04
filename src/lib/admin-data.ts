@@ -621,11 +621,31 @@ export async function getAdminDeposits() {
   const deposits = await prisma.depositRequest.findMany({
     where: { user: verifiedCustomerWhere },
     orderBy: { createdAt: "desc" },
-    include: {
+    select: {
+      id: true,
+      userId: true,
+      accountId: true,
+      amountUsd: true,
+      bitcoinWalletAddress: true,
+      txHash: true,
+      proofNote: true,
+      status: true,
+      reviewNote: true,
+      createdAt: true,
+      updatedAt: true,
       user: { select: { id: true, name: true, email: true } },
       reviewer: { select: { name: true, email: true } },
     },
   });
+
+  const proofIds = new Set(
+    (
+      await prisma.depositRequest.findMany({
+        where: { user: verifiedCustomerWhere, proofImage: { not: null } },
+        select: { id: true },
+      })
+    ).map((d) => d.id)
+  );
 
   const accountIds = Array.from(new Set(deposits.map((d) => d.accountId).filter(Boolean))) as string[];
   const accounts = accountIds.length
@@ -646,8 +666,7 @@ export async function getAdminDeposits() {
     amountUsd: d.amountUsd ? Number(d.amountUsd) : null,
     bitcoinWalletAddress: d.bitcoinWalletAddress,
     txHash: d.txHash,
-    proofImage: d.proofImage,
-    hasProofImage: Boolean(d.proofImage),
+    hasProofImage: proofIds.has(d.id),
     proofNote: d.proofNote,
     status: d.status,
     statusLabel: d.status === "PENDING" ? "Pending Approval" : d.status === "APPROVED" ? "Approved" : "Rejected",
@@ -673,12 +692,20 @@ export async function getAdminWithdrawals() {
           paymentMethod: true,
           txHash: true,
           proofNote: true,
-          proofImage: true,
           paidAt: true,
         },
       },
     },
   });
+
+  const chargeProofIds = new Set(
+    (
+      await prisma.withdrawalChargePayment.findMany({
+        where: { proofImage: { not: null } },
+        select: { id: true },
+      })
+    ).map((p) => p.id)
+  );
 
   const accountIds = Array.from(new Set(withdrawals.map((w) => w.accountId)));
   const accounts = accountIds.length
@@ -706,7 +733,9 @@ export async function getAdminWithdrawals() {
       chargePaymentStatus: w.chargePayment?.status ?? null,
       chargePaymentId: w.chargePayment?.id ?? null,
       chargePaymentTxHash: w.chargePayment?.txHash ?? null,
-      chargePaymentProofImage: w.chargePayment?.proofImage ?? null,
+      chargePaymentHasProofImage: w.chargePayment?.id
+        ? chargeProofIds.has(w.chargePayment.id)
+        : false,
       destination: w.destination,
       destinationExtra: w.destinationExtra,
       note: w.note,
@@ -758,7 +787,18 @@ export async function getAdminWithdrawalChargePayments() {
   const payments = await prisma.withdrawalChargePayment.findMany({
     where: { user: verifiedCustomerWhere },
     orderBy: { createdAt: "desc" },
-    include: {
+    select: {
+      id: true,
+      userId: true,
+      withdrawalRequestId: true,
+      amountUsd: true,
+      paymentMethod: true,
+      status: true,
+      txHash: true,
+      proofNote: true,
+      reviewNote: true,
+      paidAt: true,
+      createdAt: true,
       user: { select: { id: true, name: true, email: true } },
       withdrawalRequest: {
         select: {
@@ -772,6 +812,15 @@ export async function getAdminWithdrawalChargePayments() {
       reviewer: { select: { name: true } },
     },
   });
+
+  const proofIds = new Set(
+    (
+      await prisma.withdrawalChargePayment.findMany({
+        where: { user: verifiedCustomerWhere, proofImage: { not: null } },
+        select: { id: true },
+      })
+    ).map((p) => p.id)
+  );
 
   return payments.map((p) => ({
     id: p.id,
@@ -787,7 +836,7 @@ export async function getAdminWithdrawalChargePayments() {
     status: p.status,
     txHash: p.txHash,
     proofNote: p.proofNote,
-    proofImage: p.proofImage,
+    hasProofImage: proofIds.has(p.id),
     reviewNote: p.reviewNote,
     reviewerName: p.reviewer?.name ?? null,
     paidAt: p.paidAt?.toISOString() ?? null,
@@ -832,7 +881,18 @@ export async function getAdminProfitTaxPayments() {
   const payments = await prisma.profitTaxPayment.findMany({
     where: { user: verifiedCustomerWhere },
     orderBy: { createdAt: "desc" },
-    include: {
+    select: {
+      id: true,
+      userId: true,
+      profitWithdrawalRequestId: true,
+      amountUsd: true,
+      paymentMethod: true,
+      status: true,
+      txHash: true,
+      proofNote: true,
+      reviewNote: true,
+      paidAt: true,
+      createdAt: true,
       user: { select: { id: true, name: true, email: true } },
       profitWithdrawalRequest: {
         select: {
@@ -845,6 +905,15 @@ export async function getAdminProfitTaxPayments() {
       reviewer: { select: { name: true } },
     },
   });
+
+  const proofIds = new Set(
+    (
+      await prisma.profitTaxPayment.findMany({
+        where: { user: verifiedCustomerWhere, proofImage: { not: null } },
+        select: { id: true },
+      })
+    ).map((p) => p.id)
+  );
 
   return payments.map((p) => ({
     id: p.id,
@@ -860,7 +929,7 @@ export async function getAdminProfitTaxPayments() {
     status: p.status,
     txHash: p.txHash,
     proofNote: p.proofNote,
-    proofImage: p.proofImage,
+    hasProofImage: proofIds.has(p.id),
     reviewNote: p.reviewNote,
     reviewerName: p.reviewer?.name ?? null,
     paidAt: p.paidAt?.toISOString() ?? null,

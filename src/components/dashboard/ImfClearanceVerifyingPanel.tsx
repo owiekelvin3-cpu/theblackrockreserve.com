@@ -50,7 +50,9 @@ export default function ImfClearanceVerifyingPanel({ withdrawalId }: { withdrawa
   }, [load]);
 
   useEffect(() => {
-    const tick = window.setInterval(() => load(true), 4000);
+    const tick = window.setInterval(() => {
+      if (document.visibilityState === "visible") load(true);
+    }, 15_000);
     const onFocus = () => load(true);
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onFocus);

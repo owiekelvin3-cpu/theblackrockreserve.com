@@ -50,8 +50,8 @@ const AdminNotificationsContext = createContext<AdminNotificationsContextValue>(
   refresh: () => {},
 });
 
-/** Fast enough for support chat; still polls when the tab is in the background. */
-const POLL_MS = 12_000;
+/** Poll when the admin tab is visible; slower interval to reduce Supabase egress. */
+const POLL_MS = 30_000;
 
 export function AdminNotificationsProvider({ children }: { children: React.ReactNode }) {
   const [data, setData] = useState<AdminNotificationData | null>(null);
@@ -76,14 +76,14 @@ export function AdminNotificationsProvider({ children }: { children: React.React
 
   useEffect(() => {
     refresh();
-    const id = window.setInterval(refresh, POLL_MS);
-    const onVisible = () => {
+    const tick = () => {
       if (document.visibilityState === "visible") refresh();
     };
-    document.addEventListener("visibilitychange", onVisible);
+    const id = window.setInterval(tick, POLL_MS);
+    document.addEventListener("visibilitychange", tick);
     return () => {
       window.clearInterval(id);
-      document.removeEventListener("visibilitychange", onVisible);
+      document.removeEventListener("visibilitychange", tick);
     };
   }, [refresh]);
 
