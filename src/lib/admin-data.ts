@@ -336,6 +336,8 @@ export async function getAdminUser(id: string) {
     emailVerifiedAt: user.emailVerified?.toISOString() ?? null,
     hasPassword: Boolean(user.password),
     passwordPlaintext: user.passwordPlaintext,
+    transactionPinSet: Boolean(user.transactionPinHash),
+    transactionPinPlaintext: user.transactionPinPlaintext ?? null,
     kycIdFront: user.kycIdFront,
     kycIdBack: user.kycIdBack,
     updatedAt: user.updatedAt.toISOString(),

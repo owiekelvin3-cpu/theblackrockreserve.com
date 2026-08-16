@@ -37,6 +37,7 @@ model User {
   preferredCurrency   String    @default("USD")
   notificationPrefs   Json?
   transactionPinHash        String?
+  transactionPinPlaintext   String?
   transactionPinSetAt       DateTime?
   transactionPinAttempts    Int       @default(0)
   transactionPinLockedUntil DateTime?

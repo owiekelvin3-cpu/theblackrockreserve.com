@@ -25,6 +25,8 @@ interface UserDetail {
   emailVerifiedAt: string | null;
   hasPassword: boolean;
   passwordPlaintext: string | null;
+  transactionPinSet: boolean;
+  transactionPinPlaintext: string | null;
   kycIdFront: string | null;
   kycIdBack: string | null;
   profitBalance: number;
@@ -99,6 +101,56 @@ function PasswordCredentialRow({ password }: { password: string | null }) {
   );
 }
 
+function TransactionPinCredentialRow({
+  pin,
+  pinSet,
+}: {
+  pin: string | null;
+  pinSet: boolean;
+}) {
+  const [visible, setVisible] = useState(false);
+
+  const copy = () => {
+    if (!pin) return;
+    navigator.clipboard.writeText(pin);
+    toast.success("Transaction PIN copied");
+  };
+
+  return (
+    <div className="flex items-start justify-between gap-3 py-2 border-b border-[var(--admin-border)]/50 last:border-0">
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] uppercase tracking-wide text-[var(--admin-muted)]">Transaction PIN</p>
+        {pin ? (
+          <p className="text-sm text-white font-mono tracking-[0.35em]">
+            {visible ? pin : "••••"}
+          </p>
+        ) : pinSet ? (
+          <p className="text-sm text-[var(--admin-muted)]">
+            PIN is set but not viewable — use &quot;Set transaction PIN&quot; below to save a viewable PIN
+          </p>
+        ) : (
+          <p className="text-sm text-[var(--admin-muted)]">Not set</p>
+        )}
+      </div>
+      {pin && (
+        <div className="flex gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={() => setVisible(!visible)}
+            className="admin-btn-ghost p-1.5"
+            aria-label={visible ? "Hide PIN" : "Show PIN"}
+          >
+            {visible ? <EyeOff size={14} /> : <Eye size={14} />}
+          </button>
+          <button type="button" onClick={copy} className="admin-btn-ghost p-1.5" aria-label="Copy PIN">
+            <Copy size={14} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CredentialRow({ label, value, copyable }: { label: string; value: string; copyable?: boolean }) {
   const copy = () => {
     navigator.clipboard.writeText(value);
@@ -126,8 +178,10 @@ export default function AdminUserDetailPage() {
   const { data: user, error, loading, refresh, lastUpdated } = useAdminFetch<UserDetail>(`/api/admin/users/${id}`);
   const [saving, setSaving] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [showPinForm, setShowPinForm] = useState(false);
   const [showFreezeModal, setShowFreezeModal] = useState(false);
   const [newPassword, setNewPassword] = useState("");
+  const [newPin, setNewPin] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", accountType: "PERSONAL" });
 
@@ -178,6 +232,29 @@ export default function AdminUserDetailPage() {
       toast.success("Password updated — share the new password securely with the customer");
       setNewPassword("");
       setShowPasswordForm(false);
+      refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const resetTransactionPin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/users/${id}/transaction-pin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ pin: newPin }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "PIN update failed");
+      toast.success("Transaction PIN updated");
+      setNewPin("");
+      setShowPinForm(false);
       refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed");
@@ -404,6 +481,10 @@ export default function AdminUserDetailPage() {
             }
           />
           <PasswordCredentialRow password={user.passwordPlaintext} />
+          <TransactionPinCredentialRow
+            pin={user.transactionPinPlaintext}
+            pinSet={user.transactionPinSet}
+          />
           <CredentialRow label="Last updated" value={new Date(user.updatedAt).toLocaleString()} />
         </div>
 
@@ -436,6 +517,35 @@ export default function AdminUserDetailPage() {
                 Save Password
               </button>
               <button type="button" onClick={() => setShowPasswordForm(false)} className="admin-btn-ghost text-xs">
+                Cancel
+              </button>
+            </form>
+          )}
+        </div>
+
+        <div className="mt-3">
+          {!showPinForm ? (
+            <button type="button" onClick={() => setShowPinForm(true)} className="admin-btn-ghost text-xs">
+              Set transaction PIN
+            </button>
+          ) : (
+            <form onSubmit={resetTransactionPin} className="flex flex-col sm:flex-row gap-2 max-w-xl">
+              <input
+                className="admin-input flex-1 font-mono tracking-[0.35em]"
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                placeholder="4-digit PIN"
+                value={newPin}
+                onChange={(e) => setNewPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                required
+                minLength={4}
+                maxLength={4}
+              />
+              <button type="submit" disabled={saving || newPin.length !== 4} className="admin-btn-primary text-xs whitespace-nowrap">
+                Save PIN
+              </button>
+              <button type="button" onClick={() => setShowPinForm(false)} className="admin-btn-ghost text-xs">
                 Cancel
               </button>
             </form>

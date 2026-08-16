@@ -66,6 +66,7 @@ export async function POST(req: NextRequest) {
       where: { id: userId },
       data: {
         transactionPinHash: hash,
+        transactionPinPlaintext: parsed.data.pin,
         transactionPinSetAt: new Date(),
         transactionPinAttempts: 0,
         transactionPinLockedUntil: null,
@@ -110,6 +111,7 @@ export async function PATCH(req: NextRequest) {
       where: { id: userId },
       data: {
         transactionPinHash: hash,
+        transactionPinPlaintext: parsed.data.newPin,
         transactionPinSetAt: new Date(),
         transactionPinAttempts: 0,
         transactionPinLockedUntil: null,

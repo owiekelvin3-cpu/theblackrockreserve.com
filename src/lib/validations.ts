@@ -232,6 +232,10 @@ export const transactionPinSchema = z.preprocess(
     .regex(/^\d{4}$/, "Transaction PIN must be 4 digits")
 );
 
+export const adminTransactionPinResetSchema = z.object({
+  pin: transactionPinSchema,
+});
+
 export const setTransactionPinSchema = z
   .object({
     password: z.string().min(1, "Login password is required"),
