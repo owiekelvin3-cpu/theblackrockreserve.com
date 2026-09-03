@@ -8,7 +8,6 @@ import { createUserNotification, sendUserNotificationEmail } from "@/lib/user-no
 import { formatCurrency } from "@/lib/utils";
 import { prisma, runInteractiveTransaction } from "@/lib/prisma";
 import { invalidateAdminCaches } from "@/lib/admin-cache";
-import { assertWithdrawalCanBeApproved } from "@/lib/withdrawal-charge";
 import { adminAdvanceWithdrawalScriptStep } from "@/lib/withdrawal-script";
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
@@ -52,15 +51,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const destinationPreview = withdrawal.destination.trim();
 
     if (parsed.data.status === "APPROVED" && resolution === "NEXT_STEP") {
-      try {
-        await assertWithdrawalCanBeApproved(params.id);
-      } catch (err) {
-        return NextResponse.json(
-          { error: err instanceof Error ? err.message : "Withdrawal charge must be paid before continuing" },
-          { status: 400 }
-        );
-      }
-
       const advanceResult = await adminAdvanceWithdrawalScriptStep(withdrawal.userId, params.id);
 
       await logAdminAction(
@@ -88,15 +78,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
 
     if (parsed.data.status === "APPROVED") {
-      try {
-        await assertWithdrawalCanBeApproved(params.id);
-      } catch (err) {
-        return NextResponse.json(
-          { error: err instanceof Error ? err.message : "Withdrawal charge must be paid before approval" },
-          { status: 400 }
-        );
-      }
-
       // Legacy withdrawals: funds not held yet — require balance and debit on approve
       if (!withdrawal.fundsHeld) {
         const available = await getAvailableBalance(withdrawal.userId, withdrawal.accountId, withdrawal.id);

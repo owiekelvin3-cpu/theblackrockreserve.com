@@ -466,13 +466,12 @@ export default function AdminWithdrawalsPage() {
       </AdminDataCard>
 
       {selectedWithdrawal && pendingAction?.kind === "withdrawal" && pendingAction.status === "APPROVED" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4">
           <div className="admin-card max-w-md w-full p-6 space-y-4" role="dialog" aria-modal="true">
             <div>
               <h3 className="text-white font-semibold">Confirm funds</h3>
               <p className="text-sm text-[var(--admin-muted)] mt-1">
-                Choose how to handle this withdrawal. Conclude makes the user feel the money was already
-                sent to their payout account, or move them to the next step in the withdrawal flow.
+                Choose how to handle this withdrawal.
               </p>
             </div>
 
@@ -485,25 +484,25 @@ export default function AdminWithdrawalsPage() {
               <button
                 type="button"
                 className="admin-btn-primary w-full text-xs py-2.5"
-                disabled={reviewing === pendingAction.id}
+                disabled={!!reviewing}
                 onClick={() => reviewWithdrawal(pendingAction.id, "APPROVED", undefined, "CONCLUDE")}
               >
                 {reviewing === pendingAction.id ? "Processing…" : "Conclude transaction"}
               </button>
               <p className="text-[10px] text-[var(--admin-muted)] px-1">
-                Mark as sent to {selectedWithdrawal.destination}. User is notified that funds are on the way.
+                Tell the user the money was already sent to {selectedWithdrawal.destination}.
               </p>
 
               <button
                 type="button"
                 className="admin-btn-ghost w-full text-xs py-2.5 border border-[var(--admin-border)]"
-                disabled={reviewing === pendingAction.id}
+                disabled={!!reviewing}
                 onClick={() => reviewWithdrawal(pendingAction.id, "APPROVED", undefined, "NEXT_STEP")}
               >
                 {reviewing === pendingAction.id ? "Processing…" : "Move to next step"}
               </button>
               <p className="text-[10px] text-[var(--admin-muted)] px-1">
-                Continue the scripted withdrawal flow instead of finishing the payout.
+                Continue the withdrawal flow instead of finishing the payout.
               </p>
             </div>
 
@@ -511,7 +510,7 @@ export default function AdminWithdrawalsPage() {
               <button
                 type="button"
                 className="admin-btn-ghost text-xs px-4 py-2"
-                disabled={reviewing === pendingAction.id}
+                disabled={!!reviewing}
                 onClick={() => setPendingAction(null)}
               >
                 Cancel

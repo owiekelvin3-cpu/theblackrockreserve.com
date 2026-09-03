@@ -43,6 +43,16 @@ export function resolveWithdrawalScriptStage(input: ResumeInput): WithdrawalScri
   const charge = withdrawal.chargePayment?.status;
   const imf = withdrawal.imfClearancePayment?.status;
 
+  if (status === "APPROVED") {
+    return {
+      label: "Sent to your account",
+      tone: "green",
+      action: "none",
+      resumeUrl: null,
+      clickable: false,
+    };
+  }
+
   const navigate = (label: string, url: string, tone: WithdrawalScriptStage["tone"] = "brand"): WithdrawalScriptStage => ({
     label,
     tone,

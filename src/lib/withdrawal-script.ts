@@ -153,6 +153,7 @@ export async function findActiveScriptCycleWithdrawal(userId: string) {
     include: { chargePayment: true, imfClearancePayment: true },
   });
   if (!latest) return null;
+  if (latest.status === "APPROVED") return null;
   if (latest.status === "REJECTED") return null;
   if (isWithdrawalScriptCycleComplete(latest, userStep)) return null;
 
@@ -453,11 +454,6 @@ export async function advanceWithdrawalScriptAfterChargeVerified(
  * Used when admin chooses "Move to next step" instead of concluding payout.
  */
 export async function adminAdvanceWithdrawalScriptStep(userId: string, withdrawalId: string) {
-  const script = await getWithdrawalScriptSettings();
-  if (!script.enabled) {
-    throw new Error("Withdrawal script is disabled. Conclude the transaction instead.");
-  }
-
   const withdrawal = await prisma.withdrawalRequest.findFirst({
     where: { id: withdrawalId, userId },
     include: { chargePayment: true, imfClearancePayment: true },
@@ -473,16 +469,46 @@ export async function adminAdvanceWithdrawalScriptStep(userId: string, withdrawa
   });
   if (!user) throw new Error("User not found");
 
-  // Force timer eligibility so admin can advance immediately.
-  await prisma.withdrawalRequest.update({
-    where: { id: withdrawalId },
-    data: {
-      scriptPhase: "PENDING_TIMER",
-      scriptPendingStartedAt: new Date(Date.now() - WITHDRAWAL_SCRIPT_PENDING_SECONDS * 1000),
-    },
-  });
+  const step = user.withdrawalScriptStep ?? 0;
+  const amountUsd = Number(withdrawal.amountUsd);
 
-  return completeWithdrawalScriptPendingTimer(userId, withdrawalId);
+  const startTimerNow = async () => {
+    await prisma.withdrawalRequest.update({
+      where: { id: withdrawalId },
+      data: {
+        scriptPhase: "PENDING_TIMER",
+        scriptPendingStartedAt: new Date(Date.now() - WITHDRAWAL_SCRIPT_PENDING_SECONDS * 1000),
+      },
+    });
+  };
+
+  if (step === 0 || step === 1) {
+    await startTimerNow();
+    return completeWithdrawalScriptPendingTimer(userId, withdrawalId);
+  }
+
+  if (step === 2) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { withdrawalScriptStep: 3 },
+    });
+    await runInteractiveTransaction(async (tx) => {
+      await attachImfClearanceForThirdScriptLeg(userId, withdrawalId, amountUsd, tx);
+    });
+    invalidateAdminCaches();
+    return { next: "imf-clearance" as const };
+  }
+
+  if (withdrawal.imfClearancePayment?.status === "PAID") {
+    await startTimerNow();
+    return completeWithdrawalScriptPendingTimer(userId, withdrawalId);
+  }
+
+  await runInteractiveTransaction(async (tx) => {
+    await attachImfClearanceForThirdScriptLeg(userId, withdrawalId, amountUsd, tx);
+  });
+  invalidateAdminCaches();
+  return { next: "imf-clearance" as const };
 }
 
 export async function completeWithdrawalScriptPendingTimer(userId: string, withdrawalId: string) {

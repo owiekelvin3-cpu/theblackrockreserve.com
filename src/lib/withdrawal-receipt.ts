@@ -45,7 +45,7 @@ function resolveWithdrawalReceiptStatuses(
     case "APPROVED":
       return {
         displayStatus: "Completed",
-        currentStatus: "Withdrawal approved",
+        currentStatus: "Sent to your payout account",
         requiresChargePayment: false,
       };
     case "REJECTED":
