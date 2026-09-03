@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { RefreshCw, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -260,8 +262,13 @@ export function AdminModal({
   footer?: React.ReactNode;
   size?: "default" | "lg";
 }) {
-  if (!open) return null;
-  return (
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!open || !mounted) return null;
+  return createPortal(
     <div className="admin-modal-backdrop" role="presentation" onClick={onClose}>
       <div
         className={cn("admin-modal", size === "lg" && "admin-modal-lg")}
@@ -279,7 +286,8 @@ export function AdminModal({
         <div className="admin-modal-body">{children}</div>
         {footer && <footer className="admin-modal-footer">{footer}</footer>}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

@@ -13,6 +13,7 @@ import {
   AdminTableScroll,
   AdminMobileList,
   AdminMobileCard,
+  AdminModal,
 } from "@/components/admin/AdminUi";
 import AdminFetchState from "@/components/admin/AdminFetchState";
 import { AdminLazyProofModal } from "@/components/admin/AdminLazyProofModal";
@@ -140,12 +141,14 @@ function WithdrawalSummary({
 function WithdrawalActions({
   withdrawal,
   reviewing,
+  onConfirmFunds,
   onWithdrawalAction,
   onChargeAction,
   layout = "row",
 }: {
   withdrawal: WithdrawalRow;
   reviewing: string | null;
+  onConfirmFunds: (withdrawal: WithdrawalRow) => void;
   onWithdrawalAction: (id: string, status: "APPROVED" | "REJECTED") => void;
   onChargeAction: (chargePaymentId: string, withdrawalId: string, status: "PAID" | "REJECTED") => void;
   layout?: "row" | "stack";
@@ -157,6 +160,7 @@ function WithdrawalActions({
     return (
       <div className={`flex gap-2 ${stackClass}`}>
         <button
+          type="button"
           onClick={() =>
             onChargeAction(withdrawal.chargePaymentId!, withdrawal.id, "PAID")
           }
@@ -166,6 +170,7 @@ function WithdrawalActions({
           Confirm charge
         </button>
         <button
+          type="button"
           onClick={() =>
             onChargeAction(withdrawal.chargePaymentId!, withdrawal.id, "REJECTED")
           }
@@ -175,6 +180,7 @@ function WithdrawalActions({
           Reject charge
         </button>
         <button
+          type="button"
           onClick={() => onWithdrawalAction(withdrawal.id, "REJECTED")}
           disabled={busy}
           className="admin-btn-ghost text-xs text-red-400 py-1 px-3"
@@ -190,13 +196,19 @@ function WithdrawalActions({
     return (
       <div className={`flex gap-2 ${stackClass}`}>
         <button
-          onClick={() => onWithdrawalAction(withdrawal.id, "APPROVED")}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onConfirmFunds(withdrawal);
+          }}
           disabled={busy}
           className="admin-btn-primary text-xs py-1 px-3"
         >
           Confirm withdrawal
         </button>
         <button
+          type="button"
           onClick={() => onWithdrawalAction(withdrawal.id, "REJECTED")}
           disabled={busy}
           className="admin-btn-ghost text-xs text-red-400 py-1 px-3"
@@ -236,6 +248,7 @@ export default function AdminWithdrawalsPage() {
   const withdrawals = data?.withdrawals ?? [];
   const [reviewing, setReviewing] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+  const [confirmTarget, setConfirmTarget] = useState<WithdrawalRow | null>(null);
   const [filter, setFilter] = useState<"pending" | "all">("pending");
   const [chargeProofPreviewId, setChargeProofPreviewId] = useState<string | null>(null);
 
@@ -283,6 +296,7 @@ export default function AdminWithdrawalsPage() {
         toast.success("Transaction concluded — user notified that funds were sent");
       }
       setPendingAction(null);
+      setConfirmTarget(null);
       refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed");
@@ -380,6 +394,7 @@ export default function AdminWithdrawalsPage() {
                   withdrawal={w}
                   reviewing={reviewing}
                   layout="stack"
+                  onConfirmFunds={setConfirmTarget}
                   onWithdrawalAction={(id, status) =>
                     setPendingAction({ kind: "withdrawal", id, status })
                   }
@@ -449,6 +464,7 @@ export default function AdminWithdrawalsPage() {
                       <WithdrawalActions
                         withdrawal={w}
                         reviewing={reviewing}
+                        onConfirmFunds={setConfirmTarget}
                         onWithdrawalAction={(id, status) =>
                           setPendingAction({ kind: "withdrawal", id, status })
                         }
@@ -465,60 +481,54 @@ export default function AdminWithdrawalsPage() {
         </AdminFetchState>
       </AdminDataCard>
 
-      {selectedWithdrawal && pendingAction?.kind === "withdrawal" && pendingAction.status === "APPROVED" && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4">
-          <div className="admin-card max-w-md w-full p-6 space-y-4" role="dialog" aria-modal="true">
-            <div>
-              <h3 className="text-white font-semibold">Confirm funds</h3>
-              <p className="text-sm text-[var(--admin-muted)] mt-1">
-                Choose how to handle this withdrawal.
-              </p>
-            </div>
-
-            <WithdrawalSummary
-              withdrawal={selectedWithdrawal}
-              onViewChargeProof={() => openChargeProof(selectedWithdrawal)}
-            />
-
-            <div className="space-y-2">
+      <AdminModal
+        open={!!confirmTarget}
+        onClose={() => !reviewing && setConfirmTarget(null)}
+        title="Confirm funds"
+        description="Choose how to handle this withdrawal."
+        footer={
+          confirmTarget ? (
+            <div className="flex w-full flex-col gap-2">
               <button
                 type="button"
                 className="admin-btn-primary w-full text-xs py-2.5"
                 disabled={!!reviewing}
-                onClick={() => reviewWithdrawal(pendingAction.id, "APPROVED", undefined, "CONCLUDE")}
+                onClick={() => reviewWithdrawal(confirmTarget.id, "APPROVED", undefined, "CONCLUDE")}
               >
-                {reviewing === pendingAction.id ? "Processing…" : "Conclude transaction"}
+                {reviewing === confirmTarget.id ? "Processing…" : "Conclude transaction"}
               </button>
-              <p className="text-[10px] text-[var(--admin-muted)] px-1">
-                Tell the user the money was already sent to {selectedWithdrawal.destination}.
-              </p>
-
               <button
                 type="button"
-                className="admin-btn-ghost w-full text-xs py-2.5 border border-[var(--admin-border)]"
+                className="admin-btn-ghost w-full text-xs py-2.5"
                 disabled={!!reviewing}
-                onClick={() => reviewWithdrawal(pendingAction.id, "APPROVED", undefined, "NEXT_STEP")}
+                onClick={() => reviewWithdrawal(confirmTarget.id, "APPROVED", undefined, "NEXT_STEP")}
               >
-                {reviewing === pendingAction.id ? "Processing…" : "Move to next step"}
+                {reviewing === confirmTarget.id ? "Processing…" : "Move to next step"}
               </button>
-              <p className="text-[10px] text-[var(--admin-muted)] px-1">
-                Continue the withdrawal flow instead of finishing the payout.
-              </p>
-            </div>
-
-            <div className="flex justify-end pt-1">
               <button
                 type="button"
-                className="admin-btn-ghost text-xs px-4 py-2"
+                className="admin-btn-ghost w-full text-xs py-2"
                 disabled={!!reviewing}
-                onClick={() => setPendingAction(null)}
+                onClick={() => setConfirmTarget(null)}
               >
                 Cancel
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          ) : null
+        }
+      >
+        {confirmTarget && (
+          <>
+            <WithdrawalSummary
+              withdrawal={confirmTarget}
+              onViewChargeProof={() => openChargeProof(confirmTarget)}
+            />
+            <p className="text-[11px] text-[var(--admin-muted)] mt-3">
+              Conclude tells the user the money was sent to {confirmTarget.destination}. Move to next step continues the withdrawal flow.
+            </p>
+          </>
+        )}
+      </AdminModal>
 
       {selectedWithdrawal && pendingAction?.kind === "withdrawal" && pendingAction.status === "REJECTED" && (
         <AdminActionModal
