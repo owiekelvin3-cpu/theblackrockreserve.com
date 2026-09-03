@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import AdminActionModal from "@/components/admin/AdminActionModal";
@@ -13,7 +13,6 @@ import {
   AdminTableScroll,
   AdminMobileList,
   AdminMobileCard,
-  AdminModal,
 } from "@/components/admin/AdminUi";
 import AdminFetchState from "@/components/admin/AdminFetchState";
 import { AdminLazyProofModal } from "@/components/admin/AdminLazyProofModal";
@@ -138,17 +137,67 @@ function WithdrawalSummary({
   );
 }
 
+function ConfirmChoiceButtons({
+  withdrawal,
+  reviewing,
+  onConclude,
+  onNextStep,
+  onCancel,
+  layout = "row",
+}: {
+  withdrawal: WithdrawalRow;
+  reviewing: string | null;
+  onConclude: () => void;
+  onNextStep: () => void;
+  onCancel: () => void;
+  layout?: "row" | "stack";
+}) {
+  const busy = reviewing === withdrawal.id;
+  const stackClass = layout === "stack" ? "flex-col" : "flex-row flex-wrap justify-end";
+  return (
+    <div className={`flex gap-2 ${stackClass}`}>
+      <button
+        type="button"
+        onClick={onConclude}
+        disabled={busy}
+        className="admin-btn-primary text-xs py-1 px-3"
+      >
+        {busy ? "Processing…" : "Conclude transaction"}
+      </button>
+      <button
+        type="button"
+        onClick={onNextStep}
+        disabled={busy}
+        className="admin-btn-ghost text-xs py-1 px-3"
+      >
+        Move to next step
+      </button>
+      <button type="button" onClick={onCancel} disabled={busy} className="admin-btn-ghost text-xs py-1 px-3">
+        Cancel
+      </button>
+    </div>
+  );
+}
+
 function WithdrawalActions({
   withdrawal,
   reviewing,
+  confirming,
   onConfirmFunds,
+  onConclude,
+  onNextStep,
+  onCancelConfirm,
   onWithdrawalAction,
   onChargeAction,
   layout = "row",
 }: {
   withdrawal: WithdrawalRow;
   reviewing: string | null;
+  confirming: boolean;
   onConfirmFunds: (withdrawal: WithdrawalRow) => void;
+  onConclude: () => void;
+  onNextStep: () => void;
+  onCancelConfirm: () => void;
   onWithdrawalAction: (id: string, status: "APPROVED" | "REJECTED") => void;
   onChargeAction: (chargePaymentId: string, withdrawalId: string, status: "PAID" | "REJECTED") => void;
   layout?: "row" | "stack";
@@ -193,6 +242,18 @@ function WithdrawalActions({
   }
 
   if (needsWithdrawalReview(withdrawal)) {
+    if (confirming) {
+      return (
+        <ConfirmChoiceButtons
+          withdrawal={withdrawal}
+          reviewing={reviewing}
+          layout={layout}
+          onConclude={onConclude}
+          onNextStep={onNextStep}
+          onCancel={onCancelConfirm}
+        />
+      );
+    }
     return (
       <div className={`flex gap-2 ${stackClass}`}>
         <button
@@ -203,7 +264,7 @@ function WithdrawalActions({
             onConfirmFunds(withdrawal);
           }}
           disabled={busy}
-          className="admin-btn-primary text-xs py-1 px-3"
+          className="admin-btn-primary text-xs py-1 px-3 relative z-20"
         >
           Confirm withdrawal
         </button>
@@ -251,6 +312,30 @@ export default function AdminWithdrawalsPage() {
   const [confirmTarget, setConfirmTarget] = useState<WithdrawalRow | null>(null);
   const [filter, setFilter] = useState<"pending" | "all">("pending");
   const [chargeProofPreviewId, setChargeProofPreviewId] = useState<string | null>(null);
+  const confirmDialogRef = useRef<HTMLDialogElement>(null);
+
+  const closeConfirmFunds = () => {
+    setConfirmTarget(null);
+    const dialog = confirmDialogRef.current;
+    if (dialog?.open) dialog.close();
+  };
+
+  const openConfirmFunds = (withdrawal: WithdrawalRow) => {
+    setConfirmTarget(withdrawal);
+  };
+
+  useEffect(() => {
+    const dialog = confirmDialogRef.current;
+    if (!dialog) return;
+    if (confirmTarget && !dialog.open) {
+      try {
+        dialog.showModal();
+      } catch {
+        /* ignore */
+      }
+    }
+    if (!confirmTarget && dialog.open) dialog.close();
+  }, [confirmTarget]);
 
   const openChargeProof = (withdrawal: WithdrawalRow) => {
     if (withdrawal.chargePaymentId) setChargeProofPreviewId(withdrawal.chargePaymentId);
@@ -296,7 +381,7 @@ export default function AdminWithdrawalsPage() {
         toast.success("Transaction concluded — user notified that funds were sent");
       }
       setPendingAction(null);
-      setConfirmTarget(null);
+      closeConfirmFunds();
       refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed");
@@ -394,7 +479,11 @@ export default function AdminWithdrawalsPage() {
                   withdrawal={w}
                   reviewing={reviewing}
                   layout="stack"
-                  onConfirmFunds={setConfirmTarget}
+                  confirming={confirmTarget?.id === w.id}
+                  onConfirmFunds={openConfirmFunds}
+                  onConclude={() => reviewWithdrawal(w.id, "APPROVED", undefined, "CONCLUDE")}
+                  onNextStep={() => reviewWithdrawal(w.id, "APPROVED", undefined, "NEXT_STEP")}
+                  onCancelConfirm={closeConfirmFunds}
                   onWithdrawalAction={(id, status) =>
                     setPendingAction({ kind: "withdrawal", id, status })
                   }
@@ -464,7 +553,11 @@ export default function AdminWithdrawalsPage() {
                       <WithdrawalActions
                         withdrawal={w}
                         reviewing={reviewing}
-                        onConfirmFunds={setConfirmTarget}
+                        confirming={confirmTarget?.id === w.id}
+                        onConfirmFunds={openConfirmFunds}
+                        onConclude={() => reviewWithdrawal(w.id, "APPROVED", undefined, "CONCLUDE")}
+                        onNextStep={() => reviewWithdrawal(w.id, "APPROVED", undefined, "NEXT_STEP")}
+                        onCancelConfirm={closeConfirmFunds}
                         onWithdrawalAction={(id, status) =>
                           setPendingAction({ kind: "withdrawal", id, status })
                         }
@@ -481,54 +574,42 @@ export default function AdminWithdrawalsPage() {
         </AdminFetchState>
       </AdminDataCard>
 
-      <AdminModal
-        open={!!confirmTarget}
-        onClose={() => !reviewing && setConfirmTarget(null)}
-        title="Confirm funds"
-        description="Choose how to handle this withdrawal."
-        footer={
-          confirmTarget ? (
-            <div className="flex w-full flex-col gap-2">
-              <button
-                type="button"
-                className="admin-btn-primary w-full text-xs py-2.5"
-                disabled={!!reviewing}
-                onClick={() => reviewWithdrawal(confirmTarget.id, "APPROVED", undefined, "CONCLUDE")}
-              >
-                {reviewing === confirmTarget.id ? "Processing…" : "Conclude transaction"}
-              </button>
-              <button
-                type="button"
-                className="admin-btn-ghost w-full text-xs py-2.5"
-                disabled={!!reviewing}
-                onClick={() => reviewWithdrawal(confirmTarget.id, "APPROVED", undefined, "NEXT_STEP")}
-              >
-                {reviewing === confirmTarget.id ? "Processing…" : "Move to next step"}
-              </button>
-              <button
-                type="button"
-                className="admin-btn-ghost w-full text-xs py-2"
-                disabled={!!reviewing}
-                onClick={() => setConfirmTarget(null)}
-              >
-                Cancel
-              </button>
-            </div>
-          ) : null
-        }
+      <dialog
+        ref={confirmDialogRef}
+        className="admin-confirm-dialog"
+        onCancel={(event) => {
+          if (reviewing) event.preventDefault();
+          else closeConfirmFunds();
+        }}
+        onClose={() => {
+          if (confirmTarget) setConfirmTarget(null);
+        }}
       >
         {confirmTarget && (
-          <>
+          <div className="p-5">
+            <h3 className="text-base font-semibold mb-1">Confirm funds</h3>
+            <p className="text-xs text-[var(--text-secondary)] mb-4">
+              Choose how to handle this withdrawal.
+            </p>
             <WithdrawalSummary
               withdrawal={confirmTarget}
               onViewChargeProof={() => openChargeProof(confirmTarget)}
             />
-            <p className="text-[11px] text-[var(--admin-muted)] mt-3">
-              Conclude tells the user the money was sent to {confirmTarget.destination}. Move to next step continues the withdrawal flow.
+            <p className="text-[11px] text-[var(--text-secondary)] mt-3 mb-4">
+              Conclude tells the user the money was sent to {confirmTarget.destination}. Move to next
+              step continues the withdrawal flow.
             </p>
-          </>
+            <ConfirmChoiceButtons
+              withdrawal={confirmTarget}
+              reviewing={reviewing}
+              layout="stack"
+              onConclude={() => reviewWithdrawal(confirmTarget.id, "APPROVED", undefined, "CONCLUDE")}
+              onNextStep={() => reviewWithdrawal(confirmTarget.id, "APPROVED", undefined, "NEXT_STEP")}
+              onCancel={closeConfirmFunds}
+            />
+          </div>
         )}
-      </AdminModal>
+      </dialog>
 
       {selectedWithdrawal && pendingAction?.kind === "withdrawal" && pendingAction.status === "REJECTED" && (
         <AdminActionModal

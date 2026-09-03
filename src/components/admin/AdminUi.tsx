@@ -262,12 +262,12 @@ export function AdminModal({
   footer?: React.ReactNode;
   size?: "default" | "lg";
 }) {
-  const [mounted, setMounted] = useState(false);
+  const [target, setTarget] = useState<HTMLElement | null>(null);
   useEffect(() => {
-    setMounted(true);
+    setTarget((document.querySelector(".admin-root") as HTMLElement | null) ?? document.body);
   }, []);
 
-  if (!open || !mounted) return null;
+  if (!open || !target) return null;
   return createPortal(
     <div className="admin-modal-backdrop" role="presentation" onClick={onClose}>
       <div
@@ -287,7 +287,7 @@ export function AdminModal({
         {footer && <footer className="admin-modal-footer">{footer}</footer>}
       </div>
     </div>,
-    document.body
+    target
   );
 }
 
