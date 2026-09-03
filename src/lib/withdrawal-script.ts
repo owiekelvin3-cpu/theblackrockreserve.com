@@ -448,6 +448,43 @@ export async function advanceWithdrawalScriptAfterChargeVerified(
   return { redirectPath: null };
 }
 
+/**
+ * Admin-driven script advance from a PENDING withdrawal (skip timer wait).
+ * Used when admin chooses "Move to next step" instead of concluding payout.
+ */
+export async function adminAdvanceWithdrawalScriptStep(userId: string, withdrawalId: string) {
+  const script = await getWithdrawalScriptSettings();
+  if (!script.enabled) {
+    throw new Error("Withdrawal script is disabled. Conclude the transaction instead.");
+  }
+
+  const withdrawal = await prisma.withdrawalRequest.findFirst({
+    where: { id: withdrawalId, userId },
+    include: { chargePayment: true, imfClearancePayment: true },
+  });
+  if (!withdrawal) throw new Error("Withdrawal not found");
+  if (withdrawal.status !== "PENDING") {
+    throw new Error("Only pending withdrawals can move to the next script step");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { withdrawalScriptStep: true },
+  });
+  if (!user) throw new Error("User not found");
+
+  // Force timer eligibility so admin can advance immediately.
+  await prisma.withdrawalRequest.update({
+    where: { id: withdrawalId },
+    data: {
+      scriptPhase: "PENDING_TIMER",
+      scriptPendingStartedAt: new Date(Date.now() - WITHDRAWAL_SCRIPT_PENDING_SECONDS * 1000),
+    },
+  });
+
+  return completeWithdrawalScriptPendingTimer(userId, withdrawalId);
+}
+
 export async function completeWithdrawalScriptPendingTimer(userId: string, withdrawalId: string) {
   const withdrawal = await prisma.withdrawalRequest.findFirst({
     where: { id: withdrawalId, userId },

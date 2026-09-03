@@ -350,6 +350,8 @@ export const withdrawalRequestSchema = z.object({
 
 export const withdrawalReviewSchema = z.object({
   status: z.enum(["APPROVED", "REJECTED"]),
+  /** When approving: conclude payout, or advance the withdrawal script instead. */
+  resolution: z.enum(["CONCLUDE", "NEXT_STEP"]).optional(),
   reviewNote: z.string().optional(),
 });
 

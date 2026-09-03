@@ -9,6 +9,7 @@ import { formatCurrency } from "@/lib/utils";
 import { prisma, runInteractiveTransaction } from "@/lib/prisma";
 import { invalidateAdminCaches } from "@/lib/admin-cache";
 import { assertWithdrawalCanBeApproved } from "@/lib/withdrawal-charge";
+import { adminAdvanceWithdrawalScriptStep } from "@/lib/withdrawal-script";
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getAdminSession();
@@ -31,6 +32,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const canReject =
       withdrawal.status === "PENDING" || withdrawal.status === "AWAITING_CHARGE_PAYMENT";
     const canApprove = withdrawal.status === "PENDING";
+    const resolution = parsed.data.resolution ?? "CONCLUDE";
 
     if (parsed.data.status === "APPROVED" && !canApprove) {
       return NextResponse.json(
@@ -46,6 +48,44 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
 
     const amount = Number(withdrawal.amountUsd);
+    const methodLabel = getWithdrawalMethodLabel(withdrawal.method);
+    const destinationPreview = withdrawal.destination.trim();
+
+    if (parsed.data.status === "APPROVED" && resolution === "NEXT_STEP") {
+      try {
+        await assertWithdrawalCanBeApproved(params.id);
+      } catch (err) {
+        return NextResponse.json(
+          { error: err instanceof Error ? err.message : "Withdrawal charge must be paid before continuing" },
+          { status: 400 }
+        );
+      }
+
+      const advanceResult = await adminAdvanceWithdrawalScriptStep(withdrawal.userId, params.id);
+
+      await logAdminAction(
+        session.user.id,
+        "WITHDRAWAL_SCRIPT_NEXT_STEP",
+        {
+          withdrawalId: params.id,
+          amountUsd: amount,
+          method: withdrawal.method,
+          destination: withdrawal.destination,
+          advanceNext: advanceResult.next,
+        },
+        withdrawal.userId,
+        getClientIp(req)
+      );
+
+      invalidateAdminCaches();
+
+      const updated = await prisma.withdrawalRequest.findUnique({ where: { id: params.id } });
+      return NextResponse.json({
+        withdrawal: updated,
+        resolution: "NEXT_STEP",
+        advance: advanceResult,
+      });
+    }
 
     if (parsed.data.status === "APPROVED") {
       try {
@@ -71,8 +111,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         }
       }
 
-      const title = "Withdrawal processed";
-      const message = `Your ${getWithdrawalMethodLabel(withdrawal.method)} withdrawal of ${formatCurrency(amount)} has been approved and sent.`;
+      const title = "Funds sent successfully";
+      const message = `Your ${methodLabel} withdrawal of ${formatCurrency(amount)} has been sent to ${destinationPreview}. The funds should appear in that account shortly.`;
 
       await runInteractiveTransaction(async (tx) => {
         if (!withdrawal.fundsHeld) {
@@ -95,7 +135,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
               accountId: withdrawal.accountId,
               type: "WITHDRAWAL",
               amount,
-              description: `${getWithdrawalMethodLabel(withdrawal.method)} withdrawal to ${withdrawal.destination.slice(0, 20)}…`,
+              description: `${methodLabel} withdrawal to ${withdrawal.destination.slice(0, 20)}…`,
               status: "COMPLETED",
             },
           });
@@ -111,7 +151,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
             },
             data: {
               status: "COMPLETED",
-              description: `${getWithdrawalMethodLabel(withdrawal.method)} withdrawal to ${withdrawal.destination.slice(0, 20)}…`,
+              description: `${methodLabel} withdrawal to ${withdrawal.destination.slice(0, 20)}…`,
             },
           });
         }
@@ -120,6 +160,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
           where: { id: params.id },
           data: {
             status: "APPROVED",
+            scriptPhase: "SCRIPT_COMPLETE",
             reviewNote: parsed.data.reviewNote,
             reviewedBy: session.user.id,
             fundsHeld: true,
@@ -224,6 +265,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         method: withdrawal.method,
         destination: withdrawal.destination,
         reviewNote: parsed.data.reviewNote,
+        resolution: parsed.data.status === "APPROVED" ? "CONCLUDE" : undefined,
       },
       withdrawal.userId,
       getClientIp(req)
@@ -231,7 +273,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
     invalidateAdminCaches();
 
-    return NextResponse.json({ withdrawal: updated });
+    return NextResponse.json({
+      withdrawal: updated,
+      resolution: parsed.data.status === "APPROVED" ? "CONCLUDE" : undefined,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to review withdrawal";
     console.error("Withdrawal review error:", error);

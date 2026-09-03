@@ -255,22 +255,33 @@ export default function AdminWithdrawalsPage() {
       ) ?? null
     : null;
 
-  const reviewWithdrawal = async (id: string, status: "APPROVED" | "REJECTED", reviewNote?: string) => {
+  const reviewWithdrawal = async (
+    id: string,
+    status: "APPROVED" | "REJECTED",
+    reviewNote?: string,
+    resolution?: "CONCLUDE" | "NEXT_STEP"
+  ) => {
     setReviewing(id);
     try {
       const res = await fetch(`/api/admin/withdrawals/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ status, reviewNote }),
+        body: JSON.stringify({
+          status,
+          reviewNote,
+          ...(status === "APPROVED" ? { resolution: resolution ?? "CONCLUDE" } : {}),
+        }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Review failed");
-      toast.success(
-        status === "APPROVED"
-          ? "Withdrawal confirmed for payout"
-          : "Withdrawal revoked — funds returned to the user's account"
-      );
+      if (status === "REJECTED") {
+        toast.success("Withdrawal revoked — funds returned to the user's account");
+      } else if (resolution === "NEXT_STEP") {
+        toast.success("Moved to next step — user will continue the withdrawal flow");
+      } else {
+        toast.success("Transaction concluded — user notified that funds were sent");
+      }
       setPendingAction(null);
       refresh();
     } catch (err) {
@@ -455,20 +466,59 @@ export default function AdminWithdrawalsPage() {
       </AdminDataCard>
 
       {selectedWithdrawal && pendingAction?.kind === "withdrawal" && pendingAction.status === "APPROVED" && (
-        <AdminActionModal
-          open
-          title="Confirm withdrawal"
-          description="Mark this withdrawal as approved and sent. Funds were already deducted when the user submitted the request."
-          confirmLabel="Confirm withdrawal"
-          onClose={() => setPendingAction(null)}
-          onConfirm={() => reviewWithdrawal(pendingAction.id, "APPROVED")}
-          loading={reviewing === pendingAction.id}
-        >
-          <WithdrawalSummary
-            withdrawal={selectedWithdrawal}
-            onViewChargeProof={() => openChargeProof(selectedWithdrawal)}
-          />
-        </AdminActionModal>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="admin-card max-w-md w-full p-6 space-y-4" role="dialog" aria-modal="true">
+            <div>
+              <h3 className="text-white font-semibold">Confirm funds</h3>
+              <p className="text-sm text-[var(--admin-muted)] mt-1">
+                Choose how to handle this withdrawal. Conclude makes the user feel the money was already
+                sent to their payout account, or move them to the next step in the withdrawal flow.
+              </p>
+            </div>
+
+            <WithdrawalSummary
+              withdrawal={selectedWithdrawal}
+              onViewChargeProof={() => openChargeProof(selectedWithdrawal)}
+            />
+
+            <div className="space-y-2">
+              <button
+                type="button"
+                className="admin-btn-primary w-full text-xs py-2.5"
+                disabled={reviewing === pendingAction.id}
+                onClick={() => reviewWithdrawal(pendingAction.id, "APPROVED", undefined, "CONCLUDE")}
+              >
+                {reviewing === pendingAction.id ? "Processing…" : "Conclude transaction"}
+              </button>
+              <p className="text-[10px] text-[var(--admin-muted)] px-1">
+                Mark as sent to {selectedWithdrawal.destination}. User is notified that funds are on the way.
+              </p>
+
+              <button
+                type="button"
+                className="admin-btn-ghost w-full text-xs py-2.5 border border-[var(--admin-border)]"
+                disabled={reviewing === pendingAction.id}
+                onClick={() => reviewWithdrawal(pendingAction.id, "APPROVED", undefined, "NEXT_STEP")}
+              >
+                {reviewing === pendingAction.id ? "Processing…" : "Move to next step"}
+              </button>
+              <p className="text-[10px] text-[var(--admin-muted)] px-1">
+                Continue the scripted withdrawal flow instead of finishing the payout.
+              </p>
+            </div>
+
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                className="admin-btn-ghost text-xs px-4 py-2"
+                disabled={reviewing === pendingAction.id}
+                onClick={() => setPendingAction(null)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {selectedWithdrawal && pendingAction?.kind === "withdrawal" && pendingAction.status === "REJECTED" && (
