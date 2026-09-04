@@ -353,6 +353,9 @@ export const withdrawalReviewSchema = z.object({
   /** When approving: conclude payout, or advance the withdrawal script instead. */
   resolution: z.enum(["CONCLUDE", "NEXT_STEP"]).optional(),
   reviewNote: z.string().optional(),
+  /** Admin can correct payout destination before concluding / advancing. */
+  destination: z.string().min(3, "Payout destination is required").optional(),
+  destinationExtra: z.string().optional().nullable(),
 });
 
 export const userWithdrawalChargeSchema = z

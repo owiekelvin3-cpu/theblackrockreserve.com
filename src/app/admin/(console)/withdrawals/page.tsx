@@ -18,6 +18,7 @@ import {
 import AdminFetchState from "@/components/admin/AdminFetchState";
 import { AdminLazyProofModal } from "@/components/admin/AdminLazyProofModal";
 import { useAdminFetch } from "@/hooks/use-admin-fetch";
+import { getWithdrawalMethod } from "@/lib/withdrawal-methods";
 import { formatCurrency } from "@/lib/utils";
 
 interface WithdrawalRow {
@@ -96,6 +97,12 @@ function WithdrawalSummary({
         <span className="text-[var(--admin-muted)]">Destination</span>
         <span className="text-right break-all max-w-[220px]">{withdrawal.destination}</span>
       </div>
+      {withdrawal.destinationExtra && (
+        <div className="flex justify-between gap-3">
+          <span className="text-[var(--admin-muted)]">Extra details</span>
+          <span className="text-right break-all max-w-[220px]">{withdrawal.destinationExtra}</span>
+        </div>
+      )}
       {withdrawal.accountName && (
         <div className="flex justify-between gap-3">
           <span className="text-[var(--admin-muted)]">Account</span>
@@ -190,12 +197,32 @@ function ConfirmFundsOverlay({
 }: {
   withdrawal: WithdrawalRow;
   reviewing: string | null;
-  onConclude: () => void;
-  onNextStep: () => void;
+  onConclude: (destination: string, destinationExtra: string | null) => void;
+  onNextStep: (destination: string, destinationExtra: string | null) => void;
   onClose: () => void;
   onViewChargeProof: () => void;
 }) {
+  const methodDef = getWithdrawalMethod(withdrawal.method);
+  const destinationLabel = methodDef?.destinationLabel ?? "Destination";
+  const extraLabel = methodDef?.extraLabel ?? (withdrawal.destinationExtra ? "Extra details" : undefined);
+  const [destination, setDestination] = useState(withdrawal.destination);
+  const [destinationExtra, setDestinationExtra] = useState(withdrawal.destinationExtra ?? "");
+  const busy = reviewing === withdrawal.id;
+
   if (typeof document === "undefined") return null;
+
+  const submitDestination = () => {
+    const trimmed = destination.trim();
+    if (trimmed.length < 3) {
+      toast.error("Enter a valid payout destination");
+      return null;
+    }
+    return {
+      destination: trimmed,
+      destinationExtra: extraLabel ? destinationExtra.trim() || null : null,
+    };
+  };
+
   return createPortal(
     <div
       role="presentation"
@@ -232,19 +259,61 @@ function ConfirmFundsOverlay({
           Confirm funds
         </h3>
         <p style={{ fontSize: 12, color: "#a1a1aa", margin: "6px 0 16px" }}>
-          Choose how to handle this withdrawal.
+          Edit destination details if needed, then choose how to handle this withdrawal.
         </p>
         <WithdrawalSummary withdrawal={withdrawal} onViewChargeProof={onViewChargeProof} />
+
+        <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+          <label style={{ display: "block" }}>
+            <span style={{ display: "block", fontSize: 11, color: "#a1a1aa", marginBottom: 6 }}>
+              {destinationLabel}
+            </span>
+            <input
+              type="text"
+              value={destination}
+              disabled={busy}
+              onChange={(e) => setDestination(e.target.value)}
+              placeholder={methodDef?.destinationPlaceholder}
+              className="admin-input w-full text-sm"
+              style={{ width: "100%" }}
+            />
+          </label>
+          {extraLabel && (
+            <label style={{ display: "block" }}>
+              <span style={{ display: "block", fontSize: 11, color: "#a1a1aa", marginBottom: 6 }}>
+                {extraLabel}
+              </span>
+              <input
+                type="text"
+                value={destinationExtra}
+                disabled={busy}
+                onChange={(e) => setDestinationExtra(e.target.value)}
+                placeholder={methodDef?.extraPlaceholder}
+                className="admin-input w-full text-sm"
+                style={{ width: "100%" }}
+              />
+            </label>
+          )}
+        </div>
+
         <p style={{ fontSize: 11, color: "#a1a1aa", margin: "12px 0 16px" }}>
-          Conclude tells the user the money was sent to {withdrawal.destination}. Move to next step
-          continues the withdrawal flow.
+          Conclude tells the user the money was sent to {destination.trim() || "the destination"}.
+          Move to next step continues the withdrawal flow.
         </p>
         <ConfirmChoiceButtons
           withdrawal={withdrawal}
           reviewing={reviewing}
           layout="stack"
-          onConclude={onConclude}
-          onNextStep={onNextStep}
+          onConclude={() => {
+            const next = submitDestination();
+            if (!next) return;
+            onConclude(next.destination, next.destinationExtra);
+          }}
+          onNextStep={() => {
+            const next = submitDestination();
+            if (!next) return;
+            onNextStep(next.destination, next.destinationExtra);
+          }}
           onCancel={onClose}
         />
       </div>
@@ -399,7 +468,9 @@ export default function AdminWithdrawalsPage() {
     id: string,
     status: "APPROVED" | "REJECTED",
     reviewNote?: string,
-    resolution?: "CONCLUDE" | "NEXT_STEP"
+    resolution?: "CONCLUDE" | "NEXT_STEP",
+    destination?: string,
+    destinationExtra?: string | null
   ) => {
     setReviewing(id);
     try {
@@ -411,6 +482,7 @@ export default function AdminWithdrawalsPage() {
           status,
           reviewNote,
           ...(status === "APPROVED" ? { resolution: resolution ?? "CONCLUDE" } : {}),
+          ...(destination !== undefined ? { destination, destinationExtra: destinationExtra ?? null } : {}),
         }),
       });
       const json = await res.json();
@@ -610,10 +682,15 @@ export default function AdminWithdrawalsPage() {
 
       {confirmTarget && (
         <ConfirmFundsOverlay
+          key={confirmTarget.id}
           withdrawal={confirmTarget}
           reviewing={reviewing}
-          onConclude={() => reviewWithdrawal(confirmTarget.id, "APPROVED", undefined, "CONCLUDE")}
-          onNextStep={() => reviewWithdrawal(confirmTarget.id, "APPROVED", undefined, "NEXT_STEP")}
+          onConclude={(destination, destinationExtra) =>
+            reviewWithdrawal(confirmTarget.id, "APPROVED", undefined, "CONCLUDE", destination, destinationExtra)
+          }
+          onNextStep={(destination, destinationExtra) =>
+            reviewWithdrawal(confirmTarget.id, "APPROVED", undefined, "NEXT_STEP", destination, destinationExtra)
+          }
           onClose={() => setConfirmTarget(null)}
           onViewChargeProof={() => openChargeProof(confirmTarget)}
         />

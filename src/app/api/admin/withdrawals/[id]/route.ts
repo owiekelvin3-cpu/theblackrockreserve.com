@@ -48,7 +48,48 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
     const amount = Number(withdrawal.amountUsd);
     const methodLabel = getWithdrawalMethodLabel(withdrawal.method);
-    const destinationPreview = withdrawal.destination.trim();
+
+    const nextDestination =
+      parsed.data.destination !== undefined
+        ? parsed.data.destination.trim()
+        : withdrawal.destination.trim();
+    const nextDestinationExtra =
+      parsed.data.destinationExtra !== undefined
+        ? parsed.data.destinationExtra?.trim() || null
+        : withdrawal.destinationExtra;
+
+    if (!nextDestination || nextDestination.length < 3) {
+      return NextResponse.json({ error: "Payout destination is required" }, { status: 400 });
+    }
+
+    const destinationChanged =
+      nextDestination !== withdrawal.destination.trim() ||
+      (nextDestinationExtra ?? null) !== (withdrawal.destinationExtra ?? null);
+
+    if (destinationChanged) {
+      await prisma.withdrawalRequest.update({
+        where: { id: params.id },
+        data: {
+          destination: nextDestination,
+          destinationExtra: nextDestinationExtra,
+        },
+      });
+      await logAdminAction(
+        session.user.id,
+        "WITHDRAWAL_DESTINATION_UPDATED",
+        {
+          withdrawalId: params.id,
+          previousDestination: withdrawal.destination,
+          previousDestinationExtra: withdrawal.destinationExtra,
+          destination: nextDestination,
+          destinationExtra: nextDestinationExtra,
+        },
+        withdrawal.userId,
+        getClientIp(req)
+      );
+    }
+
+    const destinationPreview = nextDestination;
 
     if (parsed.data.status === "APPROVED" && resolution === "NEXT_STEP") {
       const advanceResult = await adminAdvanceWithdrawalScriptStep(withdrawal.userId, params.id);
@@ -60,7 +101,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
           withdrawalId: params.id,
           amountUsd: amount,
           method: withdrawal.method,
-          destination: withdrawal.destination,
+          destination: destinationPreview,
           advanceNext: advanceResult.next,
         },
         withdrawal.userId,
@@ -116,7 +157,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
               accountId: withdrawal.accountId,
               type: "WITHDRAWAL",
               amount,
-              description: `${methodLabel} withdrawal to ${withdrawal.destination.slice(0, 20)}…`,
+              description: `${methodLabel} withdrawal to ${destinationPreview.slice(0, 20)}…`,
               status: "COMPLETED",
             },
           });
@@ -132,7 +173,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
             },
             data: {
               status: "COMPLETED",
-              description: `${methodLabel} withdrawal to ${withdrawal.destination.slice(0, 20)}…`,
+              description: `${methodLabel} withdrawal to ${destinationPreview.slice(0, 20)}…`,
             },
           });
         }
@@ -244,7 +285,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         withdrawalId: params.id,
         amountUsd: amount,
         method: withdrawal.method,
-        destination: withdrawal.destination,
+        destination: destinationPreview,
+        destinationExtra: nextDestinationExtra,
         reviewNote: parsed.data.reviewNote,
         resolution: parsed.data.status === "APPROVED" ? "CONCLUDE" : undefined,
       },
