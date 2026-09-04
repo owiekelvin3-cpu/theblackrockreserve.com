@@ -11,6 +11,7 @@ import DashboardGate from "@/components/dashboard/DashboardGate";
 import EmptyState from "@/components/dashboard/EmptyState";
 import WithdrawalMethodIcon from "@/components/dashboard/WithdrawalMethodIcon";
 import WithdrawalReceiptModal, { type WithdrawalReceiptData } from "@/components/dashboard/WithdrawalReceiptModal";
+import WithdrawalSentSuccessModal from "@/components/dashboard/WithdrawalSentSuccessModal";
 import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
 import FrozenAccountModal from "@/components/dashboard/FrozenAccountModal";
 import { useFrozenAccount } from "@/components/dashboard/FrozenAccountProvider";
@@ -64,7 +65,7 @@ interface WithdrawalData {
 interface WithdrawalScriptStage {
   label: string;
   tone: "brand" | "amber" | "green" | "red" | "muted";
-  action: "navigate" | "aml-modal" | "none";
+  action: "navigate" | "aml-modal" | "sent-modal" | "none";
   resumeUrl: string | null;
   clickable: boolean;
 }
@@ -118,6 +119,7 @@ export default function WithdrawalsPage() {
   const [receiptData, setReceiptData] = useState<WithdrawalReceiptData | null>(null);
   const [historyExpanded, setHistoryExpanded] = useState(false);
   const [frozenModalOpen, setFrozenModalOpen] = useState(false);
+  const [sentSuccessItem, setSentSuccessItem] = useState<WithdrawalHistoryItem | null>(null);
   const { isFrozen, freeze } = useFrozenAccount();
 
   const selectedMethodDef = getWithdrawalMethod(method)!;
@@ -315,6 +317,10 @@ export default function WithdrawalsPage() {
       setFrozenModalOpen(true);
       return;
     }
+    if (w.scriptStage?.action === "sent-modal" || w.status === "APPROVED") {
+      setSentSuccessItem(w);
+      return;
+    }
     if (w.scriptStage?.resumeUrl) {
       router.push(w.scriptStage.resumeUrl);
       return;
@@ -508,7 +514,8 @@ export default function WithdrawalsPage() {
                   w.status === "AWAITING_CHARGE_PAYMENT" &&
                   w.chargePayment &&
                   (w.chargePayment.status === "UNPAID" || w.chargePayment.status === "REJECTED");
-                const historyClickable = w.scriptStage?.clickable || canPayCharge;
+                const historyClickable =
+                  w.scriptStage?.clickable || canPayCharge || w.status === "APPROVED";
                 return (
                   <div
                     key={w.id}
@@ -605,6 +612,12 @@ export default function WithdrawalsPage() {
           setReceiptOpen(false);
           setReceiptData(null);
         }}
+      />
+
+      <WithdrawalSentSuccessModal
+        open={!!sentSuccessItem}
+        withdrawal={sentSuccessItem}
+        onClose={() => setSentSuccessItem(null)}
       />
 
       <FrozenAccountModal

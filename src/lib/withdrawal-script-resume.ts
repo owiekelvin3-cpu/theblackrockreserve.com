@@ -1,7 +1,7 @@
 import type { WithdrawalScriptPhase, WithdrawalRequestStatus } from "@prisma/client";
 import { isWithdrawalScriptCycleComplete } from "@/lib/withdrawal-script";
 
-export type WithdrawalScriptStageAction = "navigate" | "aml-modal" | "none";
+export type WithdrawalScriptStageAction = "navigate" | "aml-modal" | "sent-modal" | "none";
 
 export type WithdrawalScriptStage = {
   label: string;
@@ -47,9 +47,9 @@ export function resolveWithdrawalScriptStage(input: ResumeInput): WithdrawalScri
     return {
       label: "Sent to your account",
       tone: "green",
-      action: "none",
+      action: "sent-modal",
       resumeUrl: null,
-      clickable: false,
+      clickable: true,
     };
   }
 

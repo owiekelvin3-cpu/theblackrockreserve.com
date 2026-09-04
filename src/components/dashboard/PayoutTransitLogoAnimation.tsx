@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import BlackRockWordmark from "@/components/dashboard/BlackRockWordmark";
 import WithdrawalMethodIcon from "@/components/dashboard/WithdrawalMethodIcon";
 import type { WithdrawalMethodDef } from "@/lib/withdrawal-methods";
@@ -60,6 +60,110 @@ export function PayoutTransitLogoAnimation({
         <p className="inst-payout-transit-label inst-payout-transit-label-dest">{destLabel}</p>
       </div>
     </div>
+  );
+}
+
+/** Bank → payout logo with successful delivery (concluded withdrawal). */
+export function PayoutSuccessHero({
+  method,
+  institutionLabel,
+}: {
+  method: WithdrawalMethodDef;
+  institutionLabel?: string;
+}) {
+  const destLabel = institutionLabel ?? method.label;
+
+  return (
+    <motion.div
+      className="inst-payout-reject-wrap"
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <div className="inst-payout-transit inst-payout-success">
+        <div className="inst-payout-transit-col">
+          <motion.div
+            className="inst-payout-transit-badge inst-payout-transit-badge-bank inst-payout-transit-badge-wordmark"
+            animate={{ scale: [1, 1.03, 1], opacity: [0.92, 1, 0.92] }}
+            transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <BlackRockWordmark compact />
+          </motion.div>
+          <p className="inst-payout-transit-label">BlackRock</p>
+        </div>
+
+        <div className="inst-payout-transit-bridge inst-payout-success-bridge">
+          <div className="inst-payout-transit-line inst-payout-success-line" />
+          <motion.span
+            className="inst-payout-transit-dot inst-payout-success-dot"
+            animate={{
+              left: ["6%", "88%"],
+              opacity: [0.45, 1, 0.45],
+              scale: [0.9, 1.05, 0.9],
+            }}
+            transition={{ duration: 2.0, repeat: Infinity, ease: "easeInOut", repeatDelay: 0.2 }}
+          />
+          <motion.span
+            className="inst-payout-success-check"
+            aria-hidden
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: [1, 1.1, 1], opacity: 1 }}
+            transition={{
+              opacity: { duration: 0.35, delay: 0.2 },
+              scale: { duration: 1.8, repeat: Infinity, ease: "easeInOut", delay: 0.35 },
+            }}
+          >
+            <Check size={14} strokeWidth={2.75} />
+          </motion.span>
+        </div>
+
+        <div className="inst-payout-transit-col">
+          <motion.div
+            className="inst-payout-transit-badge inst-payout-transit-badge-dest inst-payout-success-dest"
+            animate={{ scale: [1, 1.035, 1] }}
+            transition={{ duration: 2.1, repeat: Infinity, ease: "easeInOut", delay: 0.15 }}
+          >
+            <motion.span
+              className="inst-payout-transit-ring inst-payout-success-ring"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+            />
+            <motion.span
+              className="inst-payout-transit-ring inst-payout-transit-ring-inner inst-payout-success-ring-inner"
+              animate={{ rotate: -360 }}
+              transition={{ duration: 6.5, repeat: Infinity, ease: "linear" }}
+            />
+            <span className="inst-payout-transit-logo">
+              <WithdrawalMethodIcon method={method} size="lg" className="scale-110" />
+            </span>
+            <motion.span
+              className="inst-payout-success-dest-check"
+              aria-hidden
+              initial={{ scale: 0, rotate: -45 }}
+              animate={{ scale: [1, 1.08, 1], rotate: 0 }}
+              transition={{
+                rotate: { type: "spring", stiffness: 380, damping: 18, delay: 0.25 },
+                scale: { duration: 1.6, repeat: Infinity, ease: "easeInOut", delay: 0.5 },
+              }}
+            >
+              <Check size={11} strokeWidth={3} />
+            </motion.span>
+          </motion.div>
+          <p className="inst-payout-transit-label inst-payout-transit-label-dest">{destLabel}</p>
+        </div>
+      </div>
+      <motion.p
+        className="inst-payout-success-caption"
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: [0.75, 1, 0.75], y: 0 }}
+        transition={{
+          opacity: { duration: 2.4, repeat: Infinity, ease: "easeInOut", delay: 0.6 },
+          y: { duration: 0.4, delay: 0.45 },
+        }}
+      >
+        Sent to your account
+      </motion.p>
+    </motion.div>
   );
 }
 
