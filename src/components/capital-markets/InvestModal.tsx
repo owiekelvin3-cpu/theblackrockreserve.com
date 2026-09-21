@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, LayoutGroup, useReducedMotion } from "framer-motion";
 import { X, Wallet, ArrowRight, CheckCircle2, Loader2, CalendarClock, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/components/providers/I18nProvider";
@@ -13,6 +13,7 @@ import {
   getEnabledDurationPlans,
   maturityDateFromDays,
 } from "@/lib/market-duration";
+import { useAnimatedNumber } from "@/hooks/use-animated-number";
 import Button from "@/components/ui/Button";
 import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
 import { useTransactionPin } from "@/hooks/use-transaction-pin";
@@ -43,6 +44,7 @@ export default function InvestModal({
   onClosePosition,
 }: InvestModalProps) {
   const { t, formatCurrency, formatDate, currencySymbol } = useI18n();
+  const reduced = useReducedMotion();
   const [step, setStep] = useState<Step>("amount");
   const [amount, setAmount] = useState("");
   const [durationId, setDurationId] = useState("");
@@ -101,6 +103,8 @@ export default function InvestModal({
 
   const fee = useMemo(() => (amountNum > 0 ? calculateInvestmentFee(amountNum) : 0), [amountNum]);
   const totalCost = useMemo(() => Math.round((amountNum + fee) * 100) / 100, [amountNum, fee]);
+  const animatedProfit = useAnimatedNumber(holdReturn.profit);
+  const animatedPayout = useAnimatedNumber(holdReturn.payout);
   const shares = useMemo(() => {
     if (!asset || amountNum <= 0) return 0;
     return Math.round((amountNum / asset.price) * 1_000_000) / 1_000_000;
@@ -216,7 +220,11 @@ export default function InvestModal({
             </div>
 
             <div className="p-5 space-y-5">
-              <div className="grid grid-cols-2 gap-3 p-4 rounded-xl bg-[var(--surface-base)] border border-[var(--border-subtle)]">
+              <motion.div
+                initial={reduced ? false : { opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="grid grid-cols-2 gap-3 p-4 rounded-xl bg-[var(--surface-base)] border border-[var(--border-subtle)]"
+              >
                 <div>
                   <p className="text-xs text-[var(--text-muted)]">{t("invest.ticker")}</p>
                   <p className="font-mono font-bold text-[var(--text-primary)]">{asset.symbol}</p>
@@ -232,38 +240,57 @@ export default function InvestModal({
                     {formatCurrency(walletBalance)}
                   </span>
                 </div>
-              </div>
+              </motion.div>
 
+              <AnimatePresence mode="wait">
               {step === "amount" && (
-                <>
+                <motion.div
+                  key="amount"
+                  initial={reduced ? false : { opacity: 0, x: 18 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={reduced ? undefined : { opacity: 0, x: -18 }}
+                  transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                  className="space-y-5"
+                >
                   <div>
                     <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
                       {t("invest.durationLabel")}
                     </label>
                     <p className="text-xs text-[var(--text-muted)] mb-3">{t("invest.durationHint")}</p>
                     <div className="flex flex-wrap gap-2">
+                      <LayoutGroup>
                       {durationPlans.map((plan) => (
-                        <button
+                        <motion.button
                           key={plan.id}
                           type="button"
                           onClick={() => {
                             setDurationId(plan.id);
                             setError("");
                           }}
+                          whileHover={reduced ? undefined : { y: -2, scale: 1.03 }}
+                          whileTap={reduced ? undefined : { scale: 0.96 }}
                           className={cn(
-                            "px-3 py-2 rounded-xl text-xs font-semibold border transition-colors min-w-[88px]",
+                            "relative px-3 py-2 rounded-xl text-xs font-semibold border min-w-[88px] overflow-hidden",
                             durationId === plan.id
-                              ? "border-accent-brand bg-accent-brand/15 text-accent-brand"
+                              ? "text-accent-brand border-transparent"
                               : "border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-accent-brand/40"
                           )}
                         >
-                          <span className="block">{plan.label}</span>
-                          <span className="block mt-0.5 font-mono text-[11px] opacity-80">
+                          {durationId === plan.id && (
+                            <motion.span
+                              layoutId="invest-duration-pill"
+                              className="absolute inset-0 rounded-xl bg-accent-brand/15 border border-accent-brand"
+                              transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                            />
+                          )}
+                          <span className="relative z-10 block">{plan.label}</span>
+                          <span className="relative z-10 block mt-0.5 font-mono text-[11px] opacity-80">
                             {plan.returnPercent >= 0 ? "+" : ""}
                             {plan.returnPercent.toFixed(2)}%
                           </span>
-                        </button>
+                        </motion.button>
                       ))}
+                      </LayoutGroup>
                     </div>
                   </div>
 
@@ -292,10 +319,11 @@ export default function InvestModal({
 
                   <div className="flex flex-wrap gap-2">
                     {QUICK_AMOUNTS.map((q) => (
-                      <button
+                      <motion.button
                         key={q}
                         type="button"
                         onClick={() => setAmount(String(q))}
+                        whileTap={reduced ? undefined : { scale: 0.94 }}
                         className={cn(
                           "px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors",
                           amount === String(q)
@@ -304,32 +332,50 @@ export default function InvestModal({
                         )}
                       >
                         {formatCurrency(q)}
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
 
                   {selectedPlan && previewAmount > 0 && (
-                    <div className="rounded-xl border border-accent-brand/25 bg-accent-brand/10 p-4 space-y-3">
-                      <div className="flex items-start justify-between gap-3">
+                    <motion.div
+                      key={selectedPlan.id}
+                      initial={reduced ? false : { opacity: 0.55, y: 8, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ type: "spring", stiffness: 320, damping: 28 }}
+                      className="market-return-preview rounded-xl border border-accent-brand/25 bg-accent-brand/10 p-4 space-y-3"
+                    >
+                      <div className="relative z-10 flex items-start justify-between gap-3">
                         <div>
                           <p className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">{t("invest.projectedReturn")}</p>
                           <p className="text-2xl font-bold font-mono text-accent-green mt-0.5">
-                            +{formatCurrency(holdReturn.profit)}
+                            +{formatCurrency(animatedProfit)}
                           </p>
                           <p className="text-xs text-[var(--text-secondary)] mt-1">
-                            {t("invest.youWillMake", { amount: formatCurrency(holdReturn.profit) })}{" "}
+                            {t("invest.youWillMake", { amount: formatCurrency(animatedProfit) })}{" "}
                             {t("invest.inDuration", { duration: selectedPlan.label })}
                           </p>
                         </div>
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full bg-accent-green/10 text-accent-green">
+                        <motion.span
+                          animate={reduced ? undefined : { y: [0, -3, 0] }}
+                          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                          className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full bg-accent-green/10 text-accent-green"
+                        >
                           <TrendingUp size={12} />
                           {selectedPlan.returnPercent.toFixed(2)}%
-                        </span>
+                        </motion.span>
                       </div>
-                      <div className="grid grid-cols-2 gap-3 pt-2 border-t border-accent-brand/15 text-sm">
+                      <div className="relative z-10 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                        <motion.span
+                          className="block h-full rounded-full bg-gradient-to-r from-accent-brand to-accent-green"
+                          initial={{ width: 0 }}
+                          animate={{ width: `${Math.min(100, (selectedPlan.days / 365) * 100)}%` }}
+                          transition={{ duration: reduced ? 0 : 0.7, ease: [0.22, 1, 0.36, 1] }}
+                        />
+                      </div>
+                      <div className="relative z-10 grid grid-cols-2 gap-3 pt-2 border-t border-accent-brand/15 text-sm">
                         <div>
                           <p className="text-xs text-[var(--text-muted)]">{t("invest.projectedPayout")}</p>
-                          <p className="font-mono font-semibold text-[var(--text-primary)]">{formatCurrency(holdReturn.payout)}</p>
+                          <p className="font-mono font-semibold text-[var(--text-primary)]">{formatCurrency(animatedPayout)}</p>
                         </div>
                         <div>
                           <p className="text-xs text-[var(--text-muted)]">{t("invest.maturityDate")}</p>
@@ -340,22 +386,29 @@ export default function InvestModal({
                         </div>
                       </div>
                       {amountNum <= 0 && (
-                        <p className="text-[11px] text-[var(--text-muted)]">
+                        <p className="relative z-10 text-[11px] text-[var(--text-muted)]">
                           {t("invest.exampleOn", { amount: formatCurrency(previewAmount) })}
                         </p>
                       )}
-                      <p className="text-[11px] text-[var(--text-muted)]">{t("invest.projectedNote")}</p>
-                    </div>
+                      <p className="relative z-10 text-[11px] text-[var(--text-muted)]">{t("invest.projectedNote")}</p>
+                    </motion.div>
                   )}
 
                   <Button className="w-full" onClick={goToSummary}>
                     {t("invest.continue")} <ArrowRight size={16} className="ml-1" />
                   </Button>
-                </>
+                </motion.div>
               )}
 
               {step === "summary" && selectedPlan && (
-                <>
+                <motion.div
+                  key="summary"
+                  initial={reduced ? false : { opacity: 0, x: 18 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={reduced ? undefined : { opacity: 0, x: -18 }}
+                  transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                  className="space-y-5"
+                >
                   <div className="space-y-3 p-4 rounded-xl border border-accent-brand/20 bg-accent-brand/5">
                     <h3 className="font-semibold text-[var(--text-primary)]">{t("invest.summaryTitle")}</h3>
                     {[
@@ -386,12 +439,40 @@ export default function InvestModal({
                       {t("invest.confirm")}
                     </Button>
                   </div>
-                </>
+                </motion.div>
               )}
 
               {step === "success" && result && (
-                <div className="text-center py-4 space-y-4">
-                  <CheckCircle2 size={48} className="mx-auto text-accent-green" />
+                <motion.div
+                  key="success"
+                  initial={reduced ? false : { opacity: 0, scale: 0.94 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="text-center py-4 space-y-4"
+                >
+                  <div className="relative mx-auto h-16 w-16">
+                    {!reduced &&
+                      [0, 1, 2, 3, 4, 5].map((i) => (
+                        <motion.span
+                          key={i}
+                          className="invest-success-burst"
+                          initial={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+                          animate={{
+                            opacity: 0,
+                            x: Math.cos((i / 6) * Math.PI * 2) * 28,
+                            y: Math.sin((i / 6) * Math.PI * 2) * 28,
+                            scale: 0.3,
+                          }}
+                          transition={{ duration: 0.7, ease: "easeOut" }}
+                        />
+                      ))}
+                    <motion.div
+                      initial={reduced ? false : { scale: 0, rotate: -24 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ type: "spring", stiffness: 280, damping: 14 }}
+                    >
+                      <CheckCircle2 size={48} className="mx-auto text-accent-green" />
+                    </motion.div>
+                  </div>
                   <div>
                     <h3 className="text-xl font-bold text-[var(--text-primary)]">{t("invest.successTitle")}</h3>
                     <p className="text-sm text-[var(--text-secondary)] mt-2">
@@ -428,8 +509,9 @@ export default function InvestModal({
                       </Button>
                     )}
                   </div>
-                </div>
+                </motion.div>
               )}
+              </AnimatePresence>
 
               {submitting && step === "summary" && (
                 <div className="flex items-center justify-center gap-2 text-sm text-[var(--text-muted)]">

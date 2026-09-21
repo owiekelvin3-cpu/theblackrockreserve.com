@@ -2277,9 +2277,27 @@
 
 /* Investment Marketplace — theme-aware surfaces */
 .marketplace-status-bar {
+  position: relative;
+  overflow: hidden;
   border: 1px solid var(--border-subtle);
   background: var(--surface-elevated);
   border-radius: 0.75rem;
+}
+
+.marketplace-status-bar::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0 auto 0 -40%;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 95, 5, 0.12), transparent);
+  animation: marketplace-scan 3.6s ease-in-out infinite;
+}
+
+@keyframes marketplace-scan {
+  0% { transform: translateX(0); opacity: 0; }
+  18% { opacity: 1; }
+  100% { transform: translateX(380%); opacity: 0; }
 }
 
 .marketplace-field {
@@ -2330,6 +2348,13 @@
   border: 1px solid var(--border-subtle);
   background: var(--surface-elevated);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  transform: translateZ(0);
+}
+
+.market-asset-card:hover {
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(255, 95, 5, 0.22);
 }
 
 [data-theme="light"] .market-asset-card {
@@ -2341,8 +2366,103 @@
 
 [data-theme="light"] .market-asset-card:hover {
   box-shadow:
-    0 4px 20px rgba(15, 23, 42, 0.08),
-    0 0 0 1px rgba(255, 95, 5, 0.12);
+    0 16px 36px rgba(15, 23, 42, 0.12),
+    0 0 0 1px rgba(255, 95, 5, 0.16);
+}
+
+.market-card-shine {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(
+    115deg,
+    transparent 36%,
+    rgba(255, 255, 255, 0.08) 48%,
+    rgba(255, 95, 5, 0.16) 52%,
+    transparent 64%
+  );
+  transform: translateX(-140%);
+  opacity: 0;
+}
+
+.market-asset-card:hover .market-card-shine {
+  animation: market-shine-sweep 0.95s ease;
+}
+
+@keyframes market-shine-sweep {
+  0% { transform: translateX(-140%); opacity: 0; }
+  18% { opacity: 1; }
+  100% { transform: translateX(140%); opacity: 0; }
+}
+
+.market-live-dot {
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55);
+  animation: market-live-pulse 2s ease-out infinite;
+}
+
+@keyframes market-live-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
+  70% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+.market-return-preview {
+  position: relative;
+  overflow: hidden;
+}
+
+.market-return-preview::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  top: -50px;
+  right: -30px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.22), transparent 68%);
+  animation: market-glow-drift 4.2s ease-in-out infinite;
+}
+
+.market-return-preview::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 40%, rgba(255, 255, 255, 0.06) 50%, transparent 60%);
+  transform: translateX(-120%);
+  animation: market-preview-sheen 3.4s ease-in-out infinite;
+}
+
+@keyframes market-glow-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.7; }
+  50% { transform: translate(-24px, 16px) scale(1.15); opacity: 1; }
+}
+
+@keyframes market-preview-sheen {
+  0%, 35% { transform: translateX(-120%); }
+  70%, 100% { transform: translateX(120%); }
+}
+
+.invest-success-burst {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 999px;
+  background: #22c55e;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marketplace-status-bar::after,
+  .market-card-shine,
+  .market-live-dot,
+  .market-return-preview::before,
+  .market-return-preview::after {
+    animation: none !important;
+  }
 }
 
 .market-asset-chip {

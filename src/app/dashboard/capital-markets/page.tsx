@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { motion, LayoutGroup } from "framer-motion";
 import {
   TrendingUp, TrendingDown, BarChart3, Wallet, PieChart, Search,
   SlidersHorizontal, LineChart, History, LayoutGrid, Star, RefreshCw,
@@ -355,7 +356,12 @@ export default function CapitalMarketsPage() {
   return (
     <DashboardGate isLoading={loading}>
       <div className="space-y-6">
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4"
+        >
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-accent-brand mb-1">
               {t("capitalMarkets.badge")}
@@ -369,7 +375,7 @@ export default function CapitalMarketsPage() {
             </p>
           </div>
           <div className="marketplace-status-bar flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 px-4 py-3 w-full lg:w-auto">
-            <div className="flex items-center gap-2">
+            <div className="relative z-10 flex items-center gap-2">
               <span
                 className={cn(
                   "h-2 w-2 rounded-full shrink-0",
@@ -388,64 +394,93 @@ export default function CapitalMarketsPage() {
               </span>
             )}
           </div>
-        </div>
+        </motion.div>
 
         {data && (
           <>
             <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
-              <Card className="border border-accent-brand/15 bg-accent-brand/5">
-                <div className="flex items-center gap-2 text-[var(--text-secondary)] text-sm mb-1">
-                  <PieChart size={16} className="text-accent-brand" />
-                  {t("capitalMarkets.portfolioValue")}
-                </div>
-                <p className="font-mono text-2xl font-bold text-[var(--text-primary)]">
-                  {formatCurrency(data.analytics.currentPortfolioValue)}
-                </p>
-                <div className="mt-2">
-                  <ChangeBadge value={data.dayChange} percent={data.dayChangePercent} />
-                </div>
-              </Card>
-              <Card>
-                <div className="flex items-center gap-2 text-[var(--text-secondary)] text-sm mb-1">
-                  <BarChart3 size={16} />
-                  {t("capitalMarkets.totalInvested")}
-                </div>
-                <p className="font-mono text-2xl font-bold text-[var(--text-primary)]">
-                  {formatCurrency(data.analytics.totalInvested)}
-                </p>
-                <p className="text-xs text-[var(--text-muted)] mt-2">{t("capitalMarkets.activePositions", { count: data.positionsCount })}</p>
-              </Card>
-              <Card>
-                <div className="flex items-center gap-2 text-[var(--text-secondary)] text-sm mb-1">
-                  <Wallet size={16} />
-                  {t("capitalMarkets.availableCash")}
-                </div>
-                <p className="font-mono text-2xl font-bold text-[var(--text-primary)]">
-                  {formatCurrency(data.availableCash)}
-                </p>
-                <p className="text-xs text-[var(--text-muted)] mt-2">{t("capitalMarkets.readyToDeploy")}</p>
-              </Card>
-              <Card>
-                <div className="flex items-center gap-2 text-[var(--text-secondary)] text-sm mb-1">
-                  <TrendingUp size={16} />
-                  {t("capitalMarkets.netPnl")}
-                </div>
-                <p
-                  className={cn(
-                    "font-mono text-2xl font-bold",
-                    data.analytics.netGainLoss >= 0 ? "text-accent-green" : "text-accent-red"
-                  )}
+              {[
+                {
+                  key: "portfolio",
+                  className: "border border-accent-brand/15 bg-accent-brand/5",
+                  icon: <PieChart size={16} className="text-accent-brand" />,
+                  label: t("capitalMarkets.portfolioValue"),
+                  value: (
+                    <p className="font-mono text-2xl font-bold text-[var(--text-primary)]">
+                      {formatCurrency(data.analytics.currentPortfolioValue)}
+                    </p>
+                  ),
+                  extra: <ChangeBadge value={data.dayChange} percent={data.dayChangePercent} />,
+                },
+                {
+                  key: "invested",
+                  icon: <BarChart3 size={16} />,
+                  label: t("capitalMarkets.totalInvested"),
+                  value: (
+                    <p className="font-mono text-2xl font-bold text-[var(--text-primary)]">
+                      {formatCurrency(data.analytics.totalInvested)}
+                    </p>
+                  ),
+                  extra: (
+                    <p className="text-xs text-[var(--text-muted)] mt-2">
+                      {t("capitalMarkets.activePositions", { count: data.positionsCount })}
+                    </p>
+                  ),
+                },
+                {
+                  key: "cash",
+                  icon: <Wallet size={16} />,
+                  label: t("capitalMarkets.availableCash"),
+                  value: (
+                    <p className="font-mono text-2xl font-bold text-[var(--text-primary)]">
+                      {formatCurrency(data.availableCash)}
+                    </p>
+                  ),
+                  extra: <p className="text-xs text-[var(--text-muted)] mt-2">{t("capitalMarkets.readyToDeploy")}</p>,
+                },
+                {
+                  key: "pnl",
+                  icon: <TrendingUp size={16} />,
+                  label: t("capitalMarkets.netPnl"),
+                  value: (
+                    <p
+                      className={cn(
+                        "font-mono text-2xl font-bold",
+                        data.analytics.netGainLoss >= 0 ? "text-accent-green" : "text-accent-red"
+                      )}
+                    >
+                      {data.analytics.netGainLoss >= 0 ? "+" : ""}
+                      {formatCurrency(data.analytics.netGainLoss)}
+                    </p>
+                  ),
+                  extra: (
+                    <p className="text-xs text-[var(--text-muted)] mt-2">
+                      {data.analytics.netGainLossPercent >= 0 ? "+" : ""}
+                      {data.analytics.netGainLossPercent.toFixed(2)}% {t("capitalMarkets.roi")}
+                    </p>
+                  ),
+                },
+              ].map((stat, i) => (
+                <motion.div
+                  key={stat.key}
+                  initial={{ opacity: 0, y: 18 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.45, delay: 0.08 * i, ease: [0.22, 1, 0.36, 1] }}
+                  whileHover={{ y: -4 }}
                 >
-                  {data.analytics.netGainLoss >= 0 ? "+" : ""}
-                  {formatCurrency(data.analytics.netGainLoss)}
-                </p>
-                <p className="text-xs text-[var(--text-muted)] mt-2">
-                  {data.analytics.netGainLossPercent >= 0 ? "+" : ""}
-                  {data.analytics.netGainLossPercent.toFixed(2)}% {t("capitalMarkets.roi")}
-                </p>
-              </Card>
+                  <Card className={stat.className}>
+                    <div className="flex items-center gap-2 text-[var(--text-secondary)] text-sm mb-1">
+                      {stat.icon}
+                      {stat.label}
+                    </div>
+                    {stat.value}
+                    <div className="mt-2">{stat.extra}</div>
+                  </Card>
+                </motion.div>
+              ))}
             </div>
 
+            <LayoutGroup>
             <div className="dash-scroll-tabs border-b border-[var(--border-subtle)] pb-1">
               {(
                 [
@@ -459,17 +494,25 @@ export default function CapitalMarketsPage() {
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
-                    "inline-flex items-center gap-2 px-4 py-3 min-h-[44px] text-sm font-medium rounded-t-lg transition-colors",
+                    "relative inline-flex items-center gap-2 px-4 py-3 min-h-[44px] text-sm font-medium rounded-t-lg transition-colors",
                     activeTab === tab.id
-                      ? "text-[var(--text-primary)] border-b-2 border-accent-brand -mb-[3px]"
+                      ? "text-[var(--text-primary)]"
                       : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                   )}
                 >
                   <tab.icon size={16} />
                   {tab.label}
+                  {activeTab === tab.id && (
+                    <motion.span
+                      layoutId="mp-tab-line"
+                      className="absolute left-3 right-3 -bottom-[3px] h-0.5 rounded-full bg-accent-brand"
+                      transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                    />
+                  )}
                 </button>
               ))}
             </div>
+            </LayoutGroup>
 
             {activeTab === "marketplace" && (
               <div className="space-y-5">
@@ -514,25 +557,39 @@ export default function CapitalMarketsPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
+                  <LayoutGroup id="mp-sectors">
                   {SECTOR_FILTERS.map((f) => (
                     <button
                       key={f.id}
                       type="button"
                       onClick={() => setSector(f.id)}
                       className={cn(
-                        "marketplace-sector-btn text-xs font-medium px-3 py-1.5 rounded-full",
+                        "marketplace-sector-btn relative text-xs font-medium px-3 py-1.5 rounded-full",
                         sector === f.id && "marketplace-sector-btn-active"
                       )}
                     >
-                      {t(SECTOR_LABEL_KEYS[f.id] ?? f.id)}
+                      {sector === f.id && (
+                        <motion.span
+                          layoutId="mp-sector-glow"
+                          className="absolute inset-0 rounded-full bg-accent-brand/10"
+                          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                        />
+                      )}
+                      <span className="relative z-10">{t(SECTOR_LABEL_KEYS[f.id] ?? f.id)}</span>
                     </button>
                   ))}
+                  </LayoutGroup>
                 </div>
 
                 {featuredAssets.length > 0 && (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <Star size={18} className="text-amber-400" />
+                      <motion.span
+                        animate={{ rotate: [0, -12, 12, 0], scale: [1, 1.12, 1] }}
+                        transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+                      >
+                        <Star size={18} className="text-amber-400" />
+                      </motion.span>
                       <div>
                         <h2 className="font-semibold text-[var(--text-primary)]">{t("capitalMarkets.featuredTitle")}</h2>
                         <p className="text-xs text-[var(--text-muted)]">{t("capitalMarkets.featuredSubtitle")}</p>
