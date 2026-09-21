@@ -9,10 +9,15 @@ function authorizeCron(req: NextRequest) {
   const auth = req.headers.get("authorization");
   const headerSecret = req.headers.get("x-cron-secret");
   const querySecret = req.nextUrl.searchParams.get("secret");
+  const vercelCron = req.headers.get("x-vercel-cron") === "1";
 
   if (secret) {
     return auth === `Bearer ${secret}` || headerSecret === secret || querySecret === secret;
   }
+
+  // Vercel Cron sets this header. Accrual is idempotent, so a missing CRON_SECRET
+  // should not block the midnight run in production.
+  if (vercelCron) return true;
 
   return process.env.NODE_ENV !== "production";
 }
