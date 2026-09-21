@@ -25,6 +25,7 @@ import { CHART_BRAND, CHART_COLORS } from "@/lib/chart-theme";
 import { useChartTheme } from "@/hooks/use-chart-theme";
 import { SECTOR_FILTERS } from "@/lib/market-assets";
 import { getReturnForPeriod, type ReturnPeriodKey } from "@/lib/market-asset-mapper";
+import { planIdForReturnPeriod } from "@/lib/market-duration";
 import { toast } from "sonner";
 
 interface Holding {
@@ -54,6 +55,10 @@ interface HistoryItem {
   shares: number;
   fee: number;
   totalCost: number;
+  durationDays: number | null;
+  durationLabel: string | null;
+  expectedReturnPercent: number | null;
+  projectedReturnUsd: number | null;
   realizedPnl: number | null;
   createdAt: string;
 }
@@ -202,6 +207,7 @@ export default function CapitalMarketsPage() {
   const [sort, setSort] = useState<SortKey>("admin");
   const [returnPeriod, setReturnPeriod] = useState<ReturnPeriodKey>("30d");
   const [investAsset, setInvestAsset] = useState<MarketAssetCardData | null>(null);
+  const [investDurationId, setInvestDurationId] = useState<string | undefined>();
   const [sellHolding, setSellHolding] = useState<SellHoldingData | null>(null);
   const searchParams = useSearchParams();
   const sellFromUrl = searchParams.get("sell");
@@ -334,6 +340,11 @@ export default function CapitalMarketsPage() {
         gainLossPercent: owned.gainLossPercent,
       },
     };
+  };
+
+  const handleInvest = (asset: MarketAssetCardData, durationPlanId?: string) => {
+    setInvestDurationId(durationPlanId ?? planIdForReturnPeriod(returnPeriod));
+    setInvestAsset(asset);
   };
 
   const handleSellFromMarketplace = (asset: MarketAssetCardData) => {
@@ -534,7 +545,7 @@ export default function CapitalMarketsPage() {
                           asset={asset}
                           marketStatus={marketLabel}
                           returnPeriod={returnPeriod}
-                          onInvest={setInvestAsset}
+                          onInvest={handleInvest}
                           onSell={handleSellFromMarketplace}
                           {...cardHoldingProps(asset.symbol)}
                           index={i}
@@ -560,7 +571,7 @@ export default function CapitalMarketsPage() {
                           asset={asset}
                           marketStatus={marketLabel}
                           returnPeriod={returnPeriod}
-                          onInvest={setInvestAsset}
+                          onInvest={handleInvest}
                           onSell={handleSellFromMarketplace}
                           {...cardHoldingProps(asset.symbol)}
                           index={i}
@@ -701,6 +712,8 @@ export default function CapitalMarketsPage() {
                             <th className="text-left py-3 font-medium">{t("investments.asset")}</th>
                             <th className="text-right py-3 font-medium hidden sm:table-cell">{t("investments.shares")}</th>
                             <th className="text-right py-3 font-medium">{t("common.amount")}</th>
+                            <th className="text-right py-3 font-medium hidden md:table-cell">{t("capitalMarkets.durationCol")}</th>
+                            <th className="text-right py-3 font-medium hidden lg:table-cell">{t("capitalMarkets.projectedReturn")}</th>
                             <th className="text-right py-3 font-medium hidden md:table-cell">{t("capitalMarkets.fee")}</th>
                             <th className="text-right py-3 font-medium">{t("capitalMarkets.total")}</th>
                             <th className="text-right py-3 font-medium hidden lg:table-cell">{t("capitalMarkets.realizedPl")}</th>
@@ -723,6 +736,16 @@ export default function CapitalMarketsPage() {
                               </td>
                               <td className="text-right font-mono hidden sm:table-cell py-3">{h.shares.toFixed(4)}</td>
                               <td className="text-right font-mono py-3">{formatCurrency(h.amountUsd)}</td>
+                              <td className="text-right text-xs text-[var(--text-secondary)] hidden md:table-cell py-3">
+                                {h.side === "BUY" && h.durationLabel ? h.durationLabel : "—"}
+                              </td>
+                              <td className="text-right font-mono hidden lg:table-cell py-3">
+                                {h.side === "BUY" && h.projectedReturnUsd != null ? (
+                                  <span className="text-accent-green">+{formatCurrency(h.projectedReturnUsd)}</span>
+                                ) : (
+                                  <span className="text-[var(--text-muted)]">—</span>
+                                )}
+                              </td>
                               <td className="text-right font-mono text-[var(--text-muted)] hidden md:table-cell py-3">
                                 {formatCurrency(h.fee)}
                               </td>
@@ -845,7 +868,11 @@ export default function CapitalMarketsPage() {
         asset={investAsset}
         walletBalance={data?.availableCash ?? 0}
         open={!!investAsset}
-        onClose={() => setInvestAsset(null)}
+        initialDurationId={investDurationId}
+        onClose={() => {
+          setInvestAsset(null);
+          setInvestDurationId(undefined);
+        }}
         onSuccess={(symbol) => refreshAfterBuy(symbol, false)}
         onClosePosition={(symbol) => refreshAfterBuy(symbol, true)}
       />

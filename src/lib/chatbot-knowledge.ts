@@ -218,7 +218,7 @@ In your dashboard, you will complete this step on the Pay Processing Charge page
     keywords: ["invest", "investment", "capital markets", "stocks", "etf", "portfolio", "trade", "market", "marketplace", "trading"],
     patterns: [/\bhow.*invest/i, /\btrading marketplace/i],
     message:
-      "Open Dashboard → Trading Marketplace to browse live equities, review charts, and place buy orders from your wallet. Confirm purchases with your Transaction PIN. Owned positions show a Close Position action so you can exit at any time.",
+      "Open Dashboard → Trading Marketplace to browse equities, compare holding periods and estimated returns, then place a buy order from your wallet. Confirm purchases with your Transaction PIN. Owned positions show a Close Position action so you can exit at any time.",
     suggestions: [
       { label: "Buy stocks", value: "How do I buy stocks?" },
       { label: "Sell holdings", value: "How do I sell or close a position?" },
@@ -231,7 +231,7 @@ In your dashboard, you will complete this step on the Pay Processing Charge page
     keywords: ["buy stock", "buy shares", "purchase stock", "place order", "open position", "buy more"],
     patterns: [/\bhow.*(buy|purchase).*(stock|share|asset)/i, /\bbuy.*(marketplace|stock)/i],
     message:
-      "In Dashboard → Trading Marketplace, select an asset, enter the amount or shares, and confirm with your Transaction PIN. Purchases draw from your total spendable balance across checking and savings. After buying, the asset appears in your Portfolio tab with Close Position available.",
+      "In Dashboard → Trading Marketplace, select an asset, choose a holding duration, enter the amount, and review the estimated profit for that period. Confirm with your Transaction PIN. Purchases draw from your total spendable balance across checking and savings.",
     suggestions: [
       { label: "Insufficient balance", value: "Why does it say insufficient balance when I try to buy?" },
       { label: "Sell holdings", value: "How do I sell or close a position?" },

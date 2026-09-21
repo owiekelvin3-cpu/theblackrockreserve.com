@@ -2,11 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Wallet, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
+import { X, Wallet, ArrowRight, CheckCircle2, Loader2, CalendarClock, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { translateApiErrorMessage } from "@/lib/i18n/api-error-messages";
 import { calculateInvestmentFee } from "@/lib/market-assets";
+import {
+  calculateHoldReturn,
+  findDurationPlan,
+  getEnabledDurationPlans,
+  maturityDateFromDays,
+} from "@/lib/market-duration";
 import Button from "@/components/ui/Button";
 import TransactionPinModal from "@/components/dashboard/TransactionPinModal";
 import { useTransactionPin } from "@/hooks/use-transaction-pin";
@@ -19,6 +25,7 @@ interface InvestModalProps {
   asset: MarketAssetCardData | null;
   walletBalance: number;
   open: boolean;
+  initialDurationId?: string;
   onClose: () => void;
   onSuccess: (symbol: string) => void;
   onClosePosition?: (symbol: string) => void;
@@ -30,6 +37,7 @@ export default function InvestModal({
   asset,
   walletBalance,
   open,
+  initialDurationId,
   onClose,
   onSuccess,
   onClosePosition,
@@ -37,10 +45,22 @@ export default function InvestModal({
   const { t, formatCurrency, formatDate, currencySymbol } = useI18n();
   const [step, setStep] = useState<Step>("amount");
   const [amount, setAmount] = useState("");
+  const [durationId, setDurationId] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<{ orderId: string; shares: number; totalCost: number } | null>(null);
+  const [result, setResult] = useState<{
+    orderId: string;
+    shares: number;
+    totalCost: number;
+    projectedReturnUsd: number | null;
+    durationLabel: string | null;
+  } | null>(null);
   const { open: pinOpen, loading: pinLoading, error: pinError, requestPin, closePin, confirmPin } = useTransactionPin();
+
+  const durationPlans = useMemo(
+    () => (asset ? getEnabledDurationPlans(asset) : []),
+    [asset]
+  );
 
   useEffect(() => {
     if (!open) {
@@ -49,13 +69,35 @@ export default function InvestModal({
       setError("");
       setSubmitting(false);
       setResult(null);
+      setDurationId("");
+      return;
     }
-  }, [open, asset?.symbol]);
+    if (!asset) return;
+    const selected = findDurationPlan(asset, initialDurationId);
+    setDurationId(selected?.id ?? "");
+    // Keep duration stable while the same asset is open (marketplace polling refreshes the object).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, asset?.symbol, initialDurationId]);
 
   const amountNum = useMemo(() => {
     const n = Number(amount);
     return Number.isFinite(n) ? n : 0;
   }, [amount]);
+
+  const selectedPlan = useMemo(
+    () => durationPlans.find((plan) => plan.id === durationId) ?? durationPlans[0] ?? null,
+    [durationPlans, durationId]
+  );
+
+  const previewAmount = amountNum > 0 ? amountNum : asset?.minInvestment ?? 0;
+  const holdReturn = useMemo(
+    () => calculateHoldReturn(previewAmount, selectedPlan?.returnPercent ?? 0),
+    [previewAmount, selectedPlan?.returnPercent]
+  );
+  const maturityDate = useMemo(
+    () => (selectedPlan ? maturityDateFromDays(selectedPlan.days) : null),
+    [selectedPlan]
+  );
 
   const fee = useMemo(() => (amountNum > 0 ? calculateInvestmentFee(amountNum) : 0), [amountNum]);
   const totalCost = useMemo(() => Math.round((amountNum + fee) * 100) / 100, [amountNum, fee]);
@@ -67,6 +109,7 @@ export default function InvestModal({
   const validateAmount = (): string | null => {
     if (!amount.trim() || amountNum <= 0) return t("invest.amountRequired");
     if (!asset) return t("invest.assetRequired");
+    if (!selectedPlan) return t("invest.durationRequired");
     if (amountNum < asset.minInvestment) {
       return t("invest.minInvestment", { amount: formatCurrency(asset.minInvestment) });
     }
@@ -85,7 +128,7 @@ export default function InvestModal({
   };
 
   const confirmInvest = () => {
-    if (!asset) return;
+    if (!asset || !selectedPlan) return;
     const err = validateAmount();
     if (err) {
       setError(err);
@@ -104,7 +147,8 @@ export default function InvestModal({
           body: JSON.stringify({
             symbol: asset.symbol,
             amountUsd: amountNum,
-            idempotencyKey: `${asset.symbol}-${amountNum}-${Date.now()}`,
+            durationPlanId: selectedPlan.id,
+            idempotencyKey: `${asset.symbol}-${amountNum}-${selectedPlan.id}-${Date.now()}`,
             transactionPin,
           }),
         });
@@ -115,6 +159,8 @@ export default function InvestModal({
           orderId: json.investment.orderId,
           shares: json.investment.shares,
           totalCost: json.investment.totalCost,
+          projectedReturnUsd: json.investment.projectedReturnUsd ?? holdReturn.profit,
+          durationLabel: json.investment.durationLabel ?? selectedPlan.label,
         });
         setStep("success");
         onSuccess(asset.symbol);
@@ -151,7 +197,7 @@ export default function InvestModal({
           >
             <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b border-[var(--border-subtle)] bg-[var(--surface-elevated)]">
               <div className="flex items-center gap-3 min-w-0">
-                <StockIcon symbol={asset.symbol} name={asset.name} logoDomain={asset.logoDomain} size="md" />
+                <StockIcon symbol={asset.symbol} name={asset.name} logoDomain={asset.logoDomain} logoUrl={asset.logoUrl} size="md" />
                 <div className="min-w-0">
                   <p className="text-xs font-semibold uppercase tracking-widest text-accent-brand">{t("invest.title")}</p>
                   <h2 id="invest-modal-title" className="text-lg font-bold text-[var(--text-primary)] truncate">
@@ -190,6 +236,37 @@ export default function InvestModal({
 
               {step === "amount" && (
                 <>
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
+                      {t("invest.durationLabel")}
+                    </label>
+                    <p className="text-xs text-[var(--text-muted)] mb-3">{t("invest.durationHint")}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {durationPlans.map((plan) => (
+                        <button
+                          key={plan.id}
+                          type="button"
+                          onClick={() => {
+                            setDurationId(plan.id);
+                            setError("");
+                          }}
+                          className={cn(
+                            "px-3 py-2 rounded-xl text-xs font-semibold border transition-colors min-w-[88px]",
+                            durationId === plan.id
+                              ? "border-accent-brand bg-accent-brand/15 text-accent-brand"
+                              : "border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-accent-brand/40"
+                          )}
+                        >
+                          <span className="block">{plan.label}</span>
+                          <span className="block mt-0.5 font-mono text-[11px] opacity-80">
+                            {plan.returnPercent >= 0 ? "+" : ""}
+                            {plan.returnPercent.toFixed(2)}%
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div>
                     <label htmlFor="invest-amount" className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
                       {t("invest.amountLabel")}
@@ -231,20 +308,64 @@ export default function InvestModal({
                     ))}
                   </div>
 
+                  {selectedPlan && previewAmount > 0 && (
+                    <div className="rounded-xl border border-accent-brand/25 bg-accent-brand/10 p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">{t("invest.projectedReturn")}</p>
+                          <p className="text-2xl font-bold font-mono text-accent-green mt-0.5">
+                            +{formatCurrency(holdReturn.profit)}
+                          </p>
+                          <p className="text-xs text-[var(--text-secondary)] mt-1">
+                            {t("invest.youWillMake", { amount: formatCurrency(holdReturn.profit) })}{" "}
+                            {t("invest.inDuration", { duration: selectedPlan.label })}
+                          </p>
+                        </div>
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full bg-accent-green/10 text-accent-green">
+                          <TrendingUp size={12} />
+                          {selectedPlan.returnPercent.toFixed(2)}%
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 pt-2 border-t border-accent-brand/15 text-sm">
+                        <div>
+                          <p className="text-xs text-[var(--text-muted)]">{t("invest.projectedPayout")}</p>
+                          <p className="font-mono font-semibold text-[var(--text-primary)]">{formatCurrency(holdReturn.payout)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-[var(--text-muted)]">{t("invest.maturityDate")}</p>
+                          <p className="font-medium text-[var(--text-primary)] inline-flex items-center gap-1">
+                            <CalendarClock size={13} className="text-accent-brand" />
+                            {maturityDate ? formatDate(maturityDate, { dateStyle: "medium" }) : "—"}
+                          </p>
+                        </div>
+                      </div>
+                      {amountNum <= 0 && (
+                        <p className="text-[11px] text-[var(--text-muted)]">
+                          {t("invest.exampleOn", { amount: formatCurrency(previewAmount) })}
+                        </p>
+                      )}
+                      <p className="text-[11px] text-[var(--text-muted)]">{t("invest.projectedNote")}</p>
+                    </div>
+                  )}
+
                   <Button className="w-full" onClick={goToSummary}>
                     {t("invest.continue")} <ArrowRight size={16} className="ml-1" />
                   </Button>
                 </>
               )}
 
-              {step === "summary" && (
+              {step === "summary" && selectedPlan && (
                 <>
                   <div className="space-y-3 p-4 rounded-xl border border-accent-brand/20 bg-accent-brand/5">
                     <h3 className="font-semibold text-[var(--text-primary)]">{t("invest.summaryTitle")}</h3>
                     {[
                       [t("invest.assetLabel"), `${asset.name} (${asset.symbol})`],
                       [t("invest.amountSummary"), formatCurrency(amountNum)],
-                      [t("invest.expectedReturn"), t("invest.annually", { percent: asset.expectedReturnPercent })],
+                      [t("invest.durationSummary"), selectedPlan.label],
+                      [t("invest.returnRate"), `${selectedPlan.returnPercent.toFixed(2)}%`],
+                      [t("invest.estProfitSummary"), `+${formatCurrency(holdReturn.profit)}`],
+                      [t("invest.estPayoutSummary", { duration: selectedPlan.label }), formatCurrency(holdReturn.payout)],
+                      [t("invest.maturityDate"), maturityDate ? formatDate(maturityDate, { dateStyle: "medium" }) : "—"],
                       [t("invest.estShares"), shares.toFixed(6)],
                       [t("invest.date"), formatDate(new Date(), { dateStyle: "medium" })],
                       [t("invest.transactionFee"), formatCurrency(fee)],
@@ -280,6 +401,14 @@ export default function InvestModal({
                         total: formatCurrency(result.totalCost),
                       })}
                     </p>
+                    {result.projectedReturnUsd != null && result.durationLabel && (
+                      <p className="text-sm font-medium text-accent-green mt-2">
+                        {t("invest.successReturn", {
+                          profit: formatCurrency(result.projectedReturnUsd),
+                          duration: result.durationLabel,
+                        })}
+                      </p>
+                    )}
                     <p className="text-xs text-[var(--text-muted)] mt-2">{t("invest.positionReady")}</p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-3 w-full">

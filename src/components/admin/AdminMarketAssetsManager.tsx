@@ -6,6 +6,13 @@ import {
   GripVertical, Pencil, Pin, Star, Power, PowerOff, Trash2, Upload, X, Plus,
 } from "lucide-react";
 import {
+  defaultDurationPlans,
+  getDurationPlans,
+  newDurationPlanId,
+  scaleAnnualReturn,
+  type MarketDurationPlan,
+} from "@/lib/market-duration";
+import {
   AdminPage,
   AdminPageHeader,
   AdminRefreshButton,
@@ -54,6 +61,17 @@ const EMPTY_FORM = {
   returnYearly: "0",
   customReturnLabel: "",
   customReturnPercent: "",
+  durationPlans: defaultDurationPlans({
+    expectedReturnPercent: 8,
+    return7d: 0,
+    return14d: 0,
+    return30d: 0,
+    return90d: 0,
+    return1y: 0,
+    returnWeekly: 0,
+    returnMonthly: 0,
+    returnYearly: 0,
+  }) as MarketDurationPlan[],
   marketCapRank: "999",
   popularity: "0",
   isFeatured: false,
@@ -85,6 +103,7 @@ function assetToForm(a: AssetRow) {
     returnYearly: String(a.returnYearly),
     customReturnLabel: a.customReturnLabel ?? "",
     customReturnPercent: a.customReturnPercent != null ? String(a.customReturnPercent) : "",
+    durationPlans: getDurationPlans(a),
     marketCapRank: String(a.marketCapRank),
     popularity: String(a.popularity),
     isFeatured: a.isFeatured,
@@ -144,6 +163,13 @@ function formPayload(form: typeof EMPTY_FORM, isEdit: boolean) {
   payload.customReturnLabel = form.customReturnLabel.trim() || null;
   payload.customReturnPercent =
     form.customReturnPercent === "" ? null : num(form.customReturnPercent) ?? null;
+  payload.durationPlans = form.durationPlans.map((plan) => ({
+    id: plan.id,
+    days: plan.days,
+    label: plan.label,
+    returnPercent: plan.returnPercent,
+    enabled: plan.enabled,
+  }));
 
   return payload;
 }
@@ -406,39 +432,118 @@ export default function AdminMarketAssetsManager() {
             </section>
 
             <section>
-              <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--admin-accent)] mb-3">Return Periods (%)</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                {(
-                  [
-                    ["return7d", "7 Days"],
-                    ["return14d", "14 Days"],
-                    ["return30d", "30 Days"],
-                    ["return90d", "90 Days"],
-                    ["return1y", "1 Year"],
-                    ["returnWeekly", "Weekly"],
-                    ["returnMonthly", "Monthly"],
-                    ["returnYearly", "Yearly"],
-                  ] as const
-                ).map(([key, label]) => (
-                  <div key={key}>
-                    <label className={labelCls}>{label}</label>
-                    <input
-                      className={inputCls}
-                      type="number"
-                      step="0.01"
-                      value={form[key]}
-                      onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                    />
+              <div className="flex items-end justify-between gap-3 mb-3">
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--admin-accent)]">Holding periods &amp; returns</h3>
+                  <p className="text-[11px] text-[var(--admin-muted)] mt-1">
+                    Customers pick one of these durations when buying. Return % is the profit they see for that holding period.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="admin-btn-ghost text-xs px-3 py-1.5 inline-flex items-center gap-1"
+                  onClick={() => {
+                    const days = 60;
+                    const annual = Number(form.expectedReturnPercent) || 8;
+                    setForm({
+                      ...form,
+                      durationPlans: [
+                        ...form.durationPlans,
+                        {
+                          id: newDurationPlanId(),
+                          days,
+                          label: `${days} Days`,
+                          returnPercent: scaleAnnualReturn(annual, days),
+                          enabled: true,
+                        },
+                      ],
+                    });
+                  }}
+                >
+                  <Plus size={12} /> Add duration
+                </button>
+              </div>
+              <div className="space-y-2">
+                {form.durationPlans.map((plan, index) => (
+                  <div
+                    key={plan.id}
+                    className="grid grid-cols-12 gap-2 items-end rounded-lg border border-white/10 p-2.5"
+                  >
+                    <label className="col-span-12 sm:col-span-1 flex items-center gap-2 pb-2 text-[11px] text-[var(--admin-muted)]">
+                      <input
+                        type="checkbox"
+                        checked={plan.enabled}
+                        onChange={(e) => {
+                          const durationPlans = [...form.durationPlans];
+                          durationPlans[index] = { ...plan, enabled: e.target.checked };
+                          setForm({ ...form, durationPlans });
+                        }}
+                        className="rounded"
+                      />
+                      On
+                    </label>
+                    <div className="col-span-6 sm:col-span-3">
+                      <label className={labelCls}>Label</label>
+                      <input
+                        className={inputCls}
+                        value={plan.label}
+                        onChange={(e) => {
+                          const durationPlans = [...form.durationPlans];
+                          durationPlans[index] = { ...plan, label: e.target.value };
+                          setForm({ ...form, durationPlans });
+                        }}
+                      />
+                    </div>
+                    <div className="col-span-3 sm:col-span-2">
+                      <label className={labelCls}>Days</label>
+                      <input
+                        className={inputCls}
+                        type="number"
+                        min={1}
+                        max={3650}
+                        value={plan.days}
+                        onChange={(e) => {
+                          const days = Math.max(1, Math.round(Number(e.target.value) || 1));
+                          const durationPlans = [...form.durationPlans];
+                          durationPlans[index] = { ...plan, days };
+                          setForm({ ...form, durationPlans });
+                        }}
+                      />
+                    </div>
+                    <div className="col-span-3 sm:col-span-3">
+                      <label className={labelCls}>Return %</label>
+                      <input
+                        className={inputCls}
+                        type="number"
+                        step="0.01"
+                        value={plan.returnPercent}
+                        onChange={(e) => {
+                          const durationPlans = [...form.durationPlans];
+                          durationPlans[index] = {
+                            ...plan,
+                            returnPercent: Number(e.target.value) || 0,
+                          };
+                          setForm({ ...form, durationPlans });
+                        }}
+                      />
+                    </div>
+                    <div className="col-span-12 sm:col-span-3 flex justify-end pb-0.5">
+                      <button
+                        type="button"
+                        className="admin-btn-ghost text-[11px] px-2 py-1.5 text-red-400"
+                        onClick={() =>
+                          setForm({
+                            ...form,
+                            durationPlans: form.durationPlans.filter((_, i) => i !== index),
+                          })
+                        }
+                        disabled={form.durationPlans.length <= 1}
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
                 ))}
-                <div>
-                  <label className={labelCls}>Custom Label</label>
-                  <input className={inputCls} value={form.customReturnLabel} onChange={(e) => setForm({ ...form, customReturnLabel: e.target.value })} placeholder="e.g. YTD" />
-                </div>
-                <div>
-                  <label className={labelCls}>Custom Return %</label>
-                  <input className={inputCls} type="number" step="0.01" value={form.customReturnPercent} onChange={(e) => setForm({ ...form, customReturnPercent: e.target.value })} />
-                </div>
               </div>
             </section>
 
@@ -514,7 +619,7 @@ export default function AdminMarketAssetsManager() {
                   <th className="w-8" />
                   <th>Asset</th>
                   <th>Price</th>
-                  <th>7d / 30d / 1y</th>
+                  <th>Durations / Returns</th>
                   <th>Popularity</th>
                   <th>Flags</th>
                   <th>Status</th>
@@ -559,7 +664,11 @@ export default function AdminMarketAssetsManager() {
                       </p>
                     </td>
                     <td className="text-xs font-mono text-[var(--admin-muted)]">
-                      {a.return7d.toFixed(1)}% · {a.return30d.toFixed(1)}% · {a.return1y.toFixed(1)}%
+                      {getDurationPlans(a)
+                        .filter((p) => p.enabled)
+                        .slice(0, 4)
+                        .map((p) => `${p.label} ${p.returnPercent.toFixed(1)}%`)
+                        .join(" · ") || "—"}
                     </td>
                     <td>{a.popularity}</td>
                     <td>

@@ -485,6 +485,7 @@ export const investSubmitSchema = z.object({
     .number({ error: "Enter a valid amount" })
     .positive("Amount must be greater than zero")
     .max(10_000_000, "Amount is too large"),
+  durationPlanId: z.string().min(1).max(40).optional(),
   accountId: z.string().optional(),
   idempotencyKey: z.string().max(64).optional(),
   transactionPin: transactionPinSchema,

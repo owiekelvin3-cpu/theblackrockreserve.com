@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
       userId,
       symbol: parsed.data.symbol,
       amountUsd: Math.round(parsed.data.amountUsd * 100) / 100,
+      durationPlanId: parsed.data.durationPlanId,
       accountId: parsed.data.accountId,
       idempotencyKey: parsed.data.idempotencyKey,
     });
@@ -63,7 +64,10 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "Investment failed";
     const status =
-      message.includes("Insufficient") || message.includes("Minimum") || message.includes("Duplicate")
+      message.includes("Insufficient") ||
+      message.includes("Minimum") ||
+      message.includes("Duplicate") ||
+      message.includes("holding duration")
         ? 400
         : message.includes("not available")
           ? 404

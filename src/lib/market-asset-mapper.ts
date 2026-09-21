@@ -1,4 +1,12 @@
 import type { MarketAsset } from "@prisma/client";
+import {
+  getDurationPlans,
+  planIdForReturnPeriod,
+  type MarketDurationPlan,
+  type ReturnPeriodKey,
+} from "@/lib/market-duration";
+
+export type { MarketDurationPlan, ReturnPeriodKey };
 
 export type MarketAssetRecord = {
   id: string;
@@ -25,6 +33,7 @@ export type MarketAssetRecord = {
   returnYearly: number;
   customReturnLabel: string | null;
   customReturnPercent: number | null;
+  durationPlans: MarketDurationPlan[];
   marketCapRank: number;
   popularity: number;
   sortOrder: number;
@@ -45,6 +54,21 @@ export function mapMarketAsset(asset: MarketAsset): MarketAssetRecord {
   const changePercent = Number(asset.changePercent);
   const change = Math.round(price * (changePercent / 100) * 100) / 100;
 
+  const recordBase = {
+    expectedReturnPercent: Number(asset.expectedReturnPercent),
+    return7d: Number(asset.return7d),
+    return14d: Number(asset.return14d),
+    return30d: Number(asset.return30d),
+    return90d: Number(asset.return90d),
+    return1y: Number(asset.return1y),
+    returnWeekly: Number(asset.returnWeekly),
+    returnMonthly: Number(asset.returnMonthly),
+    returnYearly: Number(asset.returnYearly),
+    customReturnLabel: asset.customReturnLabel,
+    customReturnPercent: asset.customReturnPercent != null ? Number(asset.customReturnPercent) : null,
+    durationPlans: asset.durationPlans,
+  };
+
   return {
     id: asset.id,
     symbol: asset.symbol,
@@ -58,18 +82,9 @@ export function mapMarketAsset(asset: MarketAsset): MarketAssetRecord {
     changePercent,
     minInvestment: Number(asset.minInvestment),
     riskRating: asset.riskRating,
-    expectedReturnPercent: Number(asset.expectedReturnPercent),
     growthRate: Number(asset.growthRate),
-    return7d: Number(asset.return7d),
-    return14d: Number(asset.return14d),
-    return30d: Number(asset.return30d),
-    return90d: Number(asset.return90d),
-    return1y: Number(asset.return1y),
-    returnWeekly: Number(asset.returnWeekly),
-    returnMonthly: Number(asset.returnMonthly),
-    returnYearly: Number(asset.returnYearly),
-    customReturnLabel: asset.customReturnLabel,
-    customReturnPercent: asset.customReturnPercent != null ? Number(asset.customReturnPercent) : null,
+    ...recordBase,
+    durationPlans: getDurationPlans(recordBase),
     marketCapRank: asset.marketCapRank,
     popularity: asset.popularity,
     sortOrder: asset.sortOrder,
@@ -81,19 +96,11 @@ export function mapMarketAsset(asset: MarketAsset): MarketAssetRecord {
   };
 }
 
-export type ReturnPeriodKey =
-  | "7d"
-  | "14d"
-  | "30d"
-  | "90d"
-  | "1y"
-  | "weekly"
-  | "monthly"
-  | "yearly"
-  | "custom"
-  | "expected";
-
 export function getReturnForPeriod(asset: MarketAssetRecord, period: ReturnPeriodKey): number {
+  const planId = planIdForReturnPeriod(period);
+  const fromPlan = asset.durationPlans.find((plan) => plan.id === planId && plan.enabled);
+  if (fromPlan) return fromPlan.returnPercent;
+
   switch (period) {
     case "7d":
       return asset.return7d;

@@ -30,6 +30,10 @@ export interface InvestmentHistoryItem {
   priceAtPurchase: number;
   fee: number;
   totalCost: number;
+  durationDays: number | null;
+  durationLabel: string | null;
+  expectedReturnPercent: number | null;
+  projectedReturnUsd: number | null;
   realizedPnl: number | null;
   status: string;
   createdAt: string;
@@ -140,6 +144,10 @@ export async function getCapitalMarketsData(userId: string) {
     priceAtPurchase: Number(o.priceAtPurchase),
     fee: Number(o.fee),
     totalCost: Number(o.totalCost),
+    durationDays: o.durationDays,
+    durationLabel: o.durationLabel,
+    expectedReturnPercent: o.expectedReturnPercent != null ? Number(o.expectedReturnPercent) : null,
+    projectedReturnUsd: o.projectedReturnUsd != null ? Number(o.projectedReturnUsd) : null,
     realizedPnl: o.realizedPnl != null ? Number(o.realizedPnl) : null,
     status: o.status,
     createdAt: o.createdAt.toISOString(),

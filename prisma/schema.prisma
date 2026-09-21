@@ -212,6 +212,7 @@ model MarketAsset {
   returnYearly          Decimal  @default(0) @db.Decimal(8, 4)
   customReturnLabel     String?
   customReturnPercent   Decimal? @db.Decimal(8, 4)
+  durationPlans         Json?
   marketCapRank         Int      @default(999)
   popularity            Int      @default(0)
   sortOrder             Int      @default(0)
@@ -223,20 +224,25 @@ model MarketAsset {
 }
 
 model InvestmentOrder {
-  id              String   @id @default(cuid())
-  userId          String
-  accountId       String
-  symbol          String
-  assetName       String
-  side            String   @default("BUY")
-  amountUsd       Decimal  @db.Decimal(15, 2)
-  shares          Decimal  @db.Decimal(15, 6)
-  priceAtPurchase Decimal  @db.Decimal(15, 2)
-  fee             Decimal  @default(0) @db.Decimal(15, 2)
-  totalCost       Decimal  @db.Decimal(15, 2)
-  realizedPnl     Decimal? @db.Decimal(15, 2)
-  status          String   @default("COMPLETED")
-  createdAt       DateTime @default(now())
+  id                     String   @id @default(cuid())
+  userId                 String
+  accountId              String
+  symbol                 String
+  assetName              String
+  side                   String   @default("BUY")
+  amountUsd              Decimal  @db.Decimal(15, 2)
+  shares                 Decimal  @db.Decimal(15, 6)
+  priceAtPurchase        Decimal  @db.Decimal(15, 2)
+  fee                    Decimal  @default(0) @db.Decimal(15, 2)
+  totalCost              Decimal  @db.Decimal(15, 2)
+  durationDays           Int?
+  durationPlanId         String?
+  durationLabel          String?
+  expectedReturnPercent  Decimal? @db.Decimal(8, 4)
+  projectedReturnUsd     Decimal? @db.Decimal(15, 2)
+  realizedPnl            Decimal? @db.Decimal(15, 2)
+  status                 String   @default("COMPLETED")
+  createdAt              DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

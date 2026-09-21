@@ -4,6 +4,7 @@ import {
   calculateInvestmentFee,
   getMarketAssetBySymbol,
 } from "@/lib/market-assets";
+import { calculateHoldReturn, findDurationPlan } from "@/lib/market-duration";
 import {
   deductFromUserAccounts,
   getSpendableBalance,
@@ -14,6 +15,7 @@ export interface ExecuteInvestmentInput {
   userId: string;
   symbol: string;
   amountUsd: number;
+  durationPlanId?: string;
   accountId?: string;
   idempotencyKey?: string;
 }
@@ -27,6 +29,10 @@ export interface ExecuteInvestmentResult {
   priceAtPurchase: number;
   fee: number;
   totalCost: number;
+  durationDays: number | null;
+  durationLabel: string | null;
+  expectedReturnPercent: number | null;
+  projectedReturnUsd: number | null;
   newBalance: number;
   createdAt: string;
 }
@@ -34,7 +40,7 @@ export interface ExecuteInvestmentResult {
 export async function executeInvestment(
   input: ExecuteInvestmentInput
 ): Promise<ExecuteInvestmentResult> {
-  const { userId, symbol, amountUsd, accountId, idempotencyKey } = input;
+  const { userId, symbol, amountUsd, durationPlanId, accountId, idempotencyKey } = input;
   const normalizedSymbol = symbol.trim().toUpperCase();
 
   if (!normalizedSymbol) throw new Error("Invalid symbol");
@@ -48,6 +54,12 @@ export async function executeInvestment(
   if (amountUsd < asset.minInvestment) {
     throw new Error(`Minimum investment is $${asset.minInvestment.toFixed(2)}`);
   }
+
+  const durationPlan = findDurationPlan(asset, durationPlanId);
+  if (!durationPlan) {
+    throw new Error("Select a valid holding duration for this asset");
+  }
+  const projected = calculateHoldReturn(amountUsd, durationPlan.returnPercent);
 
   if (idempotencyKey) {
     const existing = await prisma.investmentOrder.findFirst({
@@ -76,6 +88,10 @@ export async function executeInvestment(
         priceAtPurchase: Number(existing.priceAtPurchase),
         fee: Number(existing.fee),
         totalCost: Number(existing.totalCost),
+        durationDays: existing.durationDays,
+        durationLabel: existing.durationLabel,
+        expectedReturnPercent: existing.expectedReturnPercent != null ? Number(existing.expectedReturnPercent) : null,
+        projectedReturnUsd: existing.projectedReturnUsd != null ? Number(existing.projectedReturnUsd) : null,
         newBalance: Number(account?.balance ?? 0),
         createdAt: existing.createdAt.toISOString(),
       };
@@ -133,6 +149,11 @@ export async function executeInvestment(
         priceAtPurchase,
         fee,
         totalCost,
+        durationDays: durationPlan.days,
+        durationPlanId: durationPlan.id,
+        durationLabel: durationPlan.label,
+        expectedReturnPercent: durationPlan.returnPercent,
+        projectedReturnUsd: projected.profit,
         status: "COMPLETED",
       },
     });
@@ -192,6 +213,10 @@ export async function executeInvestment(
     priceAtPurchase,
     fee,
     totalCost,
+    durationDays: durationPlan.days,
+    durationLabel: durationPlan.label,
+    expectedReturnPercent: durationPlan.returnPercent,
+    projectedReturnUsd: projected.profit,
     newBalance: result.balanceAfter,
     createdAt: result.order.createdAt.toISOString(),
   };

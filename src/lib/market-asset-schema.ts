@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { MarketAsset, Prisma } from "@prisma/client";
+import { parseDurationPlans, syncReturnFieldsFromPlans } from "@/lib/market-duration";
 
 function emptyToUndefined(v: unknown): unknown {
   if (v === "" || v === null || v === undefined) return undefined;
@@ -52,6 +53,7 @@ export const marketAssetFieldsSchema = z.object({
   returnYearly: optionalNumber({ min: -9999, max: 9999 }),
   customReturnLabel: z.union([z.string().max(40), z.null()]).optional(),
   customReturnPercent: optionalNullableNumber(),
+  durationPlans: z.array(z.unknown()).max(12).optional(),
   marketCapRank: optionalNumber({ min: 0, max: 9999, int: true }),
   popularity: optionalNumber({ min: 0, max: 999_999, int: true }),
   sortOrder: optionalNumber({ min: 0, max: 99_999, int: true }),
@@ -83,6 +85,7 @@ export const createMarketAssetSchema = z.object({
   returnYearly: optionalNumber({ min: -9999, max: 9999 }),
   customReturnLabel: z.union([z.string().max(40), z.null()]).optional(),
   customReturnPercent: optionalNullableNumber(),
+  durationPlans: z.array(z.unknown()).max(12).optional(),
   marketCapRank: optionalNumber({ min: 0, max: 9999, int: true }),
   popularity: optionalNumber({ min: 0, max: 999_999, int: true }),
   sortOrder: optionalNumber({ min: 0, max: 99_999, int: true }),
@@ -108,12 +111,23 @@ function pickDefined<T extends Record<string, unknown>>(obj: T): Partial<T> {
   return out;
 }
 
+function durationPlanFields(rawPlans: unknown[] | undefined) {
+  if (!rawPlans) return {};
+  const plans = parseDurationPlans(rawPlans);
+  if (plans.length === 0) return {};
+  return {
+    durationPlans: plans as unknown as Prisma.InputJsonValue,
+    ...syncReturnFieldsFromPlans(plans),
+  };
+}
+
 export function buildMarketAssetCreateData(
   input: MarketAssetFormInput,
   sortOrder: number
 ): Prisma.MarketAssetCreateInput {
   const symbol = input.symbol;
   const name = input.name?.trim() || symbol;
+  const durationFields = durationPlanFields(input.durationPlans);
   return {
     symbol,
     name,
@@ -143,6 +157,7 @@ export function buildMarketAssetCreateData(
     isFeatured: input.isFeatured ?? false,
     isPinned: input.isPinned ?? false,
     enabled: input.enabled ?? true,
+    ...durationFields,
   };
 }
 
@@ -176,6 +191,7 @@ export function buildMarketAssetUpdateData(
     returnYearly: input.returnYearly,
     customReturnLabel: input.customReturnLabel,
     customReturnPercent: input.customReturnPercent,
+    ...durationPlanFields(input.durationPlans),
     marketCapRank: input.marketCapRank,
     popularity: input.popularity,
     sortOrder: input.sortOrder,
