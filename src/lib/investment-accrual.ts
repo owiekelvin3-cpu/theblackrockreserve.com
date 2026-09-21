@@ -6,13 +6,17 @@ import { sendEmail } from "@/lib/email";
 import { dailyInvestmentProfitEmail } from "@/lib/email-templates";
 import { getSiteUrl } from "@/lib/site-url";
 import { isEmailEnabledForCategory, parseNotificationPrefs } from "@/lib/notification-prefs";
+import { mapMarketAsset } from "@/lib/market-asset-mapper";
 import {
   addUtcDays,
+  calculateHoldReturn,
+  findDurationPlan,
   payoutAmountForDay,
   splitDailyProfit,
   utcDateOnly,
   utcDaysInclusive,
   maturityDateFromDays,
+  type MarketDurationPlan,
 } from "@/lib/market-duration";
 
 function roundMoney(n: number) {
@@ -58,65 +62,6 @@ async function backfillOrderSchedule(order: AccrualOrder) {
   return { dailyProfitUsd, maturityAt, projected, durationDays };
 }
 
-async function creditOneDay(order: AccrualOrder, dayDate: Date, dayIndex: number) {
-  const projected = roundMoney(Number(order.projectedReturnUsd ?? 0));
-  const durationDays = order.durationDays ?? 0;
-  const already = roundMoney(Number(order.accruedProfitUsd ?? 0));
-  if (already >= projected - 0.001) return 0;
-
-  const amount = payoutAmountForDay(projected, durationDays, dayIndex, already);
-  if (amount <= 0) return 0;
-
-  try {
-    const credited = await runInteractiveTransaction(async (tx) => {
-      await tx.investmentDailyCredit.create({
-        data: {
-          orderId: order.id,
-          userId: order.userId,
-          symbol: order.symbol,
-          dayDate,
-          amount,
-        },
-      });
-
-      await tx.user.update({
-        where: { id: order.userId },
-        data: { profitBalance: { increment: amount } },
-      });
-
-      await tx.investmentOrder.update({
-        where: { id: order.id },
-        data: {
-          accruedProfitUsd: { increment: amount },
-          dailyProfitUsd: order.dailyProfitUsd ?? splitDailyProfit(projected, durationDays).daily,
-          maturityAt: order.maturityAt ?? maturityDateFromDays(durationDays, order.createdAt),
-        },
-      });
-
-      await tx.transaction.create({
-        data: {
-          userId: order.userId,
-          accountId: order.accountId,
-          type: "PROFIT_CREDIT",
-          amount,
-          description: `Daily ${order.symbol} profit — day ${dayIndex} of ${durationDays}`,
-          status: "COMPLETED",
-        },
-      });
-
-      return amount;
-    });
-
-    order.accruedProfitUsd = roundMoney(already + credited);
-    return credited;
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      return 0;
-    }
-    throw error;
-  }
-}
-
 async function accrueOrder(order: AccrualOrder, now: Date) {
   const schedule = await backfillOrderSchedule(order);
   if (!schedule) return 0;
@@ -140,28 +85,177 @@ async function accrueOrder(order: AccrualOrder, now: Date) {
 
   const existing = await prisma.investmentDailyCredit.findMany({
     where: { orderId: order.id },
-    select: { dayDate: true },
+    select: { dayDate: true, amount: true },
   });
   const paid = new Set(existing.map((row) => utcDateOnly(row.dayDate).toISOString()));
+  const paidSum = roundMoney(existing.reduce((sum, row) => sum + Number(row.amount), 0));
+  const alreadyPaid = Math.max(already, paidSum);
 
-  let credited = 0;
+  const rows: { dayDate: Date; amount: number; dayIndex: number }[] = [];
+  let running = alreadyPaid;
   for (let dayIndex = 1; dayIndex <= dueDays; dayIndex += 1) {
     const dayDate = addUtcDays(start, dayIndex - 1);
     if (paid.has(dayDate.toISOString())) continue;
-    credited += await creditOneDay(order, dayDate, dayIndex);
+    const amount = payoutAmountForDay(projected, durationDays, dayIndex, running);
+    if (amount <= 0) continue;
+    rows.push({ dayDate, amount, dayIndex });
+    running = roundMoney(running + amount);
   }
 
-  if (roundMoney(Number(order.accruedProfitUsd ?? 0)) >= projected - 0.001) {
+  if (rows.length === 0) {
+    if (alreadyPaid >= projected - 0.001 && !order.accrualClosedAt) {
+      await prisma.investmentOrder.update({
+        where: { id: order.id },
+        data: { accruedProfitUsd: Math.min(alreadyPaid, projected), accrualClosedAt: now },
+      });
+    }
+    return 0;
+  }
+
+  try {
+    const credited = await runInteractiveTransaction(async (tx) => {
+      await tx.investmentDailyCredit.createMany({
+        data: rows.map((row) => ({
+          orderId: order.id,
+          userId: order.userId,
+          symbol: order.symbol,
+          dayDate: row.dayDate,
+          amount: row.amount,
+        })),
+        skipDuplicates: true,
+      });
+
+      const agg = await tx.investmentDailyCredit.aggregate({
+        where: { orderId: order.id },
+        _sum: { amount: true },
+      });
+      const newAccrued = roundMoney(Math.min(projected, Number(agg._sum.amount ?? 0)));
+      const delta = roundMoney(Math.max(0, newAccrued - Math.max(already, alreadyPaid)));
+      if (delta <= 0) {
+        await tx.investmentOrder.update({
+          where: { id: order.id },
+          data: {
+            accruedProfitUsd: newAccrued,
+            accrualClosedAt: newAccrued >= projected - 0.001 ? now : undefined,
+          },
+        });
+        return 0;
+      }
+
+      await tx.user.update({
+        where: { id: order.userId },
+        data: { profitBalance: { increment: delta } },
+      });
+
+      await tx.investmentOrder.update({
+        where: { id: order.id },
+        data: {
+          accruedProfitUsd: newAccrued,
+          dailyProfitUsd: order.dailyProfitUsd ?? splitDailyProfit(projected, durationDays).daily,
+          maturityAt: order.maturityAt ?? maturityDateFromDays(durationDays, order.createdAt),
+          accrualClosedAt: newAccrued >= projected - 0.001 ? now : undefined,
+        },
+      });
+
+      await tx.transaction.createMany({
+        data: rows.map((row) => ({
+          userId: order.userId,
+          accountId: order.accountId,
+          type: "PROFIT_CREDIT",
+          amount: row.amount,
+          description: `Daily ${order.symbol} profit — day ${row.dayIndex} of ${durationDays}`,
+          status: "COMPLETED",
+        })),
+      });
+
+      order.accruedProfitUsd = newAccrued;
+      return delta;
+    });
+
+    return roundMoney(credited);
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return 0;
+    }
+    throw error;
+  }
+}
+
+const FALLBACK_DURATION_PLAN: MarketDurationPlan = {
+  id: "30d",
+  days: 30,
+  label: "30 Days",
+  returnPercent: 8,
+  enabled: true,
+};
+
+function needsDurationSchedule(order: {
+  durationDays: number | null;
+  projectedReturnUsd: Prisma.Decimal | number | null;
+}) {
+  return (order.durationDays ?? 0) < 1 || Number(order.projectedReturnUsd ?? 0) <= 0;
+}
+
+/** Attach the stock's current duration plan to open buys that were placed before timed returns existed. */
+export async function assignDurationToOpenBuys(userId?: string) {
+  const missing = await prisma.investmentOrder.findMany({
+    where: {
+      ...(userId ? { userId } : {}),
+      side: "BUY",
+      accrualClosedAt: null,
+      OR: [{ durationDays: null }, { durationDays: { lte: 0 } }, { projectedReturnUsd: null }, { projectedReturnUsd: { lte: 0 } }],
+    },
+  });
+  if (missing.length === 0) return 0;
+
+  const userIds = userId ? [userId] : Array.from(new Set(missing.map((order) => order.userId)));
+  const holdings = await prisma.investment.findMany({
+    where: {
+      userId: userIds.length === 1 ? userIds[0] : { in: userIds },
+      shares: { gt: 0 },
+    },
+    select: { userId: true, symbol: true },
+  });
+  const open = new Set(holdings.map((holding) => `${holding.userId}:${holding.symbol}`));
+  const eligible = missing.filter((order) => open.has(`${order.userId}:${order.symbol}`));
+  if (eligible.length === 0) return 0;
+
+  const symbols = Array.from(new Set(eligible.map((order) => order.symbol)));
+  const assets = await prisma.marketAsset.findMany({
+    where: { symbol: { in: symbols } },
+  });
+  const assetBySymbol = new Map(assets.map((asset) => [asset.symbol, mapMarketAsset(asset)]));
+
+  let updated = 0;
+  for (const order of eligible) {
+    if (!needsDurationSchedule(order)) continue;
+    const asset = assetBySymbol.get(order.symbol);
+    const plan = (asset ? findDurationPlan(asset) : null) ?? FALLBACK_DURATION_PLAN;
+    const projected = calculateHoldReturn(Number(order.amountUsd), plan.returnPercent, plan.days);
+    if (projected.profit <= 0) continue;
+    const split = splitDailyProfit(projected.profit, plan.days);
+
     await prisma.investmentOrder.update({
       where: { id: order.id },
-      data: { accrualClosedAt: now },
+      data: {
+        durationDays: plan.days,
+        durationPlanId: plan.id,
+        durationLabel: plan.label,
+        expectedReturnPercent: plan.returnPercent,
+        projectedReturnUsd: projected.profit,
+        dailyProfitUsd: split.daily,
+        maturityAt: order.maturityAt ?? maturityDateFromDays(plan.days, order.createdAt),
+      },
     });
+    updated += 1;
   }
 
-  return roundMoney(credited);
+  return updated;
 }
 
 export async function accrueInvestmentProfitsForUser(userId: string, now = new Date()) {
+  await assignDurationToOpenBuys(userId);
+
   const orders = await prisma.investmentOrder.findMany({
     where: {
       userId,
@@ -201,7 +295,7 @@ export async function accrueInvestmentProfitsForUser(userId: string, now = new D
       .map((h) => `${h.symbol} ${formatCurrency(h.amount)}`)
       .join(", ");
     const title = "Daily investment profit";
-    const message = `${formatCurrency(total)} was added to your profit balance from your timed holdings.`;
+    const message = `${formatCurrency(total)} was added to your profit balance. You can move it to Primary Checking after the holding reaches its full return.`;
 
     await createUserNotification({
       userId,
@@ -248,6 +342,8 @@ async function sendDailyInvestmentProfitEmail(params: {
 }
 
 export async function accrueAllInvestmentProfits(now = new Date()) {
+  await assignDurationToOpenBuys();
+
   const users = await prisma.investmentOrder.findMany({
     where: {
       side: "BUY",

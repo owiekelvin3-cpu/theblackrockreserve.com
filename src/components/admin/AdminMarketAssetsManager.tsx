@@ -436,7 +436,7 @@ export default function AdminMarketAssetsManager() {
                 <div>
                   <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--admin-accent)]">Holding periods &amp; returns</h3>
                   <p className="text-[11px] text-[var(--admin-muted)] mt-1">
-                    Customers pick one of these durations when buying. Return % is the total profit for that holding period. That profit is credited to their profit balance in equal daily amounts until maturity.
+                    Customers pick one of these durations when buying. Return % is the total profit for that holding period. That profit is credited to their profit balance in equal daily amounts until the full amount is reached. They can then withdraw it to Primary Checking.
                   </p>
                 </div>
                 <button

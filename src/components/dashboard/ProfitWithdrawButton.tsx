@@ -9,6 +9,8 @@ import { useI18n } from "@/components/providers/I18nProvider";
 
 interface ProfitWithdrawButtonProps {
   profitBalance: number;
+  availableProfitBalance?: number;
+  lockedProfitBalance?: number;
   onSuccess: () => void;
   className?: string;
   /** Full-width trigger on mobile (investments card) */
@@ -17,6 +19,8 @@ interface ProfitWithdrawButtonProps {
 
 export default function ProfitWithdrawButton({
   profitBalance,
+  availableProfitBalance,
+  lockedProfitBalance = 0,
   onSuccess,
   className = "",
   block = false,
@@ -24,7 +28,12 @@ export default function ProfitWithdrawButton({
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const canWithdraw = profitBalance > 0;
+  const available = availableProfitBalance ?? profitBalance;
+  const canOpen = profitBalance > 0;
+  const lockedHint =
+    lockedProfitBalance > 0 && available <= 0
+      ? t("investments.profitWithdrawLockedHint")
+      : t("investments.profitWithdrawNoBalance");
 
   useEffect(() => {
     setMounted(true);
@@ -88,7 +97,12 @@ export default function ProfitWithdrawButton({
                 </div>
               </div>
 
-              <ProfitWithdrawPanel profitBalance={profitBalance} onSuccess={handleSuccess} embedded />
+              <ProfitWithdrawPanel
+                profitBalance={available}
+                lockedProfitBalance={lockedProfitBalance}
+                onSuccess={handleSuccess}
+                embedded
+              />
             </motion.div>
           </div>
         )}
@@ -103,15 +117,15 @@ export default function ProfitWithdrawButton({
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          if (!canWithdraw) return;
+          if (!canOpen) return;
           setOpen(true);
         }}
-        disabled={!canWithdraw}
-        className={`dash-profit-withdraw-btn ${block ? "dash-profit-withdraw-btn-block" : ""} ${!canWithdraw ? "dash-profit-withdraw-btn-disabled" : ""} ${className}`.trim()}
+        disabled={!canOpen}
+        className={`dash-profit-withdraw-btn ${block ? "dash-profit-withdraw-btn-block" : ""} ${!canOpen ? "dash-profit-withdraw-btn-disabled" : ""} ${className}`.trim()}
         aria-label={t("investments.profitWithdrawTitle")}
         aria-haspopup="dialog"
         aria-expanded={open}
-        title={!canWithdraw ? t("investments.profitWithdrawNoBalance") : undefined}
+        title={!canOpen ? lockedHint : available <= 0 ? t("investments.profitWithdrawLockedHint") : undefined}
       >
         <ArrowDownToLine size={12} strokeWidth={2.5} />
         {t("dashboard.profitWithdraw")}

@@ -73,14 +73,61 @@ export async function getActivePendingProfitWithdrawal(userId: string) {
   };
 }
 
-/** Spendable profit for new withdrawals. */
+/** Daily credits that stay locked until the holding reaches its full projected return. */
+export async function getLockedAccruingProfit(
+  userId: string,
+  tx?: Prisma.TransactionClient
+): Promise<number> {
+  const db = tx ?? prisma;
+  const orders = await db.investmentOrder.findMany({
+    where: {
+      userId,
+      side: "BUY",
+      accrualClosedAt: null,
+      durationDays: { gt: 0 },
+      projectedReturnUsd: { gt: 0 },
+    },
+    select: { accruedProfitUsd: true, projectedReturnUsd: true },
+  });
+
+  const locked = orders.reduce((sum, order) => {
+    const accrued = roundMoney(Number(order.accruedProfitUsd ?? 0));
+    const projected = roundMoney(Number(order.projectedReturnUsd ?? 0));
+    if (accrued <= 0 || accrued >= projected - 0.001) return sum;
+    return sum + accrued;
+  }, 0);
+
+  return roundMoney(locked);
+}
+
+export async function getProfitAvailability(
+  userId: string,
+  tx?: Prisma.TransactionClient
+) {
+  const [profitBalance, reservedProfitBalance, lockedProfitBalance] = await Promise.all([
+    getProfitBalance(userId, tx),
+    getPendingProfitWithdrawalReserve(userId, tx),
+    getLockedAccruingProfit(userId, tx),
+  ]);
+
+  return {
+    profitBalance,
+    reservedProfitBalance,
+    lockedProfitBalance,
+    availableProfitBalance: Math.max(
+      0,
+      roundMoney(profitBalance - reservedProfitBalance - lockedProfitBalance)
+    ),
+  };
+}
+
+/** Spendable profit for new withdrawals (excludes tax holds and unmatured daily credits). */
 export async function getAvailableProfitBalance(
   userId: string,
   tx?: Prisma.TransactionClient
 ): Promise<number> {
-  const balance = await getProfitBalance(userId, tx);
-  const reserved = await getPendingProfitWithdrawalReserve(userId, tx);
-  return Math.max(0, roundMoney(balance - reserved));
+  const { availableProfitBalance } = await getProfitAvailability(userId, tx);
+  return availableProfitBalance;
 }
 
 /** Sum of realized P&L from completed sell orders. */

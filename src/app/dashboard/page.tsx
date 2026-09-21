@@ -16,6 +16,7 @@ interface OverviewData {
   investedBalance: number;
   profitBalance: number;
   availableProfitBalance?: number;
+  lockedProfitBalance?: number;
   pendingProfitWithdrawal?: {
     id: string;
     amountUsd: number;
@@ -61,6 +62,8 @@ export default function DashboardPage() {
             totalBalance={data.totalBalance}
             investedBalance={data.investedBalance}
             profitBalance={data.profitBalance}
+            availableProfitBalance={data.availableProfitBalance}
+            lockedProfitBalance={data.lockedProfitBalance}
             savingsBalance={data.savings.savingsBalance}
             savingsApy={data.savings.apyAnnualPercent}
             onProfitWithdraw={loadData}

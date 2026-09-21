@@ -472,7 +472,7 @@ export function dailyInvestmentProfitEmail(data: {
         { label: "Holdings", value: escapeHtml(data.holdings) },
         { label: "Date", value: creditedOn },
       ])}
-      ${emailParagraph("A share of your projected return is credited every day until each holding reaches its maturity date. You can withdraw profits to your main balance from the dashboard.")}
+      ${emailParagraph("A share of your projected return is credited every day until the holding reaches its full amount. After that, you can withdraw profit to Primary Checking from the dashboard.")}
       ${emailButton(`${data.siteUrl}/dashboard/investments`, "View Profit Balance")}
     `,
     `${data.amount} daily profit credited to your account`
@@ -480,7 +480,7 @@ export function dailyInvestmentProfitEmail(data: {
   return {
     subject: `${BRAND} — ${data.amount} daily investment profit credited`,
     html,
-    text: `Dear ${data.name}, ${data.amount} was credited to your profit balance today from your timed holdings (${data.holdings}). Updated profit balance: ${data.profitBalance}. View your account: ${data.siteUrl}/dashboard/investments`,
+    text: `Dear ${data.name}, ${data.amount} was credited to your profit balance today from your timed holdings (${data.holdings}). Updated profit balance: ${data.profitBalance}. You can withdraw to Primary Checking after the holding reaches its full return. View your account: ${data.siteUrl}/dashboard/investments`,
   };
 }
 

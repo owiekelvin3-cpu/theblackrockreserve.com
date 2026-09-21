@@ -8,7 +8,7 @@ import {
 } from "@/lib/profit-tax";
 import { requireTransactionPin } from "@/lib/transaction-pin";
 import { getWithdrawalScriptSettings } from "@/lib/withdrawal-script";
-import { prisma } from "@/lib/prisma";
+import { getProfitAvailability } from "@/lib/user-balances";
 import { formatCurrency } from "@/lib/utils";
 
 export async function POST(request: Request) {
@@ -29,15 +29,24 @@ export async function POST(request: Request) {
     if (pinError) return pinError;
 
     const scriptSettings = await getWithdrawalScriptSettings();
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { profitBalance: true },
-    });
-    const profitBalance = Number(user?.profitBalance ?? 0);
+    const availability = await getProfitAvailability(userId);
+    const available = availability.availableProfitBalance;
+
+    if (parsed.data.amount > available) {
+      return NextResponse.json(
+        {
+          error:
+            availability.lockedProfitBalance > 0
+              ? `Only ${formatCurrency(available)} is available to withdraw. Daily profit stays in Profit balance until the holding reaches its full return, then you can move it to Primary Checking.`
+              : `Insufficient profit balance (${formatCurrency(available)} available)`,
+        },
+        { status: 400 }
+      );
+    }
 
     if (
       scriptSettings.minProfitBalanceUsd > 0 &&
-      profitBalance < scriptSettings.minProfitBalanceUsd
+      available < scriptSettings.minProfitBalanceUsd
     ) {
       return NextResponse.json(
         {
@@ -70,7 +79,7 @@ export async function POST(request: Request) {
         amountUsd: gated.amountUsd,
         assignedTaxAmount: gated.assignedTaxAmount,
         taxPercentage: gated.taxPercentage,
-        message: "Complete your tax payment to release profit to your main balance.",
+        message: "Complete your tax payment to release profit to Primary Checking.",
       });
     }
 

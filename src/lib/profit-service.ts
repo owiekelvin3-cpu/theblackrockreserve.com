@@ -6,6 +6,7 @@ import { formatCurrency } from "@/lib/utils";
 import { profitAddedEmail, profitRemovedEmail } from "@/lib/email-templates";
 import { sendEmail } from "@/lib/email";
 import { getSiteUrl } from "@/lib/site-url";
+import { getProfitAvailability } from "@/lib/user-balances";
 
 export async function addUserProfit(params: {
   userId: string;
@@ -249,12 +250,19 @@ export async function withdrawProfitToMain(userId: string, amount: number) {
   });
   if (!user) throw new Error("User not found");
 
-  const profitBefore = Number(user.profitBalance);
-  if (profitBefore < rounded) {
+  const availability = await getProfitAvailability(userId);
+  if (rounded > availability.availableProfitBalance) {
+    if (availability.lockedProfitBalance > 0) {
+      throw new Error(
+        `Only ${formatCurrency(availability.availableProfitBalance)} is available to withdraw. Daily profit stays in Profit balance until the holding reaches its full return, then you can move it to Primary Checking.`
+      );
+    }
     throw new Error(
-      `Insufficient profit balance (${formatCurrency(profitBefore)} available)`
+      `Insufficient profit balance (${formatCurrency(availability.availableProfitBalance)} available)`
     );
   }
+
+  const profitBefore = Number(user.profitBalance);
 
   const bankAccounts = await ensureUserBankAccounts(userId);
   const account =
@@ -273,9 +281,12 @@ export async function withdrawProfitToMain(userId: string, amount: number) {
     if (!freshUser) throw new Error("User not found");
 
     const liveProfit = Number(freshUser.profitBalance);
-    if (liveProfit < rounded) {
+    const liveAvailability = await getProfitAvailability(userId, tx);
+    if (rounded > liveAvailability.availableProfitBalance) {
       throw new Error(
-        `Insufficient profit balance (${formatCurrency(liveProfit)} available)`
+        liveAvailability.lockedProfitBalance > 0
+          ? `Only ${formatCurrency(liveAvailability.availableProfitBalance)} is available to withdraw. Daily profit stays in Profit balance until the holding reaches its full return, then you can move it to Primary Checking.`
+          : `Insufficient profit balance (${formatCurrency(liveAvailability.availableProfitBalance)} available)`
       );
     }
 
@@ -302,7 +313,7 @@ export async function withdrawProfitToMain(userId: string, amount: number) {
         accountId: account.id,
         type: "PROFIT_CREDIT",
         amount: rounded,
-        description: "Profit withdrawn to main balance",
+        description: "Profit withdrawn to Primary Checking",
         status: "COMPLETED",
       },
     });
@@ -311,8 +322,8 @@ export async function withdrawProfitToMain(userId: string, amount: number) {
   });
 
   const amountLabel = formatCurrency(rounded);
-  const title = "Profit moved to main balance";
-  const message = `${amountLabel} was transferred from your profit balance to your main account.`;
+  const title = "Profit moved to Primary Checking";
+  const message = `${amountLabel} was transferred from your profit balance to your Primary Checking account.`;
 
   await createUserNotification({ userId, type: "PROFIT_WITHDRAWAL", title, message });
   await sendUserNotificationEmail({ userId, title, message });

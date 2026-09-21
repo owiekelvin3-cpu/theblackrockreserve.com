@@ -218,7 +218,7 @@ In your dashboard, you will complete this step on the Pay Processing Charge page
     keywords: ["invest", "investment", "capital markets", "stocks", "etf", "portfolio", "trade", "market", "marketplace", "trading"],
     patterns: [/\bhow.*invest/i, /\btrading marketplace/i],
     message:
-      "Open Dashboard → Trading Marketplace to browse equities, compare holding periods and estimated returns, then place a buy order from your wallet. Projected profit is credited to your profit balance every day until the holding matures. Confirm purchases with your Transaction PIN. Owned positions show a Close Position action so you can exit at any time.",
+      "Open Dashboard → Trading Marketplace to browse equities, compare holding periods and estimated returns, then place a buy order from your wallet. A percentage of the projected profit is credited to your profit balance every day until the full amount is reached. After that you can withdraw it to Primary Checking. Confirm purchases with your Transaction PIN. Owned positions show a Close Position action so you can exit at any time.",
     suggestions: [
       { label: "Buy stocks", value: "How do I buy stocks?" },
       { label: "Sell holdings", value: "How do I sell or close a position?" },
@@ -231,7 +231,7 @@ In your dashboard, you will complete this step on the Pay Processing Charge page
     keywords: ["buy stock", "buy shares", "purchase stock", "place order", "open position", "buy more"],
     patterns: [/\bhow.*(buy|purchase).*(stock|share|asset)/i, /\bbuy.*(marketplace|stock)/i],
     message:
-      "In Dashboard → Trading Marketplace, select an asset, choose a holding duration, enter the amount, and review the estimated profit for that period. A percentage of that profit is credited to your profit balance every day until the maturity date, and you receive an email when each daily credit posts. Confirm with your Transaction PIN. Purchases draw from your total spendable balance across checking and savings.",
+      "In Dashboard → Trading Marketplace, select an asset, choose a holding duration, enter the amount, and review the estimated profit for that period. A percentage of that profit is credited to your profit balance every day until the full amount is reached, and you receive an email when each daily credit posts. After the full return is in Profit balance, you can withdraw it to Primary Checking. Confirm with your Transaction PIN. Purchases draw from your total spendable balance across checking and savings.",
     suggestions: [
       { label: "Insufficient balance", value: "Why does it say insufficient balance when I try to buy?" },
       { label: "Sell holdings", value: "How do I sell or close a position?" },
@@ -252,10 +252,10 @@ In your dashboard, you will complete this step on the Pay Processing Charge page
   {
     id: "profits-dashboard",
     priority: 51,
-    keywords: ["profit dashboard", "profits", "holdings", "realized gain", "portfolio earnings", "p&l", "pnl", "daily profit", "maturity"],
+    keywords: ["profit dashboard", "profits", "holdings", "realized gain", "portfolio earnings", "p&l", "pnl", "daily profit", "maturity", "withdraw profit", "profit balance"],
     patterns: [/\bwhere.*(profit|gain|holding)/i, /\b(profit|gain).*(dashboard|balance)/i, /\bdaily.*(profit|return|credit)/i],
     message:
-      "Timed stock holdings credit a share of the projected profit to your profit balance every day until the maturity date. You also receive an email each time that daily profit is added. Dashboard → Profits & Holdings shows capital deployed, total profit balance, realized trading P&L, and each open position. Use Close Position on any row to sell instantly. Remaining daily credits stop when a position is fully closed.",
+      "Timed stock holdings credit a share of the projected profit to your profit balance every day until the full amount is reached. You also receive an email each time that daily profit is added. That balance stays in Profit balance until the holding is fully paid, then you can withdraw it to Primary Checking. Dashboard → Profits & Holdings shows capital deployed, total profit balance, realized trading P&L, and each open position. Use Close Position on any row to sell instantly. Remaining daily credits stop when a position is fully closed.",
     suggestions: [
       { label: "Sell holdings", value: "How do I sell or close a position?" },
       { label: "Trading marketplace", value: "How does the trading marketplace work?" },

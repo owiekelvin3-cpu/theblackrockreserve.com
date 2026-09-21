@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getSignedTransactionAmount } from "@/lib/transaction-amount";
 import { loadCounterpartiesForTransactions } from "@/lib/transaction-counterparty";
-import { getInvestedBalance, getProfitBalance, getAvailableProfitBalance, getActivePendingProfitWithdrawal } from "@/lib/user-balances";
+import { getInvestedBalance, getProfitAvailability, getActivePendingProfitWithdrawal } from "@/lib/user-balances";
 import { ensureCheckingAndSavingsAccounts, getSavingsSummary } from "@/lib/savings-service";
 import { bankAccountNumberSelect, getDbSchemaCapabilities } from "@/lib/db-schema-capabilities";
 
@@ -91,7 +91,7 @@ export async function getDashboardOverview(userId: string) {
   const now = new Date();
   const yearStart = new Date(now.getFullYear(), 0, 1);
 
-  const [accounts, investments, recentTransactions, yearTransactions, depositSettings, investedBalance, profitBalance, availableProfitBalance, pendingProfitWithdrawal, savings] =
+  const [accounts, investments, recentTransactions, yearTransactions, depositSettings, investedBalance, profitAvailability, pendingProfitWithdrawal, savings] =
     await Promise.all([
       getAccounts(userId),
       getInvestments(userId),
@@ -102,11 +102,11 @@ export async function getDashboardOverview(userId: string) {
       }),
       getPublicDepositSettings(),
       getInvestedBalance(userId),
-      getProfitBalance(userId),
-      getAvailableProfitBalance(userId),
+      getProfitAvailability(userId),
       getActivePendingProfitWithdrawal(userId),
       getSavingsSummary(userId),
     ]);
+  const { profitBalance, availableProfitBalance, lockedProfitBalance } = profitAvailability;
 
   const checkingAccount = accounts.find((a) => a.type === "checking");
   const totalBalance = checkingAccount?.balance ?? 0;
@@ -173,6 +173,7 @@ export async function getDashboardOverview(userId: string) {
     investedBalance,
     profitBalance,
     availableProfitBalance,
+    lockedProfitBalance,
     pendingProfitWithdrawal,
     /** @deprecated use investedBalance */
     savingsBalance: investedBalance,

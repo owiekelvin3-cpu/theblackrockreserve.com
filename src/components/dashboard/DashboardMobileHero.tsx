@@ -18,6 +18,8 @@ type DashboardMobileHeroProps = {
   totalBalance: number;
   investedBalance: number;
   profitBalance: number;
+  availableProfitBalance?: number;
+  lockedProfitBalance?: number;
   savingsBalance: number;
   savingsApy?: number;
   onProfitWithdraw?: () => void;
@@ -31,6 +33,8 @@ export default function DashboardMobileHero({
   totalBalance,
   investedBalance,
   profitBalance,
+  availableProfitBalance,
+  lockedProfitBalance = 0,
   savingsBalance,
   savingsApy = 20,
   onProfitWithdraw,
@@ -145,6 +149,8 @@ export default function DashboardMobileHero({
             <div className="dash-mobile-metric-profit-action">
               <ProfitWithdrawButton
                 profitBalance={profitBalance}
+                availableProfitBalance={availableProfitBalance}
+                lockedProfitBalance={lockedProfitBalance}
                 onSuccess={onProfitWithdraw}
               />
             </div>

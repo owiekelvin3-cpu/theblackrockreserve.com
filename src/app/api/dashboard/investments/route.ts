@@ -1,21 +1,26 @@
 import { NextResponse } from "next/server";
 import { getSessionUserId, unauthorizedResponse } from "@/lib/api-auth";
 import { getInvestments } from "@/lib/dashboard-data";
-import { getInvestedBalance, getProfitBalance, getAvailableProfitBalance, getTradingRealizedProfit, getActivePendingProfitWithdrawal } from "@/lib/user-balances";
+import { getInvestedBalance, getProfitAvailability, getTradingRealizedProfit, getActivePendingProfitWithdrawal } from "@/lib/user-balances";
 
 export async function GET() {
   const userId = await getSessionUserId();
   if (!userId) return unauthorizedResponse();
 
   try {
-    const [holdings, investedBalance, profitBalance, availableProfitBalance, pendingProfitWithdrawal, tradingRealizedProfit] = await Promise.all([
+    const { accrueInvestmentProfitsForUser } = await import("@/lib/investment-accrual");
+    await accrueInvestmentProfitsForUser(userId).catch((error) =>
+      console.error("Investments profit accrual error:", error)
+    );
+
+    const [holdings, investedBalance, profitAvailability, pendingProfitWithdrawal, tradingRealizedProfit] = await Promise.all([
       getInvestments(userId),
       getInvestedBalance(userId),
-      getProfitBalance(userId),
-      getAvailableProfitBalance(userId),
+      getProfitAvailability(userId),
       getActivePendingProfitWithdrawal(userId),
       getTradingRealizedProfit(userId),
     ]);
+    const { profitBalance, availableProfitBalance, lockedProfitBalance } = profitAvailability;
     const totalValue = holdings.reduce((sum, h) => sum + h.value, 0);
     return NextResponse.json({
       holdings,
@@ -23,6 +28,7 @@ export async function GET() {
       investedBalance,
       profitBalance,
       availableProfitBalance,
+      lockedProfitBalance,
       pendingProfitWithdrawal,
       tradingRealizedProfit,
     });

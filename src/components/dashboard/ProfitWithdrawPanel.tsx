@@ -13,6 +13,7 @@ const QUICK_FRACTIONS = [0.25, 0.5, 0.75] as const;
 
 interface ProfitWithdrawPanelProps {
   profitBalance: number;
+  lockedProfitBalance?: number;
   onSuccess: () => void;
   /** Omit outer divider when shown inside a modal */
   embedded?: boolean;
@@ -34,6 +35,7 @@ function formatAmountDigits(value: string): string {
 
 export default function ProfitWithdrawPanel({
   profitBalance,
+  lockedProfitBalance = 0,
   onSuccess,
   embedded = false,
 }: ProfitWithdrawPanelProps) {
@@ -110,7 +112,7 @@ export default function ProfitWithdrawPanel({
     });
   };
 
-  if (maxAmount <= 0) return null;
+  if (maxAmount <= 0 && lockedProfitBalance <= 0) return null;
 
   const displayAmount = formatAmountDigits(amount);
   const showPreview = parsedAmount > 0 && Number.isFinite(parsedAmount);
@@ -131,14 +133,24 @@ export default function ProfitWithdrawPanel({
 
       {embedded && (
         <div className="profit-withdraw-balance-card">
-          <p className="profit-withdraw-balance-label">{t("investments.profitBalance")}</p>
+          <p className="profit-withdraw-balance-label">{t("investments.profitWithdrawAvailable")}</p>
           <p className={cn("profit-withdraw-balance-value", availableIsLarge && "is-compact")}>
             {formattedAvailable}
           </p>
-          <p className="profit-withdraw-tax-note">{t("investments.profitWithdrawTaxNote")}</p>
+          {lockedProfitBalance > 0 ? (
+            <p className="profit-withdraw-tax-note">
+              {t("investments.profitWithdrawLocked", { amount: formatCurrency(lockedProfitBalance) })}
+            </p>
+          ) : (
+            <p className="profit-withdraw-tax-note">{t("investments.profitWithdrawTaxNote")}</p>
+          )}
         </div>
       )}
 
+      {maxAmount <= 0 ? (
+        <p className="text-sm text-text-muted pt-3">{t("investments.profitWithdrawLockedHint")}</p>
+      ) : (
+        <>
       <div className="profit-withdraw-amount-wrap">
         <label htmlFor="profit-withdraw-amount" className="profit-withdraw-amount-label">
           {t("investments.profitWithdrawAmountLabel")}
@@ -199,6 +211,8 @@ export default function ProfitWithdrawPanel({
         <ArrowDownToLine size={16} />
         {loading || pinLoading ? t("common.processing") : t("investments.profitWithdrawCta")}
       </button>
+        </>
+      )}
 
       <TransactionPinModal
         open={pinOpen}

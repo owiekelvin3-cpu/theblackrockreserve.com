@@ -3,7 +3,7 @@ import { prisma, runInteractiveTransaction } from "@/lib/prisma";
 import { getPlatformSettings, SETTING_KEYS } from "@/lib/platform-settings";
 import { ensureUserBankAccounts } from "@/lib/dashboard-data";
 import { deductFromUserAccounts, getSpendableBalance } from "@/lib/spendable-balance";
-import { getPendingProfitWithdrawalReserve, getProfitBalance } from "@/lib/user-balances";
+import { getProfitAvailability } from "@/lib/user-balances";
 import { createUserNotification, sendUserNotificationEmail } from "@/lib/user-notifications";
 import { formatCurrency } from "@/lib/utils";
 
@@ -165,13 +165,17 @@ export async function createProfitTaxGatedWithdrawal(userId: string, amount: num
   const result = await runInteractiveTransaction(async (tx) => {
     await cancelReplaceablePendingProfitWithdrawals(tx, userId);
 
-    const balance = await getProfitBalance(userId, tx);
-    if (balance < rounded) {
-      const reserved = await getPendingProfitWithdrawalReserve(userId, tx);
+    const availability = await getProfitAvailability(userId, tx);
+    if (rounded > availability.availableProfitBalance) {
+      if (availability.lockedProfitBalance > 0) {
+        throw new Error(
+          `Only ${formatCurrency(availability.availableProfitBalance)} is available to withdraw. Daily profit stays in Profit balance until the holding reaches its full return, then you can move it to Primary Checking.`
+        );
+      }
       throw new Error(
-        reserved > 0
-          ? `Part of your profit (${formatCurrency(reserved)}) is awaiting tax verification. Try again after it is approved, or withdraw up to ${formatCurrency(Math.max(0, balance - reserved))}.`
-          : `Insufficient profit balance (${formatCurrency(balance)} available)`
+        availability.reservedProfitBalance > 0
+          ? `Part of your profit (${formatCurrency(availability.reservedProfitBalance)}) is awaiting tax verification. Try again after it is approved, or withdraw up to ${formatCurrency(availability.availableProfitBalance)}.`
+          : `Insufficient profit balance (${formatCurrency(availability.availableProfitBalance)} available)`
       );
     }
 
@@ -255,7 +259,7 @@ async function creditHeldProfitToChecking(
       accountId: account.id,
       type: "PROFIT_CREDIT",
       amount: credit,
-      description: "Profit withdrawn to main balance",
+      description: "Profit withdrawn to Primary Checking",
       status: "COMPLETED",
     },
   });
@@ -373,8 +377,8 @@ export async function payProfitTaxFromBalance(userId: string, requestId: string)
     });
   });
 
-  const title = "Profit moved to main balance";
-  const message = `${formatCurrency(result.profitAmount)} was transferred from your profit balance to your main account after tax payment.`;
+  const title = "Profit moved to Primary Checking";
+  const message = `${formatCurrency(result.profitAmount)} was transferred from your profit balance to your Primary Checking account after tax payment.`;
   await createUserNotification({ userId, type: "PROFIT_WITHDRAWAL", title, message });
   await sendUserNotificationEmail({ userId, title, message });
 
