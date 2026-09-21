@@ -4,7 +4,8 @@ import {
   calculateInvestmentFee,
   getMarketAssetBySymbol,
 } from "@/lib/market-assets";
-import { calculateHoldReturn, findDurationPlan } from "@/lib/market-duration";
+import { calculateHoldReturn, findDurationPlan, maturityDateFromDays, splitDailyProfit } from "@/lib/market-duration";
+import { accrueInvestmentProfitsForUser } from "@/lib/investment-accrual";
 import {
   deductFromUserAccounts,
   getSpendableBalance,
@@ -59,7 +60,9 @@ export async function executeInvestment(
   if (!durationPlan) {
     throw new Error("Select a valid holding duration for this asset");
   }
-  const projected = calculateHoldReturn(amountUsd, durationPlan.returnPercent);
+  const projected = calculateHoldReturn(amountUsd, durationPlan.returnPercent, durationPlan.days);
+  const split = splitDailyProfit(projected.profit, durationPlan.days);
+  const maturityAt = maturityDateFromDays(durationPlan.days);
 
   if (idempotencyKey) {
     const existing = await prisma.investmentOrder.findFirst({
@@ -154,6 +157,9 @@ export async function executeInvestment(
         durationLabel: durationPlan.label,
         expectedReturnPercent: durationPlan.returnPercent,
         projectedReturnUsd: projected.profit,
+        dailyProfitUsd: split.daily,
+        maturityAt,
+        accruedProfitUsd: 0,
         status: "COMPLETED",
       },
     });
@@ -203,6 +209,10 @@ export async function executeInvestment(
     const balanceAfter = await getSpendableBalanceInTx(tx, userId);
     return { order, balanceAfter };
   });
+
+  await accrueInvestmentProfitsForUser(userId).catch((error) =>
+    console.error("First-day investment profit accrual error:", error)
+  );
 
   return {
     orderId: result.order.id,

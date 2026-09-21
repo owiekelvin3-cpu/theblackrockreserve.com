@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { getAccounts, getInvestments } from "@/lib/dashboard-data";
 import { getProfitBalance } from "@/lib/user-balances";
 import { getMarketAssets, getMarketStatus, type MarketAssetDto } from "@/lib/market-assets";
+import { accrueInvestmentProfitsForUser } from "@/lib/investment-accrual";
+import { utcDateOnly } from "@/lib/market-duration";
 
 export interface EnrichedHolding {
   id: string;
@@ -18,6 +20,11 @@ export interface EnrichedHolding {
   dayChangePercent: number;
   roiPercent: number;
   investedAt: string;
+  dailyProfitUsd: number;
+  accruedProfitUsd: number;
+  projectedReturnUsd: number;
+  maturityAt: string | null;
+  daysRemaining: number;
 }
 
 export interface InvestmentHistoryItem {
@@ -34,6 +41,9 @@ export interface InvestmentHistoryItem {
   durationLabel: string | null;
   expectedReturnPercent: number | null;
   projectedReturnUsd: number | null;
+  dailyProfitUsd: number | null;
+  accruedProfitUsd: number;
+  maturityAt: string | null;
   realizedPnl: number | null;
   status: string;
   createdAt: string;
@@ -52,7 +62,11 @@ export interface PortfolioAnalytics {
 }
 
 export async function getCapitalMarketsData(userId: string) {
-  const [holdings, accounts, assets, orders, profitBalance] = await Promise.all([
+  await accrueInvestmentProfitsForUser(userId).catch((error) =>
+    console.error("Capital markets profit accrual error:", error)
+  );
+
+  const [holdings, accounts, assets, orders, buyLots, profitBalance] = await Promise.all([
     getInvestments(userId),
     getAccounts(userId),
     getMarketAssets(),
@@ -61,10 +75,22 @@ export async function getCapitalMarketsData(userId: string) {
       orderBy: { createdAt: "desc" },
       take: 100,
     }),
+    prisma.investmentOrder.findMany({
+      where: { userId, side: "BUY" },
+      orderBy: { createdAt: "asc" },
+    }),
     getProfitBalance(userId),
   ]);
 
   const assetMap = new Map(assets.map((a) => [a.symbol, a]));
+
+  const today = utcDateOnly(new Date());
+  const buyLotsBySymbol = new Map<string, typeof buyLots>();
+  for (const order of buyLots) {
+    const list = buyLotsBySymbol.get(order.symbol) ?? [];
+    list.push(order);
+    buyLotsBySymbol.set(order.symbol, list);
+  }
 
   const enrichedHoldings: EnrichedHolding[] = holdings.map((h) => {
     const quote = assetMap.get(h.symbol);
@@ -74,7 +100,18 @@ export async function getCapitalMarketsData(userId: string) {
     const gainLoss = marketValue - costBasis;
     const gainLossPercent = costBasis > 0 ? (gainLoss / costBasis) * 100 : 0;
 
-    const firstOrder = orders.find((o) => o.symbol === h.symbol && o.side !== "SELL");
+    const lots = buyLotsBySymbol.get(h.symbol) ?? [];
+    const firstOrder = lots[0] ?? orders.find((o) => o.symbol === h.symbol && o.side !== "SELL");
+    const dailyProfitUsd = lots.reduce((sum, o) => sum + (o.accrualClosedAt ? 0 : Number(o.dailyProfitUsd ?? 0)), 0);
+    const accruedProfitUsd = lots.reduce((sum, o) => sum + Number(o.accruedProfitUsd ?? 0), 0);
+    const projectedReturnUsd = lots.reduce((sum, o) => sum + Number(o.projectedReturnUsd ?? 0), 0);
+    const openLots = lots.filter((o) => !o.accrualClosedAt && o.maturityAt);
+    const nextMaturity = openLots
+      .map((o) => o.maturityAt as Date)
+      .sort((a, b) => a.getTime() - b.getTime())[0] ?? null;
+    const daysRemaining = nextMaturity
+      ? Math.max(0, Math.round((utcDateOnly(nextMaturity).getTime() - today.getTime()) / 86_400_000))
+      : 0;
 
     return {
       id: h.id,
@@ -91,6 +128,11 @@ export async function getCapitalMarketsData(userId: string) {
       dayChangePercent: quote?.changePercent ?? 0,
       roiPercent: gainLossPercent,
       investedAt: firstOrder?.createdAt.toISOString() ?? new Date().toISOString(),
+      dailyProfitUsd: Math.round(dailyProfitUsd * 100) / 100,
+      accruedProfitUsd: Math.round(accruedProfitUsd * 100) / 100,
+      projectedReturnUsd: Math.round(projectedReturnUsd * 100) / 100,
+      maturityAt: nextMaturity?.toISOString() ?? null,
+      daysRemaining,
     };
   });
 
@@ -148,6 +190,9 @@ export async function getCapitalMarketsData(userId: string) {
     durationLabel: o.durationLabel,
     expectedReturnPercent: o.expectedReturnPercent != null ? Number(o.expectedReturnPercent) : null,
     projectedReturnUsd: o.projectedReturnUsd != null ? Number(o.projectedReturnUsd) : null,
+    dailyProfitUsd: o.dailyProfitUsd != null ? Number(o.dailyProfitUsd) : null,
+    accruedProfitUsd: Number(o.accruedProfitUsd ?? 0),
+    maturityAt: o.maturityAt?.toISOString() ?? null,
     realizedPnl: o.realizedPnl != null ? Number(o.realizedPnl) : null,
     status: o.status,
     createdAt: o.createdAt.toISOString(),

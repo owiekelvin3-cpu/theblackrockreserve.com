@@ -4,6 +4,7 @@ import {
   calculateInvestmentFee,
   getMarketAssetBySymbol,
 } from "@/lib/market-assets";
+import { closeAccrualsForSymbol } from "@/lib/investment-accrual";
 
 export interface ExecuteSellInput {
   userId: string;
@@ -134,6 +135,7 @@ export async function executeSell(input: ExecuteSellInput): Promise<ExecuteSellR
     const remainingShares = roundShares(heldShares - sharesToSell);
     if (remainingShares <= 0.000001) {
       await tx.investment.delete({ where: { id: holding.id } });
+      await closeAccrualsForSymbol(tx, userId, normalizedSymbol);
     } else {
       await tx.investment.update({
         where: { id: holding.id },

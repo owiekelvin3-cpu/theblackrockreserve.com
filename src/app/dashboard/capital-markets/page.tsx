@@ -45,6 +45,11 @@ interface Holding {
   dayChangePercent: number;
   roiPercent: number;
   investedAt: string;
+  dailyProfitUsd: number;
+  accruedProfitUsd: number;
+  projectedReturnUsd: number;
+  maturityAt: string | null;
+  daysRemaining: number;
 }
 
 interface HistoryItem {
@@ -60,6 +65,9 @@ interface HistoryItem {
   durationLabel: string | null;
   expectedReturnPercent: number | null;
   projectedReturnUsd: number | null;
+  dailyProfitUsd: number | null;
+  accruedProfitUsd: number;
+  maturityAt: string | null;
   realizedPnl: number | null;
   createdAt: string;
 }
@@ -339,6 +347,8 @@ export default function CapitalMarketsPage() {
         shares: owned.shares,
         marketValue: owned.marketValue,
         gainLossPercent: owned.gainLossPercent,
+        dailyProfitUsd: owned.dailyProfitUsd,
+        daysRemaining: owned.daysRemaining,
       },
     };
   };
@@ -692,6 +702,7 @@ export default function CapitalMarketsPage() {
                             <th className="text-right py-3 font-medium">{t("investments.value")}</th>
                             <th className="text-right py-3 font-medium">{t("capitalMarkets.pl")}</th>
                             <th className="text-right py-3 font-medium hidden sm:table-cell">{t("capitalMarkets.roi")}</th>
+                            <th className="text-right py-3 font-medium hidden lg:table-cell">{t("capitalMarkets.dailyProfit")}</th>
                             <th className="text-right py-3 font-medium">{t("trade.action")}</th>
                           </tr>
                         </thead>
@@ -735,6 +746,22 @@ export default function CapitalMarketsPage() {
                                   {h.roiPercent.toFixed(2)}%
                                 </span>
                               </td>
+                              <td className="text-right hidden lg:table-cell py-4">
+                                {h.dailyProfitUsd > 0 ? (
+                                  <div>
+                                    <p className="font-mono text-accent-green text-xs">
+                                      +{formatCurrency(h.dailyProfitUsd)}
+                                    </p>
+                                    <p className="text-[10px] text-[var(--text-muted)]">
+                                      {h.daysRemaining > 0
+                                        ? t("capitalMarkets.daysLeft", { days: h.daysRemaining })
+                                        : t("capitalMarkets.termMatured")}
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <span className="text-[var(--text-muted)] text-xs">—</span>
+                                )}
+                              </td>
                               <td className="text-right py-4">
                                 <button
                                   type="button"
@@ -771,6 +798,7 @@ export default function CapitalMarketsPage() {
                             <th className="text-right py-3 font-medium">{t("common.amount")}</th>
                             <th className="text-right py-3 font-medium hidden md:table-cell">{t("capitalMarkets.durationCol")}</th>
                             <th className="text-right py-3 font-medium hidden lg:table-cell">{t("capitalMarkets.projectedReturn")}</th>
+                            <th className="text-right py-3 font-medium hidden xl:table-cell">{t("capitalMarkets.dailyProfit")}</th>
                             <th className="text-right py-3 font-medium hidden md:table-cell">{t("capitalMarkets.fee")}</th>
                             <th className="text-right py-3 font-medium">{t("capitalMarkets.total")}</th>
                             <th className="text-right py-3 font-medium hidden lg:table-cell">{t("capitalMarkets.realizedPl")}</th>
@@ -798,7 +826,23 @@ export default function CapitalMarketsPage() {
                               </td>
                               <td className="text-right font-mono hidden lg:table-cell py-3">
                                 {h.side === "BUY" && h.projectedReturnUsd != null ? (
-                                  <span className="text-accent-green">+{formatCurrency(h.projectedReturnUsd)}</span>
+                                  <div>
+                                    <span className="text-accent-green">+{formatCurrency(h.projectedReturnUsd)}</span>
+                                    {h.accruedProfitUsd > 0 && (
+                                      <p className="text-[10px] text-[var(--text-muted)]">
+                                        {t("capitalMarkets.accruedProfit")}: {formatCurrency(h.accruedProfitUsd)}
+                                      </p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-[var(--text-muted)]">—</span>
+                                )}
+                              </td>
+                              <td className="text-right font-mono hidden xl:table-cell py-3">
+                                {h.side === "BUY" && h.dailyProfitUsd != null && h.dailyProfitUsd > 0 ? (
+                                  <span className="text-accent-green">
+                                    {t("capitalMarkets.perDay", { amount: formatCurrency(h.dailyProfitUsd) })}
+                                  </span>
                                 ) : (
                                   <span className="text-[var(--text-muted)]">—</span>
                                 )}

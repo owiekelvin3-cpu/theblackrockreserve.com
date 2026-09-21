@@ -83,6 +83,11 @@ export async function getTransactions(userId: string, type?: string, limit = 20)
 import { getPublicDepositSettings } from "@/lib/platform-settings";
 
 export async function getDashboardOverview(userId: string) {
+  const { accrueInvestmentProfitsForUser } = await import("@/lib/investment-accrual");
+  await accrueInvestmentProfitsForUser(userId).catch((error) =>
+    console.error("Dashboard profit accrual error:", error)
+  );
+
   const now = new Date();
   const yearStart = new Date(now.getFullYear(), 0, 1);
 

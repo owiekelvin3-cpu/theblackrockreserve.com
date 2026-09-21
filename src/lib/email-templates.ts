@@ -453,6 +453,37 @@ export function profitRemovedEmail(data: {
   };
 }
 
+export function dailyInvestmentProfitEmail(data: {
+  name: string;
+  amount: string;
+  profitBalance: string;
+  holdings: string;
+  siteUrl: string;
+}) {
+  const creditedOn = new Date().toLocaleString("en-US", { dateStyle: "medium" });
+  const html = layout(
+    `
+      ${emailHeading("Daily investment profit credited")}
+      ${emailGreeting(data.name)}
+      ${emailParagraph(`<strong style="color:${TEXT};">${escapeHtml(data.amount)}</strong> has been added to your profit balance from your timed holdings.`)}
+      ${emailInfoCard([
+        { label: "Amount credited today", value: escapeHtml(data.amount) },
+        { label: "Updated profit balance", value: escapeHtml(data.profitBalance) },
+        { label: "Holdings", value: escapeHtml(data.holdings) },
+        { label: "Date", value: creditedOn },
+      ])}
+      ${emailParagraph("A share of your projected return is credited every day until each holding reaches its maturity date. You can withdraw profits to your main balance from the dashboard.")}
+      ${emailButton(`${data.siteUrl}/dashboard/investments`, "View Profit Balance")}
+    `,
+    `${data.amount} daily profit credited to your account`
+  );
+  return {
+    subject: `${BRAND} — ${data.amount} daily investment profit credited`,
+    html,
+    text: `Dear ${data.name}, ${data.amount} was credited to your profit balance today from your timed holdings (${data.holdings}). Updated profit balance: ${data.profitBalance}. View your account: ${data.siteUrl}/dashboard/investments`,
+  };
+}
+
 export function investmentConfirmationEmail(data: {
   name: string;
   symbol: string;

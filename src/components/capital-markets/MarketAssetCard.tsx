@@ -24,6 +24,8 @@ export type OwnedHoldingSummary = {
   shares: number;
   marketValue: number;
   gainLossPercent: number;
+  dailyProfitUsd?: number;
+  daysRemaining?: number;
 };
 
 interface MarketAssetCardProps {
@@ -62,7 +64,7 @@ export default function MarketAssetCard({
   const highlightPlan =
     durationPlans.find((plan) => plan.id === highlightedPlanId) ?? durationPlans[0] ?? null;
   const exampleReturn = highlightPlan
-    ? calculateHoldReturn(exampleAmount, highlightPlan.returnPercent)
+    ? calculateHoldReturn(exampleAmount, highlightPlan.returnPercent, highlightPlan.days)
     : null;
   const animatedProfit = useAnimatedNumber(exampleReturn?.profit ?? 0);
   const maxReturn = Math.max(...durationPlans.map((plan) => Math.abs(plan.returnPercent)), 0.01);
@@ -171,7 +173,7 @@ export default function MarketAssetCard({
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
             {durationPlans.map((plan, i) => {
-              const sample = calculateHoldReturn(exampleAmount, plan.returnPercent);
+              const sample = calculateHoldReturn(exampleAmount, plan.returnPercent, plan.days);
               const active = plan.id === highlightedPlanId;
               return (
                 <motion.button
@@ -195,6 +197,9 @@ export default function MarketAssetCard({
                     </p>
                     <p className="text-[10px] font-mono text-[var(--text-secondary)]">
                       +{formatCurrency(sample.profit)}
+                    </p>
+                    <p className="text-[10px] font-mono text-accent-green/80">
+                      {t("capitalMarkets.perDay", { amount: formatCurrency(sample.daily) })}
                     </p>
                     <div className="mt-1 h-1 rounded-full bg-white/5 overflow-hidden">
                       <motion.span
@@ -238,6 +243,18 @@ export default function MarketAssetCard({
                 {holding.shares.toFixed(4)} shares
               </p>
               <p className="text-xs text-[var(--text-muted)] mt-0.5">{formatCurrency(holding.marketValue)}</p>
+              {holding.dailyProfitUsd != null && holding.dailyProfitUsd > 0 && (
+                <p className="text-[11px] font-medium text-accent-green mt-0.5">
+                  {t("capitalMarkets.perDay", { amount: formatCurrency(holding.dailyProfitUsd) })}
+                  {holding.daysRemaining != null
+                    ? ` · ${
+                        holding.daysRemaining > 0
+                          ? t("capitalMarkets.daysLeft", { days: holding.daysRemaining })
+                          : t("capitalMarkets.termMatured")
+                      }`
+                    : ""}
+                </p>
+              )}
             </>
           ) : exampleReturn && highlightPlan ? (
             <>

@@ -52,6 +52,7 @@ model User {
   counterpartyTransactions Transaction[] @relation("TransactionCounterparty")
   investments         Investment[]
   investmentOrders    InvestmentOrder[]
+  investmentDailyCredits InvestmentDailyCredit[]
   sessions            Session[]
   balanceAdjustments  BalanceAdjustment[] @relation("UserAdjustments")
   adminAdjustments    BalanceAdjustment[] @relation("AdminAdjustments")
@@ -242,9 +243,32 @@ model InvestmentOrder {
   projectedReturnUsd     Decimal? @db.Decimal(15, 2)
   realizedPnl            Decimal? @db.Decimal(15, 2)
   status                 String   @default("COMPLETED")
+  maturityAt             DateTime?
+  dailyProfitUsd         Decimal? @db.Decimal(15, 2)
+  accruedProfitUsd       Decimal  @default(0) @db.Decimal(15, 2)
+  accrualClosedAt        DateTime?
   createdAt              DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credits InvestmentDailyCredit[]
+
+  @@index([side, accrualClosedAt])
+}
+
+model InvestmentDailyCredit {
+  id        String   @id @default(cuid())
+  orderId   String
+  userId    String
+  symbol    String
+  dayDate   DateTime @db.Date
+  amount    Decimal  @db.Decimal(15, 2)
+  createdAt DateTime @default(now())
+
+  order InvestmentOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, dayDate])
+  @@index([userId, createdAt])
 }
 
 model ContactMessage {

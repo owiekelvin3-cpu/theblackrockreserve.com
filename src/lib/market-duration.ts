@@ -188,20 +188,53 @@ export function planIdForReturnPeriod(period: ReturnPeriodKey): string {
   return PERIOD_TO_PLAN_ID[period] ?? "30d";
 }
 
-export function calculateHoldReturn(amount: number, returnPercent: number) {
+export function utcDateOnly(date: Date): Date {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+}
+
+export function addUtcDays(date: Date, days: number): Date {
+  const next = utcDateOnly(date);
+  next.setUTCDate(next.getUTCDate() + days);
+  return next;
+}
+
+export function utcDaysInclusive(from: Date, to: Date): number {
+  const start = utcDateOnly(from).getTime();
+  const end = utcDateOnly(to).getTime();
+  return Math.max(0, Math.round((end - start) / 86_400_000)) + 1;
+}
+
+export function splitDailyProfit(projected: number, days: number) {
+  const termDays = Math.max(1, Math.round(days));
+  const total = roundMoney(Math.max(0, projected));
+  const daily = roundMoney(total / termDays);
+  return { daily, total, days: termDays };
+}
+
+export function payoutAmountForDay(projected: number, days: number, dayIndex: number, alreadyAccrued: number) {
+  const { daily, total, days: termDays } = splitDailyProfit(projected, days);
+  const remaining = roundMoney(Math.max(0, total - alreadyAccrued));
+  if (dayIndex >= termDays) return remaining;
+  return roundMoney(Math.min(daily, remaining));
+}
+
+export function calculateHoldReturn(amount: number, returnPercent: number, days = 1) {
   const safeAmount = Number.isFinite(amount) && amount > 0 ? amount : 0;
   const profit = roundMoney(safeAmount * (returnPercent / 100));
+  const termDays = Math.max(1, Math.round(days));
+  const { daily } = splitDailyProfit(profit, termDays);
   return {
     profit,
     payout: roundMoney(safeAmount + profit),
     returnPercent: roundPercent(returnPercent),
+    daily,
+    days: termDays,
   };
 }
 
 export function maturityDateFromDays(days: number, from = new Date()): Date {
-  const date = new Date(from);
-  date.setDate(date.getDate() + Math.max(1, Math.round(days)));
-  return date;
+  const termDays = Math.max(1, Math.round(days));
+  return addUtcDays(from, termDays - 1);
 }
 
 export function examplePurchaseAmount(minInvestment: number): number {

@@ -93,8 +93,8 @@ export default function InvestModal({
 
   const previewAmount = amountNum > 0 ? amountNum : asset?.minInvestment ?? 0;
   const holdReturn = useMemo(
-    () => calculateHoldReturn(previewAmount, selectedPlan?.returnPercent ?? 0),
-    [previewAmount, selectedPlan?.returnPercent]
+    () => calculateHoldReturn(previewAmount, selectedPlan?.returnPercent ?? 0, selectedPlan?.days ?? 1),
+    [previewAmount, selectedPlan?.returnPercent, selectedPlan?.days]
   );
   const maturityDate = useMemo(
     () => (selectedPlan ? maturityDateFromDays(selectedPlan.days) : null),
@@ -105,6 +105,7 @@ export default function InvestModal({
   const totalCost = useMemo(() => Math.round((amountNum + fee) * 100) / 100, [amountNum, fee]);
   const animatedProfit = useAnimatedNumber(holdReturn.profit);
   const animatedPayout = useAnimatedNumber(holdReturn.payout);
+  const animatedDaily = useAnimatedNumber(holdReturn.daily);
   const shares = useMemo(() => {
     if (!asset || amountNum <= 0) return 0;
     return Math.round((amountNum / asset.price) * 1_000_000) / 1_000_000;
@@ -384,6 +385,20 @@ export default function InvestModal({
                             {maturityDate ? formatDate(maturityDate, { dateStyle: "medium" }) : "—"}
                           </p>
                         </div>
+                        <div className="col-span-2">
+                          <p className="text-xs text-[var(--text-muted)]">{t("invest.dailyProfit")}</p>
+                          <p className="font-mono font-semibold text-accent-green">
+                            {t("capitalMarkets.perDay", { amount: formatCurrency(animatedDaily) })}
+                          </p>
+                          {maturityDate && (
+                            <p className="text-[11px] text-[var(--text-secondary)] mt-1">
+                              {t("invest.dailyUntilMaturity", {
+                                amount: formatCurrency(animatedDaily),
+                                date: formatDate(maturityDate, { dateStyle: "medium" }),
+                              })}
+                            </p>
+                          )}
+                        </div>
                       </div>
                       {amountNum <= 0 && (
                         <p className="relative z-10 text-[11px] text-[var(--text-muted)]">
@@ -417,6 +432,7 @@ export default function InvestModal({
                       [t("invest.durationSummary"), selectedPlan.label],
                       [t("invest.returnRate"), `${selectedPlan.returnPercent.toFixed(2)}%`],
                       [t("invest.estProfitSummary"), `+${formatCurrency(holdReturn.profit)}`],
+                      [t("invest.estDailyProfit"), t("capitalMarkets.perDay", { amount: formatCurrency(holdReturn.daily) })],
                       [t("invest.estPayoutSummary", { duration: selectedPlan.label }), formatCurrency(holdReturn.payout)],
                       [t("invest.maturityDate"), maturityDate ? formatDate(maturityDate, { dateStyle: "medium" }) : "—"],
                       [t("invest.estShares"), shares.toFixed(6)],
@@ -487,6 +503,14 @@ export default function InvestModal({
                         {t("invest.successReturn", {
                           profit: formatCurrency(result.projectedReturnUsd),
                           duration: result.durationLabel,
+                        })}
+                      </p>
+                    )}
+                    {selectedPlan && maturityDate && (
+                      <p className="text-sm text-[var(--text-secondary)] mt-1">
+                        {t("invest.successDaily", {
+                          amount: formatCurrency(holdReturn.daily),
+                          date: formatDate(maturityDate, { dateStyle: "medium" }),
                         })}
                       </p>
                     )}
