@@ -62,9 +62,22 @@ export function roundPercent(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
-export function scaleAnnualReturn(annualPercent: number, days: number): number {
-  if (!Number.isFinite(annualPercent) || !Number.isFinite(days) || days <= 0) return 0;
-  return roundPercent(annualPercent * (days / 365));
+/** Total return for a holding period: daily % × days. */
+export function scaleDailyReturn(dailyPercent: number, days: number): number {
+  if (!Number.isFinite(dailyPercent) || !Number.isFinite(days) || days <= 0) return 0;
+  return roundPercent(dailyPercent * days);
+}
+
+/** @deprecated use scaleDailyReturn — expected return is a daily rate. */
+export function scaleAnnualReturn(dailyPercent: number, days: number): number {
+  return scaleDailyReturn(dailyPercent, days);
+}
+
+export function applyDailyReturnToPlans(plans: MarketDurationPlan[], dailyPercent: number): MarketDurationPlan[] {
+  return plans.map((plan) => ({
+    ...plan,
+    returnPercent: scaleDailyReturn(dailyPercent, plan.days),
+  }));
 }
 
 export function newDurationPlanId(): string {
@@ -101,7 +114,7 @@ export function parseDurationPlans(raw: unknown): MarketDurationPlan[] {
     const days = asFiniteNumber(row.days);
     const returnPercent = asFiniteNumber(row.returnPercent);
     if (days == null || days < 1 || days > 3650) continue;
-    if (returnPercent == null || returnPercent < -100 || returnPercent > 500) continue;
+    if (returnPercent == null || returnPercent < -100 || returnPercent > 50_000) continue;
 
     const rawId = typeof row.id === "string" && row.id.trim() ? row.id.trim() : `d-${Math.round(days)}`;
     let id = rawId.slice(0, 40);
@@ -125,24 +138,24 @@ export function parseDurationPlans(raw: unknown): MarketDurationPlan[] {
   return plans.slice(0, 12);
 }
 
-function storedOrScaled(stored: number, annual: number, days: number): number {
+function storedOrScaled(stored: number, dailyPercent: number, days: number): number {
   if (Number.isFinite(stored) && stored !== 0) return roundPercent(stored);
-  return scaleAnnualReturn(annual, days);
+  return scaleDailyReturn(dailyPercent, days);
 }
 
 export function defaultDurationPlans(source: DurationPlanSource): MarketDurationPlan[] {
-  const annual = Number.isFinite(source.expectedReturnPercent) ? source.expectedReturnPercent : 8;
+  const daily = Number.isFinite(source.expectedReturnPercent) ? source.expectedReturnPercent : 1;
   const plans: MarketDurationPlan[] = STANDARD_DURATION_PRESETS.map((preset) => {
     let stored = 0;
     if (preset.days === 7) stored = source.return7d || source.returnWeekly;
     else if (preset.days === 14) stored = source.return14d;
     else if (preset.days === 30) stored = source.return30d || source.returnMonthly;
     else if (preset.days === 90) stored = source.return90d;
-    else if (preset.days === 365) stored = source.return1y || source.returnYearly || annual;
+    else if (preset.days === 365) stored = source.return1y || source.returnYearly;
 
     return {
       ...preset,
-      returnPercent: storedOrScaled(stored, annual, preset.days),
+      returnPercent: storedOrScaled(stored, daily, preset.days),
       enabled: true,
     };
   });
@@ -244,19 +257,27 @@ export function examplePurchaseAmount(minInvestment: number): number {
 
 export function syncReturnFieldsFromPlans(plans: MarketDurationPlan[]) {
   const enabled = plans.filter((plan) => plan.enabled);
-  const pick = (days: number) => enabled.find((plan) => plan.days === days)?.returnPercent;
+  const pick = (days: number) => {
+    const value = enabled.find((plan) => plan.days === days)?.returnPercent;
+    if (value == null) return 0;
+    return Math.max(-9999.99, Math.min(9999.99, roundPercent(value)));
+  };
   const custom = enabled.find((plan) => plan.id === "custom" || !STANDARD_DURATION_PRESETS.some((p) => p.id === plan.id));
+  const customPercent =
+    custom && custom.id === "custom"
+      ? Math.max(-9999.99, Math.min(9999.99, roundPercent(custom.returnPercent)))
+      : null;
 
   return {
-    return7d: pick(7) ?? 0,
-    return14d: pick(14) ?? 0,
-    return30d: pick(30) ?? 0,
-    return90d: pick(90) ?? 0,
-    return1y: pick(365) ?? 0,
-    returnWeekly: pick(7) ?? 0,
-    returnMonthly: pick(30) ?? 0,
-    returnYearly: pick(365) ?? 0,
+    return7d: pick(7),
+    return14d: pick(14),
+    return30d: pick(30),
+    return90d: pick(90),
+    return1y: pick(365),
+    returnWeekly: pick(7),
+    returnMonthly: pick(30),
+    returnYearly: pick(365),
     customReturnLabel: custom?.label ?? null,
-    customReturnPercent: custom && custom.id === "custom" ? custom.returnPercent : null,
+    customReturnPercent: customPercent,
   };
 }

@@ -265,8 +265,8 @@ export default function MarketAssetCard({
             </>
           ) : (
             <>
-              <p className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">Expected Return</p>
-              <p className="text-sm font-semibold text-accent-brand">~{asset.expectedReturnPercent}% p.a.</p>
+              <p className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">{t("invest.expectedReturn")}</p>
+              <p className="text-sm font-semibold text-accent-brand">{t("invest.annually", { percent: asset.expectedReturnPercent })}</p>
             </>
           )}
         </div>

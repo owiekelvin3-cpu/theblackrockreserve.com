@@ -187,7 +187,7 @@ const extensions = {
     date: "Date",
     transactionFee: "Transaction Fee",
     totalCost: "Total Cost",
-    annually: "~{percent}% annually",
+    annually: "~{percent}% / day",
     durationSummary: "Holding period",
     estProfitSummary: "Estimated profit",
     estDailyProfit: "Daily profit credit",

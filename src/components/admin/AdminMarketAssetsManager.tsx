@@ -9,7 +9,8 @@ import {
   defaultDurationPlans,
   getDurationPlans,
   newDurationPlanId,
-  scaleAnnualReturn,
+  scaleDailyReturn,
+  applyDailyReturnToPlans,
   type MarketDurationPlan,
 } from "@/lib/market-duration";
 import {
@@ -413,8 +414,26 @@ export default function AdminMarketAssetsManager() {
                   </select>
                 </div>
                 <div>
-                  <label className={labelCls}>Expected Return % (p.a.)</label>
-                  <input className={inputCls} type="number" step="0.1" value={form.expectedReturnPercent} onChange={(e) => setForm({ ...form, expectedReturnPercent: e.target.value })} />
+                  <label className={labelCls}>Expected Return % (Day)</label>
+                  <input
+                    className={inputCls}
+                    type="number"
+                    step="0.1"
+                    value={form.expectedReturnPercent}
+                    onChange={(e) => {
+                      const daily = Number(e.target.value);
+                      setForm({
+                        ...form,
+                        expectedReturnPercent: e.target.value,
+                        durationPlans: Number.isFinite(daily)
+                          ? applyDailyReturnToPlans(form.durationPlans, daily)
+                          : form.durationPlans,
+                      });
+                    }}
+                  />
+                  <p className="text-[10px] text-[var(--admin-muted)] mt-1">
+                    Daily rate. Each holding period becomes this % × days (15% × 30 days = 450%).
+                  </p>
                 </div>
                 <div>
                   <label className={labelCls}>Growth Rate %</label>
@@ -436,7 +455,7 @@ export default function AdminMarketAssetsManager() {
                 <div>
                   <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--admin-accent)]">Holding periods &amp; returns</h3>
                   <p className="text-[11px] text-[var(--admin-muted)] mt-1">
-                    Customers pick one of these durations when buying. Return % is the total profit for that holding period. That profit is credited to their profit balance in equal daily amounts until the full amount is reached. They can then withdraw it to Primary Checking.
+                    Customers pick one of these durations when buying. Return % is Expected Return % (Day) × days. That total is credited to Profit balance in equal daily amounts until the full amount is reached, then they can withdraw it to Primary Checking.
                   </p>
                 </div>
                 <button
@@ -444,7 +463,7 @@ export default function AdminMarketAssetsManager() {
                   className="admin-btn-ghost text-xs px-3 py-1.5 inline-flex items-center gap-1"
                   onClick={() => {
                     const days = 60;
-                    const annual = Number(form.expectedReturnPercent) || 8;
+                    const daily = Number(form.expectedReturnPercent) || 0;
                     setForm({
                       ...form,
                       durationPlans: [
@@ -453,7 +472,7 @@ export default function AdminMarketAssetsManager() {
                           id: newDurationPlanId(),
                           days,
                           label: `${days} Days`,
-                          returnPercent: scaleAnnualReturn(annual, days),
+                          returnPercent: scaleDailyReturn(daily, days),
                           enabled: true,
                         },
                       ],
@@ -504,14 +523,19 @@ export default function AdminMarketAssetsManager() {
                         value={plan.days}
                         onChange={(e) => {
                           const days = Math.max(1, Math.round(Number(e.target.value) || 1));
+                          const daily = Number(form.expectedReturnPercent) || 0;
                           const durationPlans = [...form.durationPlans];
-                          durationPlans[index] = { ...plan, days };
+                          durationPlans[index] = {
+                            ...plan,
+                            days,
+                            returnPercent: scaleDailyReturn(daily, days),
+                          };
                           setForm({ ...form, durationPlans });
                         }}
                       />
                     </div>
                     <div className="col-span-3 sm:col-span-3">
-                      <label className={labelCls}>Return %</label>
+                      <label className={labelCls}>Return % (days × daily)</label>
                       <input
                         className={inputCls}
                         type="number"
