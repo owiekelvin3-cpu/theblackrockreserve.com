@@ -7,15 +7,15 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 const seeds = [
-  ["AAPL", "Apple Inc.", "Technology", "apple.com", 198.42, 1.24, 100, "Medium", 9.5, 1, 98],
-  ["MSFT", "Microsoft Corporation", "Technology", "microsoft.com", 428.15, 0.87, 100, "Low", 10.2, 2, 96],
-  ["NVDA", "NVIDIA Corporation", "Technology", "nvidia.com", 132.65, 2.41, 100, "High", 14.8, 3, 99],
-  ["AMZN", "Amazon.com Inc.", "Technology", "amazon.com", 198.87, -0.32, 100, "Medium", 11.0, 4, 94],
-  ["GOOGL", "Alphabet Inc. Class A", "Technology", "google.com", 178.52, 0.55, 100, "Medium", 10.5, 5, 92],
-  ["GOOG", "Alphabet Inc. Class C", "Technology", "google.com", 179.88, 0.61, 100, "Medium", 10.5, 6, 78],
-  ["META", "Meta Platforms Inc.", "Technology", "meta.com", 612.34, 1.12, 100, "Medium", 12.3, 7, 90],
-  ["TSLA", "Tesla Inc.", "Technology", "tesla.com", 248.91, -1.85, 100, "High", 15.2, 8, 97],
-  ["DIS", "The Walt Disney Company", "Entertainment", "disney.com", 112.34, 0.88, 50, "Medium", 8.2, 49, 82],
+  ["AAPL", "Apple Inc.", "Technology", "apple.com", 338.98, 0.848, 100, "Medium", 9.5, 1, 98],
+  ["MSFT", "Microsoft Corporation", "Technology", "microsoft.com", 501.61, 1.586, 100, "Low", 10.2, 2, 96],
+  ["NVDA", "NVIDIA Corporation", "Technology", "nvidia.com", 227.38, 2.299, 100, "High", 14.8, 3, 99],
+  ["AMZN", "Amazon.com Inc.", "Technology", "amazon.com", 258.45, 1.868, 100, "Medium", 11.0, 4, 94],
+  ["GOOGL", "Alphabet Inc. Class A", "Technology", "google.com", 354.97, 1.553, 100, "Medium", 10.5, 5, 92],
+  ["GOOG", "Alphabet Inc. Class C", "Technology", "google.com", 350.87, 1.876, 100, "Medium", 10.5, 6, 78],
+  ["META", "Meta Platforms Inc.", "Technology", "meta.com", 741.25, 11.428, 100, "Medium", 12.3, 7, 90],
+  ["TSLA", "Tesla Inc.", "Technology", "tesla.com", 375.3, 3.028, 100, "High", 15.2, 8, 97],
+  ["DIS", "The Walt Disney Company", "Entertainment", "disney.com", 104.23, 1.519, 50, "Medium", 8.2, 49, 82],
 ];
 
 async function main() {
