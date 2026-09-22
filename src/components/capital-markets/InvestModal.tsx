@@ -32,7 +32,7 @@ interface InvestModalProps {
   onClosePosition?: (symbol: string) => void;
 }
 
-const QUICK_AMOUNTS = [100, 500, 1000, 5000];
+const QUICK_AMOUNTS = [1000, 5000, 10000, 50000, 100000];
 
 export default function InvestModal({
   asset,
