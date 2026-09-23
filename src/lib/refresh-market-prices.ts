@@ -2,7 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { fetchLiveQuotes, isPublicMarketSymbol } from "@/lib/market-quotes";
 
 const STALE_MS = 10 * 60 * 1000;
-let lastRefreshAt = 0;
 let refreshPromise: Promise<{ updated: number; skipped: number; failed: string[] }> | null = null;
 
 function roundMoney(n: number) {
@@ -21,7 +20,6 @@ export async function refreshMarketAssetPrices(force = false) {
   if (!force) {
     const oldest = publicAssets.reduce((earliest, asset) => Math.min(earliest, asset.updatedAt.getTime()), Date.now());
     if (Date.now() - oldest < STALE_MS) {
-      lastRefreshAt = Date.now();
       return { updated: 0, skipped: publicAssets.length, failed: [] as string[] };
     }
   }
@@ -52,7 +50,6 @@ export async function refreshMarketAssetPrices(force = false) {
     updated += 1;
   }
 
-  lastRefreshAt = Date.now();
   return { updated, skipped: publicAssets.length - quotes.length, failed };
 }
 
