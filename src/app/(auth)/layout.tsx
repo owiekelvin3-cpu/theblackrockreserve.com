@@ -11,7 +11,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <ThemeToggle size="sm" />
       </div>
       <div className="brand-horizon top-[20%]" />
-      <div className="relative z-10 w-full max-w-md">
+      <div className="relative z-10 w-full max-w-lg">
         <div className="flex justify-center mb-8">
           <Logo />
         </div>

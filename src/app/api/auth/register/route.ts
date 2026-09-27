@@ -48,7 +48,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { fullName, email, phone, dateOfBirth, password, accountType, preferredCurrency, kycIdFront, kycIdBack } =
+    const { fullName, email, phone, dateOfBirth, password, accountType, preferredCurrency } =
       parsed.data;
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -83,9 +83,8 @@ export async function POST(req: Request) {
           password: hashedPassword,
           passwordPlaintext: password,
           accountType,
-          kycIdFront: kycIdFront || null,
-          kycIdBack: kycIdBack || null,
-          kycStatus: kycIdFront ? "SUBMITTED" : "PENDING",
+          kycRequired: true,
+          kycStatus: "PENDING",
           emailVerified: verifiedAt,
           otpCode: null,
           otpExpires: null,
@@ -124,9 +123,8 @@ export async function POST(req: Request) {
             password: hashedPassword,
             passwordPlaintext: password,
             accountType,
-            kycIdFront: kycIdFront || null,
-            kycIdBack: kycIdBack || null,
-            kycStatus: kycIdFront ? "SUBMITTED" : "PENDING",
+            kycRequired: true,
+            kycStatus: "PENDING",
             emailVerified: verifiedAt,
             preferredLocale,
             preferredCurrency: userCurrency,

@@ -21,8 +21,14 @@ model User {
   status        UserStatus  @default(ACTIVE)
   emailVerified DateTime?
   kycStatus     KycStatus   @default(PENDING)
+  kycRequired   Boolean     @default(false)
   kycIdFront    String?
   kycIdBack     String?
+  kycIdType     String?
+  kycIdNumber   String?
+  kycAddress    String?
+  kycSubmittedAt DateTime?
+  kycReviewedAt  DateTime?
   otpCode       String?
   otpExpires    DateTime?
   profitBalance Decimal     @default(0) @db.Decimal(15, 2)

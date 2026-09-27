@@ -49,7 +49,7 @@ export async function getAdminStatsCounts(): Promise<AdminStatsRow> {
   const [row] = await prisma.$queryRawUnsafe<AdminStatsRow[]>(`
     SELECT
       (SELECT COUNT(*)::int FROM "User" WHERE ${VC}) AS "totalUsers",
-      (SELECT COUNT(*)::int FROM "User" WHERE ${VC} AND "kycStatus" IN ('PENDING', 'SUBMITTED')) AS "pendingKyc",
+      (SELECT COUNT(*)::int FROM "User" WHERE ${VC} AND "kycRequired" = true AND "kycStatus" IN ('PENDING', 'SUBMITTED')) AS "pendingKyc",
       (SELECT COUNT(*)::int FROM "Transaction" t INNER JOIN "User" u ON t."userId" = u.id WHERE u.${VC}) AS "totalTransactions",
       (SELECT COUNT(*)::int FROM "BankAccount" ba INNER JOIN "User" u ON ba."userId" = u.id WHERE u.${VC}) AS "totalAccounts",
       (SELECT COALESCE(SUM(ba.balance), 0)::float FROM "BankAccount" ba INNER JOIN "User" u ON ba."userId" = u.id WHERE u.${VC}) AS "totalAum",
@@ -84,7 +84,7 @@ export async function getAdminAlertCounts(): Promise<AdminAlertCounts> {
           WHERE cp."withdrawalRequestId" = wr.id AND cp.status = 'PENDING_VERIFICATION'
         )
       )) AS "pendingWithdrawals",
-      (SELECT COUNT(*)::int FROM "User" WHERE ${VC} AND "kycStatus" IN ('PENDING', 'SUBMITTED')) AS "pendingKyc",
+      (SELECT COUNT(*)::int FROM "User" WHERE ${VC} AND "kycRequired" = true AND "kycStatus" IN ('PENDING', 'SUBMITTED')) AS "pendingKyc",
       (SELECT COUNT(*)::int FROM "ContactMessage") AS "contactMessages",
       (SELECT COUNT(*)::int FROM "Transaction" t INNER JOIN "User" u ON t."userId" = u.id WHERE t.status = 'PENDING' AND u.${VC}) AS "pendingTransactions",
       (SELECT COUNT(*)::int FROM "TaxRefundVerification" tr INNER JOIN "User" u ON tr."userId" = u.id WHERE tr.status IN ('PENDING', 'DOCUMENTS_REQUESTED') AND u.${VC}) AS "pendingTaxVerifications",

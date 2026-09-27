@@ -21,6 +21,10 @@ interface UserDetail {
   accountType: string;
   status: string;
   kycStatus: string;
+  kycRequired?: boolean;
+  kycIdType?: string | null;
+  kycIdNumber?: string | null;
+  kycAddress?: string | null;
   emailVerified: boolean;
   emailVerifiedAt: string | null;
   hasPassword: boolean;
@@ -551,6 +555,29 @@ export default function AdminUserDetailPage() {
             </form>
           )}
         </div>
+
+        {(user.kycIdType || user.kycIdNumber || user.kycAddress) && (
+          <div className="mt-4 pt-4 border-t border-[var(--admin-border)] grid sm:grid-cols-3 gap-3 text-sm">
+            {user.kycIdType && (
+              <div>
+                <p className="text-[10px] uppercase text-[var(--admin-muted)]">ID type</p>
+                <p>{user.kycIdType.replaceAll("_", " ")}</p>
+              </div>
+            )}
+            {user.kycIdNumber && (
+              <div>
+                <p className="text-[10px] uppercase text-[var(--admin-muted)]">ID number</p>
+                <p>{user.kycIdNumber}</p>
+              </div>
+            )}
+            {user.kycAddress && (
+              <div className="sm:col-span-3">
+                <p className="text-[10px] uppercase text-[var(--admin-muted)]">Address</p>
+                <p>{user.kycAddress}</p>
+              </div>
+            )}
+          </div>
+        )}
 
         {(user.kycIdFront || user.kycIdBack) && (
           <div className="mt-4 pt-4 border-t border-[var(--admin-border)] grid sm:grid-cols-2 gap-4">

@@ -45,6 +45,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const { emailVerified: verifyFlag, ...profileFields } = parsed.data;
     const data: Parameters<typeof prisma.user.update>[0]["data"] = { ...profileFields };
 
+    if (parsed.data.kycStatus === "VERIFIED" || parsed.data.kycStatus === "REJECTED") {
+      data.kycReviewedAt = new Date();
+    }
+
     if (verifyFlag === true && !existing.emailVerified) {
       data.emailVerified = new Date();
       data.otpCode = null;

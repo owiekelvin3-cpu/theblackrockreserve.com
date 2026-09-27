@@ -16,6 +16,7 @@ import type { LoginInput } from "@/lib/validations";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { useValidationSchemas } from "@/lib/i18n/use-validation-schemas";
 import { waitForSessionRole } from "@/lib/auth-session-client";
+import { destinationAfterCustomerAuth } from "@/lib/kyc-client";
 import { safeRedirectPath } from "@/lib/cookie-options";
 
 function LoginFormInner() {
@@ -69,7 +70,7 @@ function LoginFormInner() {
 
     setRedirecting(true);
     await waitForSessionRole("USER");
-    window.location.assign(destination);
+    window.location.assign(await destinationAfterCustomerAuth(destination));
   };
 
   return (

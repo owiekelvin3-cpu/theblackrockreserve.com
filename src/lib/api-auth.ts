@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { verifiedCustomerWhere } from "@/lib/customer-auth";
+import { isKycBlockingAccess } from "@/lib/kyc";
 
 /** Verified customer (USER role) — for all dashboard APIs */
 export async function getSessionUserId(): Promise<string | null> {
@@ -16,10 +17,11 @@ export async function getSessionUserId(): Promise<string | null> {
       ...verifiedCustomerWhere,
       status: "ACTIVE",
     },
-    select: { id: true },
-  });
+    select: { id: true, kycRequired: true, kycStatus: true },
+    });
 
-  return user?.id ?? null;
+  if (!user || isKycBlockingAccess(user)) return null;
+  return user.id;
 }
 
 /** Admin APIs — always re-check role/status in DB so demoted/suspended admins lose access. */

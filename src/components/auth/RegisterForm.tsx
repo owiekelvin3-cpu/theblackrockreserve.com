@@ -6,7 +6,7 @@ import { signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Upload, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
@@ -15,6 +15,7 @@ import { useI18n } from "@/components/providers/I18nProvider";
 import { STANDARD_CURRENCY_OPTIONS } from "@/lib/currency";
 import { useValidationSchemas } from "@/lib/i18n/use-validation-schemas";
 import { waitForSessionRole } from "@/lib/auth-session-client";
+import { destinationAfterCustomerAuth } from "@/lib/kyc-client";
 
 type Step1Data = RegisterStep1Input;
 type Step2Data = RegisterStep2Input;
@@ -24,8 +25,6 @@ export default function RegisterForm() {
   const schemas = useValidationSchemas();
   const [step, setStep] = useState(1);
   const [step1Data, setStep1Data] = useState<Step1Data | null>(null);
-  const [step2Data, setStep2Data] = useState<Step2Data | null>(null);
-  const [kycFiles, setKycFiles] = useState<{ front?: string; back?: string }>({});
   const [isLoading, setIsLoading] = useState(false);
 
   const step1Form = useForm<Step1Data>({ resolver: zodResolver(schemas.registerStep1Schema) });
@@ -39,25 +38,12 @@ export default function RegisterForm() {
     setStep(2);
   };
 
-  const handleStep2 = (data: Step2Data) => {
-    setStep2Data(data);
-    setStep(3);
-  };
-
-  const handleFileUpload = (side: "front" | "back", file: File) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      setKycFiles((prev) => ({ ...prev, [side]: reader.result as string }));
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleRegister = async () => {
-    if (!step1Data || !step2Data) return;
+  const handleRegister = async (data: Step2Data) => {
+    if (!step1Data) return;
     setIsLoading(true);
 
     try {
-      const { confirmPassword, ...step2Payload } = step2Data;
+      const { confirmPassword, ...step2Payload } = data;
       void confirmPassword;
       const res = await fetch("/api/auth/register", {
         method: "POST",
@@ -65,17 +51,15 @@ export default function RegisterForm() {
         body: JSON.stringify({
           ...step1Data,
           ...step2Payload,
-          kycIdFront: kycFiles.front,
-          kycIdBack: kycFiles.back,
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || t("auth.registrationFailed"));
+      const payload = await res.json();
+      if (!res.ok) throw new Error(payload.error || t("auth.registrationFailed"));
 
       const result = await signIn("credentials", {
         email: step1Data.email,
-        password: step2Data.password,
+        password: data.password,
         redirect: false,
       });
 
@@ -85,9 +69,9 @@ export default function RegisterForm() {
         return;
       }
 
-      toast.success(data.message || t("auth.accountSaved"));
+      toast.success(payload.message || t("auth.accountCreatedKyc"));
       await waitForSessionRole("USER");
-      window.location.assign("/dashboard");
+      window.location.assign(await destinationAfterCustomerAuth("/kyc"));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("auth.registrationFailed"));
     } finally {
@@ -101,14 +85,14 @@ export default function RegisterForm() {
       <p className="text-sm text-text-secondary text-center mt-2">{t("auth.createAccountSubtitle")}</p>
 
       <div className="mt-6 flex items-center gap-2">
-        {[1, 2, 3].map((s) => (
+        {[1, 2].map((s) => (
           <div key={s} className="flex-1 flex items-center gap-2">
             <div className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-semibold ${
               step >= s ? "bg-accent-gold text-bg-primary" : "bg-bg-tertiary text-text-muted"
             }`}>
               {step > s ? <Check size={16} /> : s}
             </div>
-            {s < 3 && <div className={`flex-1 h-0.5 ${step > s ? "bg-accent-gold" : "bg-bg-tertiary"}`} />}
+            {s < 2 && <div className={`flex-1 h-0.5 ${step > s ? "bg-accent-gold" : "bg-bg-tertiary"}`} />}
           </div>
         ))}
       </div>
@@ -124,7 +108,7 @@ export default function RegisterForm() {
       )}
 
       {step === 2 && (
-        <form onSubmit={step2Form.handleSubmit(handleStep2)} className="mt-8 space-y-4">
+        <form onSubmit={step2Form.handleSubmit(handleRegister)} className="mt-8 space-y-4">
           <Input label={t("auth.password")} type="password" {...step2Form.register("password")} error={step2Form.formState.errors.password?.message} />
           <Input label={t("auth.confirmPassword")} type="password" {...step2Form.register("confirmPassword")} error={step2Form.formState.errors.confirmPassword?.message} />
           <div>
@@ -168,44 +152,9 @@ export default function RegisterForm() {
           </div>
           <div className="flex gap-3">
             <Button type="button" variant="ghost" onClick={() => setStep(1)} className="flex-1">{t("auth.back")}</Button>
-            <Button type="submit" className="flex-1">{t("auth.continue")}</Button>
+            <Button type="submit" isLoading={isLoading} className="flex-1">{t("auth.createAccountBtn")}</Button>
           </div>
         </form>
-      )}
-
-      {step === 3 && (
-        <div className="mt-8 space-y-4">
-          <p className="text-sm text-text-secondary">{t("auth.kycUploadDesc")}</p>
-          {(["front", "back"] as const).map((side) => (
-            <label key={side} className="block">
-              <span className="text-sm font-medium text-text-secondary mb-2 block capitalize">
-                {side === "front" ? t("auth.idFront") : t("auth.idBack")}
-              </span>
-              <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-accent-gold/40 transition-colors cursor-pointer">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => e.target.files?.[0] && handleFileUpload(side, e.target.files[0])}
-                />
-                {kycFiles[side] ? (
-                  <div className="flex items-center justify-center gap-2 text-accent-green">
-                    <Check size={20} /> {t("auth.uploaded")}
-                  </div>
-                ) : (
-                  <div className="text-text-muted">
-                    <Upload size={24} className="mx-auto mb-2" />
-                    <p className="text-sm">{t("auth.clickUpload")}</p>
-                  </div>
-                )}
-              </div>
-            </label>
-          ))}
-          <div className="flex gap-3">
-            <Button type="button" variant="ghost" onClick={() => setStep(2)} className="flex-1">{t("auth.back")}</Button>
-            <Button onClick={handleRegister} isLoading={isLoading} className="flex-1">{t("auth.createAccountBtn")}</Button>
-          </div>
-        </div>
       )}
 
       <p className="mt-6 text-center text-sm text-text-secondary">
