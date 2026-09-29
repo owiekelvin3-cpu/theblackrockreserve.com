@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 const updateSchema = z.object({
   name: z.string().min(1).max(120).optional(),
   subject: z.string().min(1).max(200).optional(),
-  htmlBody: z.string().min(1).max(50000).optional(),
+  htmlBody: z.string().min(1).max(1_500_000).optional(),
   textBody: z.string().optional(),
 });
 

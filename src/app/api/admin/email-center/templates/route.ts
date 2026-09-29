@@ -8,7 +8,7 @@ const createSchema = z.object({
   name: z.string().min(1).max(120),
   slug: z.string().min(1).max(80).regex(/^[a-z0-9-]+$/),
   subject: z.string().min(1).max(200),
-  htmlBody: z.string().min(1).max(50000),
+  htmlBody: z.string().min(1).max(1_500_000),
   textBody: z.string().optional(),
 });
 

@@ -453,6 +453,9 @@ export default function AdminEmailCenter() {
               </div>
               <div>
                 <label className="admin-label">Message</label>
+                <p className="text-[11px] text-[var(--admin-muted)] mb-1.5">
+                  Use <strong className="text-white font-medium">Add image</strong> to include photos in the email.
+                </p>
                 <AdminRichTextEditor value={bodyHtml} onChange={setBodyHtml} />
               </div>
               <div className="flex flex-wrap gap-2">
@@ -542,6 +545,9 @@ export default function AdminEmailCenter() {
                   </div>
                   <div>
                     <label className="admin-label">Message</label>
+                    <p className="text-[11px] text-[var(--admin-muted)] mb-1.5">
+                      Use <strong className="text-white font-medium">Add image</strong> to include photos in the email.
+                    </p>
                     <AdminRichTextEditor value={broadcastBody} onChange={setBroadcastBody} minHeight="180px" />
                   </div>
                   <div className="flex gap-2">

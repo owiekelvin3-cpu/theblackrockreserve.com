@@ -7,7 +7,7 @@ import { sendIndividualAdminEmail } from "@/lib/admin-email/service";
 const schema = z.object({
   userId: z.string().min(1),
   subject: z.string().min(1).max(200),
-  bodyHtml: z.string().min(1).max(50000),
+  bodyHtml: z.string().min(1).max(1_500_000),
   templateId: z.string().optional(),
 });
 

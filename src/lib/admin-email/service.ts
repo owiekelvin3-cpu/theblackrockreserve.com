@@ -7,6 +7,7 @@ import type {
 import { prisma } from "@/lib/prisma";
 import { sendEmail, isEmailConfigured } from "@/lib/email";
 import { adminComposedEmail } from "@/lib/email-templates";
+import { extractInlineImages } from "@/lib/admin-email/inline-images";
 import { logAdminAction } from "@/lib/admin-audit";
 import { DEFAULT_EMAIL_TEMPLATES } from "@/lib/admin-email/default-templates";
 import { resolveBroadcastRecipients } from "@/lib/admin-email/recipients";
@@ -94,11 +95,13 @@ export async function deliverEmailLog(logId: string) {
   }
 
   try {
+    const { html, attachments } = extractInlineImages(log.htmlBody);
     await sendEmail({
       to: log.to,
       subject: log.subject,
-      html: log.htmlBody,
+      html,
       text: log.textBody ?? log.subject,
+      attachments,
     });
     await prisma.emailLog.update({
       where: { id: logId },

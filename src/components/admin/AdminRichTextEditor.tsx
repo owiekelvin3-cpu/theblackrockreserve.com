@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
-import { Bold, Italic, List, ListOrdered, Link2, Heading2 } from "lucide-react";
+import { Bold, Italic, List, ListOrdered, Link2, Heading2, ImagePlus } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -12,6 +13,46 @@ type Props = {
   minHeight?: string;
 };
 
+const EMAIL_IMAGE_STYLE =
+  "max-width:100%;height:auto;display:block;margin:12px 0;border-radius:8px;border:0;";
+
+function compressImageFile(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith("image/")) {
+      reject(new Error("Please choose an image file."));
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      reject(new Error("Image must be under 8 MB."));
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const maxW = 800;
+      const scale = Math.min(1, maxW / Math.max(1, img.width));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(img.width * scale));
+      canvas.height = Math.max(1, Math.round(img.height * scale));
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("Could not process that image."));
+        return;
+      }
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(objectUrl);
+      resolve(canvas.toDataURL("image/jpeg", 0.74));
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Could not read that image."));
+    };
+    img.src = objectUrl;
+  });
+}
+
 export default function AdminRichTextEditor({
   value,
   onChange,
@@ -20,6 +61,8 @@ export default function AdminRichTextEditor({
   minHeight = "200px",
 }: Props) {
   const editorRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const savedRange = useRef<Range | null>(null);
 
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== value) {
@@ -27,7 +70,21 @@ export default function AdminRichTextEditor({
     }
   }, [value]);
 
+  const saveSelection = () => {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) savedRange.current = sel.getRangeAt(0).cloneRange();
+  };
+
+  const restoreSelection = () => {
+    const sel = window.getSelection();
+    if (!sel || !savedRange.current) return;
+    sel.removeAllRanges();
+    sel.addRange(savedRange.current);
+  };
+
   const exec = useCallback((command: string, arg?: string) => {
+    restoreSelection();
+    editorRef.current?.focus();
     document.execCommand(command, false, arg);
     if (editorRef.current) onChange(editorRef.current.innerHTML);
   }, [onChange]);
@@ -39,6 +96,27 @@ export default function AdminRichTextEditor({
   const addLink = () => {
     const url = window.prompt("Enter URL");
     if (url) exec("createLink", url);
+  };
+
+  const insertImageDataUrl = async (file: File) => {
+    try {
+      const dataUrl = await compressImageFile(file);
+      restoreSelection();
+      editorRef.current?.focus();
+      document.execCommand(
+        "insertHTML",
+        false,
+        `<img src="${dataUrl}" alt="" style="${EMAIL_IMAGE_STYLE}" />`
+      );
+      if (editorRef.current) onChange(editorRef.current.innerHTML);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not add that image.");
+    }
+  };
+
+  const addImage = () => {
+    saveSelection();
+    fileRef.current?.click();
   };
 
   return (
@@ -58,25 +136,107 @@ export default function AdminRichTextEditor({
             aria-label={label}
             onMouseDown={(e) => {
               e.preventDefault();
+              saveSelection();
               exec(cmd, arg);
             }}
           >
             <Icon size={15} />
           </button>
         ))}
-        <button type="button" className="admin-btn-ghost p-2" aria-label="Link" onMouseDown={(e) => { e.preventDefault(); addLink(); }}>
+        <button
+          type="button"
+          className="admin-btn-ghost p-2"
+          aria-label="Link"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            saveSelection();
+            addLink();
+          }}
+        >
           <Link2 size={15} />
         </button>
+        <button
+          type="button"
+          className="admin-btn-ghost px-2.5 py-1.5 text-xs inline-flex items-center gap-1.5 bg-accent-brand/15 border-accent-brand/30 text-white"
+          aria-label="Add image"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            addImage();
+          }}
+        >
+          <ImagePlus size={15} /> Add image
+        </button>
+        <button
+          type="button"
+          className="admin-btn-ghost px-2 py-1.5 text-xs"
+          aria-label="Insert image from URL"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            saveSelection();
+            const url = window.prompt("Paste an image URL");
+            if (!url) return;
+            const trimmed = url.trim();
+            if (!/^https?:\/\//i.test(trimmed)) {
+              toast.error("Use an http or https image link.");
+              return;
+            }
+            restoreSelection();
+            editorRef.current?.focus();
+            document.execCommand(
+              "insertHTML",
+              false,
+              `<img src="${trimmed.replace(/"/g, "&quot;")}" alt="" style="${EMAIL_IMAGE_STYLE}" />`
+            );
+            if (editorRef.current) onChange(editorRef.current.innerHTML);
+          }}
+        >
+          Image URL
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            const files = Array.from(e.target.files ?? []);
+            e.target.value = "";
+            void (async () => {
+              for (const file of files) {
+                await insertImageDataUrl(file);
+              }
+            })();
+          }}
+        />
       </div>
       <div
         ref={editorRef}
         contentEditable
         suppressContentEditableWarning
-        className="admin-input border-0 rounded-none focus:ring-0 text-sm text-white prose-invert max-w-none p-4"
+        className="admin-input border-0 rounded-none focus:ring-0 text-sm text-white prose-invert max-w-none p-4 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg"
         style={{ minHeight }}
         data-placeholder={placeholder}
         onInput={handleInput}
+        onMouseUp={saveSelection}
+        onKeyUp={saveSelection}
+        onPaste={(e) => {
+          const file = Array.from(e.clipboardData?.files ?? []).find((item) => item.type.startsWith("image/"));
+          if (!file) return;
+          e.preventDefault();
+          saveSelection();
+          void insertImageDataUrl(file);
+        }}
+        onDrop={(e) => {
+          const file = Array.from(e.dataTransfer?.files ?? []).find((item) => item.type.startsWith("image/"));
+          if (!file) return;
+          e.preventDefault();
+          saveSelection();
+          void insertImageDataUrl(file);
+        }}
       />
+      <p className="px-3 py-2 text-[11px] text-[var(--admin-muted)] border-t border-[var(--admin-border)]">
+        Click <span className="text-white">Add image</span> to put photos in this email. You can also paste or drop an image into the message.
+      </p>
     </div>
   );
 }
@@ -108,7 +268,7 @@ export function EmailPreviewFrame({
             <h2 className="text-lg font-bold text-gray-900 mb-2">{subject || "Email subject"}</h2>
             <p className="mb-3">Dear {recipientName},</p>
             <div
-              className="prose prose-sm max-w-none text-gray-600 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-[#E85D04]"
+              className="prose prose-sm max-w-none text-gray-600 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-[#E85D04] [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:my-3"
               dangerouslySetInnerHTML={{ __html: bodyHtml || "<p>Your message will appear here.</p>" }}
             />
             <div className="mt-6 text-center">

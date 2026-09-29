@@ -7,6 +7,12 @@ export type SendEmailOptions = {
   html: string;
   text: string;
   replyTo?: string;
+  attachments?: Array<{
+    filename: string;
+    content: Buffer;
+    cid?: string;
+    contentType?: string;
+  }>;
 };
 
 export type EmailProvider = "smtp" | "none";
@@ -86,6 +92,13 @@ async function sendViaSmtp(options: SendEmailOptions) {
     subject: options.subject,
     html: options.html,
     text: options.text,
+    attachments: options.attachments?.map((file) => ({
+      filename: file.filename,
+      content: file.content,
+      contentType: file.contentType,
+      cid: file.cid,
+      contentDisposition: file.cid ? "inline" : "attachment",
+    })),
   });
 }
 

@@ -16,7 +16,7 @@ const previewSchema = z.object({
 
 const sendSchema = z.object({
   subject: z.string().min(1).max(200),
-  bodyHtml: z.string().min(1).max(50000),
+  bodyHtml: z.string().min(1).max(1_500_000),
   recipientFilter: filterEnum,
   recipientIds: z.array(z.string()).optional(),
   scheduledAt: z.string().datetime().optional().nullable(),
