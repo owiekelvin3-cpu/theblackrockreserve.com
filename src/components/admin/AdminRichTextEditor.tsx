@@ -196,7 +196,7 @@ export default function AdminRichTextEditor({
   return (
     <div
       className={cn(
-        "admin-rich-editor rounded-xl border overflow-hidden transition-colors",
+        "admin-rich-editor relative z-10 rounded-xl border transition-colors",
         dragging ? "border-accent-brand bg-accent-brand/10" : "border-[var(--admin-border)]",
         className
       )}
@@ -253,28 +253,39 @@ export default function AdminRichTextEditor({
         >
           <Link2 size={15} />
         </button>
+        <button
+          type="button"
+          className="admin-btn-ghost px-2.5 py-1.5 text-xs inline-flex items-center gap-1.5"
+          aria-label="Add photos"
+          onClick={() => fileRef.current?.click()}
+        >
+          <ImagePlus size={15} /> Add photos
+        </button>
       </div>
 
-      <label className="flex items-center justify-between gap-3 px-3 py-2.5 border-b border-[var(--admin-border)] bg-accent-brand/10 cursor-pointer hover:bg-accent-brand/20">
-        <span className="inline-flex items-center gap-2 text-sm font-medium text-white">
-          <ImagePlus size={16} />
-          {adding ? "Adding photos…" : "Add photos"}
-        </span>
-        <span className="text-[11px] text-[var(--admin-muted)]">JPG, PNG, GIF, WebP</span>
+      <div className="relative isolate border-b border-[var(--admin-border)] bg-accent-brand/10 hover:bg-accent-brand/20">
         <input
           ref={fileRef}
           type="file"
-          accept="image/jpeg,image/png,image/gif,image/webp,image/*"
+          accept="image/*"
           multiple
-          className="sr-only"
           disabled={adding}
+          className="absolute inset-0 z-30 block h-full w-full cursor-pointer opacity-0"
+          onClick={saveSelection}
           onChange={(e) => {
             const files = Array.from(e.target.files ?? []);
             e.target.value = "";
             if (files.length) void addImageFiles(files);
           }}
         />
-      </label>
+        <div className="pointer-events-none flex items-center justify-between gap-3 px-3 py-3">
+          <span className="inline-flex items-center gap-2 text-sm font-semibold text-white">
+            <ImagePlus size={16} />
+            {adding ? "Adding photos…" : "Add photos"}
+          </span>
+          <span className="text-[11px] text-[var(--admin-muted)]">Click to choose JPG, PNG, GIF, or WebP</span>
+        </div>
+      </div>
 
       <div
         ref={editorRef}
