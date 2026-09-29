@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Bold, Italic, List, ListOrdered, Link2, Heading2, ImagePlus } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -14,43 +14,70 @@ type Props = {
 };
 
 const EMAIL_IMAGE_STYLE =
-  "max-width:100%;height:auto;display:block;margin:12px 0;border-radius:8px;border:0;";
+  "max-width:100%;height:auto;display:block;margin:16px 0;border-radius:8px;border:0;";
+
+function isImageFile(file: File) {
+  return file.type.startsWith("image/") || /\.(png|jpe?g|gif|webp|bmp|heic)$/i.test(file.name);
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("Could not read that image."));
+    reader.readAsDataURL(file);
+  });
+}
 
 function compressImageFile(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
-    if (!file.type.startsWith("image/")) {
-      reject(new Error("Please choose an image file."));
+    if (!isImageFile(file)) {
+      reject(new Error("Please choose a photo (JPG, PNG, GIF, or WebP)."));
       return;
     }
-    if (file.size > 8 * 1024 * 1024) {
-      reject(new Error("Image must be under 8 MB."));
+    if (file.size > 12 * 1024 * 1024) {
+      reject(new Error("Please use a photo under 12 MB."));
       return;
     }
 
     const objectUrl = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => {
-      const maxW = 800;
-      const scale = Math.min(1, maxW / Math.max(1, img.width));
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.max(1, Math.round(img.width * scale));
-      canvas.height = Math.max(1, Math.round(img.height * scale));
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
+      try {
+        const maxW = 960;
+        const scale = Math.min(1, maxW / Math.max(1, img.width));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          URL.revokeObjectURL(objectUrl);
+          void readFileAsDataUrl(file).then(resolve).catch(reject);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         URL.revokeObjectURL(objectUrl);
-        reject(new Error("Could not process that image."));
-        return;
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      } catch {
+        URL.revokeObjectURL(objectUrl);
+        void readFileAsDataUrl(file).then(resolve).catch(reject);
       }
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      URL.revokeObjectURL(objectUrl);
-      resolve(canvas.toDataURL("image/jpeg", 0.74));
     };
     img.onerror = () => {
       URL.revokeObjectURL(objectUrl);
-      reject(new Error("Could not read that image."));
+      void readFileAsDataUrl(file).then(resolve).catch(reject);
     };
     img.src = objectUrl;
   });
+}
+
+function filesFromClipboard(event: React.ClipboardEvent) {
+  const fromItems = Array.from(event.clipboardData?.items ?? [])
+    .filter((item) => item.type.startsWith("image/"))
+    .map((item) => item.getAsFile())
+    .filter((file): file is File => Boolean(file));
+  if (fromItems.length) return fromItems;
+  return Array.from(event.clipboardData?.files ?? []).filter(isImageFile);
 }
 
 export default function AdminRichTextEditor({
@@ -63,64 +90,135 @@ export default function AdminRichTextEditor({
   const editorRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const savedRange = useRef<Range | null>(null);
+  const focusedRef = useRef(false);
+  const [dragging, setDragging] = useState(false);
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
-    if (editorRef.current && editorRef.current.innerHTML !== value) {
-      editorRef.current.innerHTML = value;
-    }
+    const editor = editorRef.current;
+    if (!editor || focusedRef.current) return;
+    if (editor.innerHTML !== value) editor.innerHTML = value;
   }, [value]);
+
+  const emitChange = () => {
+    if (editorRef.current) onChange(editorRef.current.innerHTML);
+  };
+
+  const rangeInEditor = (range: Range | null) => {
+    const editor = editorRef.current;
+    if (!editor || !range) return false;
+    return editor.contains(range.commonAncestorContainer);
+  };
 
   const saveSelection = () => {
     const sel = window.getSelection();
-    if (sel && sel.rangeCount > 0) savedRange.current = sel.getRangeAt(0).cloneRange();
+    if (!sel || sel.rangeCount === 0) return;
+    const range = sel.getRangeAt(0).cloneRange();
+    if (rangeInEditor(range)) savedRange.current = range;
   };
 
-  const restoreSelection = () => {
+  const insertImageNode = (dataUrl: string) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const img = document.createElement("img");
+    img.src = dataUrl;
+    img.alt = "Email photo";
+    img.setAttribute("style", EMAIL_IMAGE_STYLE);
+
+    editor.focus();
     const sel = window.getSelection();
-    if (!sel || !savedRange.current) return;
-    sel.removeAllRanges();
-    sel.addRange(savedRange.current);
+    const range =
+      (savedRange.current && rangeInEditor(savedRange.current) ? savedRange.current : null) ??
+      (sel && sel.rangeCount > 0 && rangeInEditor(sel.getRangeAt(0)) ? sel.getRangeAt(0) : null);
+
+    if (range) {
+      range.deleteContents();
+      range.insertNode(img);
+      range.setStartAfter(img);
+      range.collapse(true);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+      savedRange.current = range.cloneRange();
+    } else {
+      editor.appendChild(img);
+    }
+
+    const spacer = document.createElement("p");
+    spacer.appendChild(document.createElement("br"));
+    img.insertAdjacentElement("afterend", spacer);
+    emitChange();
   };
 
-  const exec = useCallback((command: string, arg?: string) => {
-    restoreSelection();
-    editorRef.current?.focus();
-    document.execCommand(command, false, arg);
-    if (editorRef.current) onChange(editorRef.current.innerHTML);
-  }, [onChange]);
-
-  const handleInput = () => {
-    if (editorRef.current) onChange(editorRef.current.innerHTML);
+  const addImageFiles = async (files: File[]) => {
+    const images = files.filter(isImageFile);
+    if (images.length === 0) {
+      toast.error("Please choose a photo (JPG, PNG, GIF, or WebP).");
+      return;
+    }
+    setAdding(true);
+    try {
+      for (const file of images) {
+        const dataUrl = await compressImageFile(file);
+        if (!dataUrl.startsWith("data:image/")) {
+          throw new Error("That file is not a usable photo.");
+        }
+        insertImageNode(dataUrl);
+      }
+      toast.success(images.length === 1 ? "Photo added to the email." : `${images.length} photos added to the email.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not add that photo.");
+    } finally {
+      setAdding(false);
+    }
   };
+
+  const exec = useCallback(
+    (command: string, arg?: string) => {
+      editorRef.current?.focus();
+      if (savedRange.current && rangeInEditor(savedRange.current)) {
+        const sel = window.getSelection();
+        sel?.removeAllRanges();
+        sel?.addRange(savedRange.current);
+      }
+      document.execCommand(command, false, arg);
+      emitChange();
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [onChange]
+  );
 
   const addLink = () => {
     const url = window.prompt("Enter URL");
     if (url) exec("createLink", url);
   };
 
-  const insertImageDataUrl = async (file: File) => {
-    try {
-      const dataUrl = await compressImageFile(file);
-      restoreSelection();
-      editorRef.current?.focus();
-      document.execCommand(
-        "insertHTML",
-        false,
-        `<img src="${dataUrl}" alt="" style="${EMAIL_IMAGE_STYLE}" />`
-      );
-      if (editorRef.current) onChange(editorRef.current.innerHTML);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not add that image.");
-    }
-  };
-
-  const addImage = () => {
-    saveSelection();
-    fileRef.current?.click();
-  };
-
   return (
-    <div className={cn("admin-rich-editor rounded-xl border border-[var(--admin-border)] overflow-hidden", className)}>
+    <div
+      className={cn(
+        "admin-rich-editor rounded-xl border overflow-hidden transition-colors",
+        dragging ? "border-accent-brand bg-accent-brand/10" : "border-[var(--admin-border)]",
+        className
+      )}
+      onDragEnter={(e) => {
+        e.preventDefault();
+        if ([...e.dataTransfer.items].some((item) => item.kind === "file")) setDragging(true);
+      }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+      }}
+      onDragLeave={(e) => {
+        if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+        setDragging(false);
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragging(false);
+        const files = Array.from(e.dataTransfer.files ?? []).filter(isImageFile);
+        if (files.length) void addImageFiles(files);
+      }}
+    >
       <div className="flex flex-wrap gap-1 p-2 border-b border-[var(--admin-border)] bg-white/[0.03]">
         {[
           { icon: Bold, cmd: "bold", label: "Bold" },
@@ -155,87 +253,59 @@ export default function AdminRichTextEditor({
         >
           <Link2 size={15} />
         </button>
-        <button
-          type="button"
-          className="admin-btn-ghost px-2.5 py-1.5 text-xs inline-flex items-center gap-1.5 bg-accent-brand/15 border-accent-brand/30 text-white"
-          aria-label="Add image"
-          onMouseDown={(e) => {
-            e.preventDefault();
-            addImage();
-          }}
-        >
-          <ImagePlus size={15} /> Add image
-        </button>
-        <button
-          type="button"
-          className="admin-btn-ghost px-2 py-1.5 text-xs"
-          aria-label="Insert image from URL"
-          onMouseDown={(e) => {
-            e.preventDefault();
-            saveSelection();
-            const url = window.prompt("Paste an image URL");
-            if (!url) return;
-            const trimmed = url.trim();
-            if (!/^https?:\/\//i.test(trimmed)) {
-              toast.error("Use an http or https image link.");
-              return;
-            }
-            restoreSelection();
-            editorRef.current?.focus();
-            document.execCommand(
-              "insertHTML",
-              false,
-              `<img src="${trimmed.replace(/"/g, "&quot;")}" alt="" style="${EMAIL_IMAGE_STYLE}" />`
-            );
-            if (editorRef.current) onChange(editorRef.current.innerHTML);
-          }}
-        >
-          Image URL
-        </button>
+      </div>
+
+      <label className="flex items-center justify-between gap-3 px-3 py-2.5 border-b border-[var(--admin-border)] bg-accent-brand/10 cursor-pointer hover:bg-accent-brand/20">
+        <span className="inline-flex items-center gap-2 text-sm font-medium text-white">
+          <ImagePlus size={16} />
+          {adding ? "Adding photos…" : "Add photos"}
+        </span>
+        <span className="text-[11px] text-[var(--admin-muted)]">JPG, PNG, GIF, WebP</span>
         <input
           ref={fileRef}
           type="file"
-          accept="image/*"
+          accept="image/jpeg,image/png,image/gif,image/webp,image/*"
           multiple
-          className="hidden"
+          className="sr-only"
+          disabled={adding}
           onChange={(e) => {
             const files = Array.from(e.target.files ?? []);
             e.target.value = "";
-            void (async () => {
-              for (const file of files) {
-                await insertImageDataUrl(file);
-              }
-            })();
+            if (files.length) void addImageFiles(files);
           }}
         />
-      </div>
+      </label>
+
       <div
         ref={editorRef}
         contentEditable
         suppressContentEditableWarning
-        className="admin-input border-0 rounded-none focus:ring-0 text-sm text-white prose-invert max-w-none p-4 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg"
+        className="admin-input border-0 rounded-none focus:ring-0 text-sm text-white max-w-none p-4 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg empty:before:content-[attr(data-placeholder)] empty:before:text-[var(--admin-muted)]"
         style={{ minHeight }}
         data-placeholder={placeholder}
-        onInput={handleInput}
+        onInput={emitChange}
+        onFocus={() => {
+          focusedRef.current = true;
+        }}
+        onBlur={() => {
+          focusedRef.current = false;
+          emitChange();
+        }}
         onMouseUp={saveSelection}
         onKeyUp={saveSelection}
         onPaste={(e) => {
-          const file = Array.from(e.clipboardData?.files ?? []).find((item) => item.type.startsWith("image/"));
-          if (!file) return;
+          const images = filesFromClipboard(e);
+          if (!images.length) return;
           e.preventDefault();
           saveSelection();
-          void insertImageDataUrl(file);
-        }}
-        onDrop={(e) => {
-          const file = Array.from(e.dataTransfer?.files ?? []).find((item) => item.type.startsWith("image/"));
-          if (!file) return;
-          e.preventDefault();
-          saveSelection();
-          void insertImageDataUrl(file);
+          void addImageFiles(images);
         }}
       />
+
       <p className="px-3 py-2 text-[11px] text-[var(--admin-muted)] border-t border-[var(--admin-border)]">
-        Click <span className="text-white">Add image</span> to put photos in this email. You can also paste or drop an image into the message.
+        {dragging
+          ? "Drop photos here to add them to the email."
+          : "Photos appear in the message and in what the user receives."}
       </p>
     </div>
   );
