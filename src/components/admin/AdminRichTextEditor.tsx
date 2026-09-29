@@ -202,7 +202,7 @@ export default function AdminRichTextEditor({
       )}
       onDragEnter={(e) => {
         e.preventDefault();
-        if ([...e.dataTransfer.items].some((item) => item.kind === "file")) setDragging(true);
+        if (Array.from(e.dataTransfer.items).some((item) => item.kind === "file")) setDragging(true);
       }}
       onDragOver={(e) => {
         e.preventDefault();
